@@ -74,6 +74,37 @@ Requirements:
 - `--send` is the explicit opt-in flag; without it, the command defaults to dry-run
 - No token value is printed in output
 
+## Google credentials setup
+
+### Option A: Service account (recommended for server use)
+
+1. Create a service account in [Google Cloud Console](https://console.cloud.google.com/).
+2. Download the JSON key file.
+3. Place it outside the repo, e.g. `/home/ubuntu/hermes-control/secrets/cca-service-account.json`.
+4. Add to `/home/ubuntu/hermes-control/secrets/shared.env`:
+
+```bash
+GOOGLE_APPLICATION_CREDENTIALS_PATH=/home/ubuntu/hermes-control/secrets/cca-service-account.json
+GOOGLE_SHEETS_SPREADSHEET_ID=your-spreadsheet-id-here
+```
+
+### Option B: OAuth tokens (user-consent flow)
+
+Add to `/home/ubuntu/hermes-control/secrets/shared.env`:
+
+```bash
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REFRESH_TOKEN=your-refresh-token
+GOOGLE_SHEETS_SPREADSHEET_ID=your-spreadsheet-id-here
+```
+
+### After adding credentials
+
+Run `cca sheets-status` to verify readiness without printing secrets.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

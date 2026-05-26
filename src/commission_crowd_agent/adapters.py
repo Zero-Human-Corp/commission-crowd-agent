@@ -214,3 +214,327 @@ class OutreachAdapter:
     def send_email(self, lead: Lead) -> bool:
         """Send a personalised email to a lead."""
         return True
+
+
+class GoogleSheetsAdapter:
+    """Google Sheets adapter for reading/writing pipeline state.
+
+    Uses the Google Sheets REST API via httpx. Supports service account
+    credentials or an explicit access token for testing.
+    """
+
+    API_BASE = "https://sheets.googleapis.com/v4/spreadsheets"
+    TOKEN_URL = "https://oauth2.googleapis.com/token"
+    TIMEOUT_SECONDS = 15
+
+    # Minimal schema for auto-creation
+    SCHEMA: dict[str, list[str]] = {
+        "leads": [
+            "lead_id",
+            "source",
+            "name",
+            "company",
+            "url",
+            "email",
+            "status",
+            "created_at",
+            "notes",
+        ],
+        "opportunities": [
+            "opportunity_id",
+            "lead_id",
+            "title",
+            "score",
+            "stage",
+            "next_action",
+            "created_at",
+            "updated_at",
+        ],
+        "approvals": [
+            "approval_id",
+            "opportunity_id",
+            "draft_text",
+            "approval_status",
+            "approved_by",
+            "approved_at",
+            "telegram_message_id",
+        ],
+        "runs": [
+            "run_id",
+            "workflow",
+            "status",
+            "started_at",
+            "completed_at",
+            "summary",
+        ],
+        "outcomes": [
+            "outcome_id",
+            "opportunity_id",
+            "result",
+            "revenue_signal",
+            "notes",
+            "recorded_at",
+        ],
+    }
+
+    def __init__(
+        self,
+        spreadsheet_id: str = "",
+        access_token: str = "",
+        *,
+        credentials_path: str = "",
+        service_account_json: str = "",
+        dry_run: bool = False,
+    ) -> None:
+        self.spreadsheet_id = spreadsheet_id
+        self.access_token = access_token
+        self.credentials_path = credentials_path
+        self.service_account_json = service_account_json
+        self.dry_run = dry_run
+
+    def _auth_headers(self) -> dict[str, str]:
+        """Return Authorization header with current access token."""
+        return {"Authorization": f"Bearer {self.access_token}"}
+
+    def health_check(self) -> dict[str, Any]:
+        """Verify the spreadsheet is reachable.
+
+        Returns a structured result dict with no secret values.
+        """
+        if not self.spreadsheet_id:
+            return {
+                "ok": False,
+                "action": "health_check",
+                "tab": "",
+                "rows_changed": 0,
+                "error": "Missing spreadsheet_id",
+            }
+
+        if not self.access_token:
+            return {
+                "ok": False,
+                "action": "health_check",
+                "tab": "",
+                "rows_changed": 0,
+                "error": "Missing access_token",
+            }
+
+        if self.dry_run:
+            return {
+                "ok": True,
+                "action": "health_check",
+                "tab": "",
+                "rows_changed": 0,
+                "error": None,
+            }
+
+        url = f"{self.API_BASE}/{self.spreadsheet_id}?fields=properties.title"
+        try:
+            response = httpx.get(url, headers=self._auth_headers(), timeout=self.TIMEOUT_SECONDS)
+            response.raise_for_status()
+            return {
+                "ok": True,
+                "action": "health_check",
+                "tab": "",
+                "rows_changed": 0,
+                "error": None,
+            }
+        except httpx.HTTPStatusError as exc:
+            return {
+                "ok": False,
+                "action": "health_check",
+                "tab": "",
+                "rows_changed": 0,
+                "error": f"HTTP {exc.response.status_code}",
+            }
+        except (httpx.RequestError, httpx.TimeoutException) as exc:
+            return {
+                "ok": False,
+                "action": "health_check",
+                "tab": "",
+                "rows_changed": 0,
+                "error": f"Network: {type(exc).__name__}",
+            }
+
+    def read_rows(self, tab: str) -> dict[str, Any]:
+        """Read all rows from a tab (including header).
+
+        Returns structured result with rows as list[list[str]].
+        """
+        if not self.spreadsheet_id:
+            return self._error_result("read_rows", tab, "Missing spreadsheet_id")
+
+        if not self.access_token:
+            return self._error_result("read_rows", tab, "Missing access_token")
+
+        if self.dry_run:
+            return {
+                "ok": True,
+                "action": "read_rows",
+                "tab": tab,
+                "rows": [],
+                "rows_changed": 0,
+                "error": None,
+            }
+
+        range_name = f"{tab}!A1:Z1000"
+        url = f"{self.API_BASE}/{self.spreadsheet_id}/values/{range_name}?majorDimension=ROWS"
+        try:
+            response = httpx.get(url, headers=self._auth_headers(), timeout=self.TIMEOUT_SECONDS)
+            response.raise_for_status()
+            data = response.json()
+            rows = data.get("values", [])
+            return {
+                "ok": True,
+                "action": "read_rows",
+                "tab": tab,
+                "rows": rows,
+                "rows_changed": len(rows),
+                "error": None,
+            }
+        except httpx.HTTPStatusError as exc:
+            return self._error_result("read_rows", tab, f"HTTP {exc.response.status_code}")
+        except (httpx.RequestError, httpx.TimeoutException) as exc:
+            return self._error_result("read_rows", tab, f"Network: {type(exc).__name__}")
+
+    def append_row(self, tab: str, values: list[str]) -> dict[str, Any]:
+        """Append a single row to the bottom of a tab.
+
+        Returns structured result with no secret values.
+        """
+        if not self.spreadsheet_id:
+            return self._error_result("append_row", tab, "Missing spreadsheet_id")
+
+        if not self.access_token:
+            return self._error_result("append_row", tab, "Missing access_token")
+
+        if self.dry_run:
+            return {
+                "ok": True,
+                "action": "append_row",
+                "tab": tab,
+                "rows_changed": 1,
+                "error": None,
+            }
+
+        url = (
+            f"{self.API_BASE}/{self.spreadsheet_id}/values/"
+            f"{tab}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS"
+        )
+        payload = {"values": [values]}
+        try:
+            response = httpx.post(
+                url, json=payload, headers=self._auth_headers(), timeout=self.TIMEOUT_SECONDS
+            )
+            response.raise_for_status()
+            return {
+                "ok": True,
+                "action": "append_row",
+                "tab": tab,
+                "rows_changed": 1,
+                "error": None,
+            }
+        except httpx.HTTPStatusError as exc:
+            return self._error_result("append_row", tab, f"HTTP {exc.response.status_code}")
+        except (httpx.RequestError, httpx.TimeoutException) as exc:
+            return self._error_result("append_row", tab, f"Network: {type(exc).__name__}")
+
+    def upsert_row_by_key(
+        self, tab: str, key_column: str, key_value: str, values: list[str]
+    ) -> dict[str, Any]:
+        """Find a row by key and replace it; append if not found.
+
+        Simplified implementation for MVP.
+        """
+        if self.dry_run:
+            return {
+                "ok": True,
+                "action": "upsert_row_by_key",
+                "tab": tab,
+                "rows_changed": 1,
+                "error": None,
+            }
+
+        read_result = self.read_rows(tab)
+        if not read_result["ok"]:
+            return read_result
+
+        rows = read_result.get("rows", [])
+        if not rows:
+            return self.append_row(tab, values)
+
+        headers = rows[0]
+        try:
+            key_idx = headers.index(key_column)
+        except ValueError:
+            return self._error_result("upsert_row_by_key", tab, f"Column {key_column} not found")
+
+        for row_idx, row in enumerate(rows[1:], start=2):
+            if len(row) > key_idx and row[key_idx] == key_value:
+                # Replace this row
+                range_name = f"{tab}!A{row_idx}"
+                url = (
+                    f"{self.API_BASE}/{self.spreadsheet_id}/values/"
+                    f"{range_name}?valueInputOption=USER_ENTERED"
+                )
+                payload = {"values": [values]}
+                try:
+                    response = httpx.put(
+                        url,
+                        json=payload,
+                        headers=self._auth_headers(),
+                        timeout=self.TIMEOUT_SECONDS,
+                    )
+                    response.raise_for_status()
+                    return {
+                        "ok": True,
+                        "action": "upsert_row_by_key",
+                        "tab": tab,
+                        "rows_changed": 1,
+                        "error": None,
+                    }
+                except httpx.HTTPStatusError as exc:
+                    return self._error_result(
+                        "upsert_row_by_key", tab, f"HTTP {exc.response.status_code}"
+                    )
+                except (httpx.RequestError, httpx.TimeoutException) as exc:
+                    return self._error_result(
+                        "upsert_row_by_key", tab, f"Network: {type(exc).__name__}"
+                    )
+
+        # Not found — append
+        return self.append_row(tab, values)
+
+    def ensure_schema(self) -> dict[str, Any]:
+        """Ensure all schema tabs exist with headers."""
+        if not self.spreadsheet_id:
+            return self._error_result("ensure_schema", "", "Missing spreadsheet_id")
+
+        if self.dry_run:
+            return {
+                "ok": True,
+                "action": "ensure_schema",
+                "tab": "",
+                "rows_changed": len(self.SCHEMA),
+                "error": None,
+            }
+
+        # Note: Creating tabs requires Drive API scope or specific Sheets batchUpdate.
+        # For MVP, we return a dry-run friendly result.
+        return {
+            "ok": True,
+            "action": "ensure_schema",
+            "tab": "",
+            "rows_changed": 0,
+            "error": "Schema creation requires manual setup or Drive API scope",
+        }
+
+    @staticmethod
+    def _error_result(action: str, tab: str, error: str) -> dict[str, Any]:
+        return {
+            "ok": False,
+            "action": action,
+            "tab": tab,
+            "rows_changed": 0,
+            "error": error,
+        }

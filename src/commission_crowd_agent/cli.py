@@ -9,7 +9,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from .adapters import NotifierAdapter
+from .adapters import GoogleSheetsAdapter, NotifierAdapter
 from .config import load_settings
 from .domain import Lead
 from .secrets import (
@@ -122,6 +122,79 @@ def notify_test(
         console.print(f"   Error: {result['error']}")
     if result["message_id"] is not None:
         console.print(f"   Message ID: {result['message_id']}")
+
+
+# --- Google Sheets CLI commands ---
+
+
+@app.command(name="sheets-status")
+def sheets_status() -> None:
+    """Check Google Sheets adapter readiness (dry-run safe)."""
+    settings = load_settings()
+    adapter = GoogleSheetsAdapter(
+        spreadsheet_id=settings.google_sheets_spreadsheet_id,
+        dry_run=True,
+    )
+    result = adapter.health_check()
+    status_icon = "✅" if result["ok"] else "❌"
+    console.print(f"{status_icon} Google Sheets status")
+    ssid_state = "configured" if settings.google_sheets_spreadsheet_id else "missing"
+    creds_state = "ready" if settings.google_ready else "missing"
+    console.print(f"   Spreadsheet ID: {ssid_state}")
+    console.print(f"   Google credentials: {creds_state}")
+    console.print("   Dry run: True")
+
+
+@app.command(name="sheets-ensure-schema")
+def sheets_ensure_schema(
+    dry_run: bool = typer.Option(default=True, help="Simulate without writing"),
+    write: bool = typer.Option(default=False, help="Actually create tabs (requires scope)"),
+) -> None:
+    """Ensure all schema tabs exist. Defaults to dry-run."""
+    settings = load_settings()
+    adapter = GoogleSheetsAdapter(
+        spreadsheet_id=settings.google_sheets_spreadsheet_id,
+        dry_run=dry_run and not write,
+    )
+    result = adapter.ensure_schema()
+    status_icon = "✅" if result["ok"] else "❌"
+    console.print(f"{status_icon} sheets-ensure-schema")
+    console.print(f"   Dry run: {adapter.dry_run}")
+    console.print(f"   Tabs expected: {len(adapter.SCHEMA)}")
+    if result["error"]:
+        console.print(f"   Note: {result['error']}")
+
+
+@app.command(name="sheets-append-sample-lead")
+def sheets_append_sample_lead(
+    dry_run: bool = typer.Option(default=True, help="Simulate without writing"),
+    write: bool = typer.Option(default=False, help="Actually append the row"),
+) -> None:
+    """Append a sample lead row to the leads tab. Defaults to dry-run."""
+    settings = load_settings()
+    adapter = GoogleSheetsAdapter(
+        spreadsheet_id=settings.google_sheets_spreadsheet_id,
+        dry_run=dry_run and not write,
+    )
+    sample = [
+        "L-SAMPLE-001",
+        "manual_test",
+        "Sample Name",
+        "Sample Corp",
+        "https://example.com",
+        "sample@example.com",
+        "new",
+        "2026-05-26T00:00:00Z",
+        "Created by sheets-append-sample-lead CLI command",
+    ]
+    result = adapter.append_row("leads", sample)
+    status_icon = "✅" if result["ok"] else "❌"
+    console.print(f"{status_icon} sheets-append-sample-lead")
+    console.print(f"   Dry run: {adapter.dry_run}")
+    console.print(f"   Tab: {result['tab']}")
+    console.print(f"   Rows changed: {result['rows_changed']}")
+    if result["error"]:
+        console.print(f"   Error: {result['error']}")
 
 
 @app.command(name="run-research-cycle")

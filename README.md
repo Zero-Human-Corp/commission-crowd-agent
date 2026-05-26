@@ -45,6 +45,9 @@ pip install -e ".[dev]"
 cca status                     # Show which services are configured
 cca preflight                  # Shared secrets + readiness check (safe for logs)
 cca notify-test --dry-run      # Test Telegram notifier safely (default dry-run)
+cca sheets-status              # Check Google Sheets adapter readiness
+cca sheets-ensure-schema --dry-run  # Simulate schema creation
+cca sheets-append-sample-lead --dry-run  # Simulate adding a sample lead
 cca run-research-cycle --dry-run   # Full research → draft → score pipeline
 cca score-opportunities --dry-run  # Re-score existing leads
 cca draft-outreach --dry-run       # Generate email drafts

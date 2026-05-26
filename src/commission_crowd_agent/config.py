@@ -39,6 +39,12 @@ class CcaSettings(BaseSettings):
     google_client_secret: str = Field(default="")
     google_refresh_token: str = Field(default="")
     google_sheets_spreadsheet_id: str = Field(default="")
+    google_application_credentials_path: str = Field(
+        default="", description="Path to service account JSON file"
+    )
+    google_service_account_json: str = Field(
+        default="", description="Inline service account JSON (use path if possible)"
+    )
 
     # --- Email / SMTP ---
     smtp_host: str = Field(default="")
@@ -68,9 +74,14 @@ class CcaSettings(BaseSettings):
 
     @property
     def google_ready(self) -> bool:
-        return bool(
+        """True if Google credentials are available (OAuth or service account)."""
+        has_oauth = bool(
             self.google_client_id and self.google_client_secret and self.google_refresh_token
         )
+        has_service_account = bool(
+            self.google_application_credentials_path or self.google_service_account_json
+        )
+        return has_oauth or has_service_account
 
     @property
     def smtp_ready(self) -> bool:
@@ -98,6 +109,8 @@ _SHARED_KEY_MAP: dict[str, str] = {
     "google_client_secret": "GOOGLE_CLIENT_SECRET",
     "google_refresh_token": "GOOGLE_REFRESH_TOKEN",
     "google_sheets_spreadsheet_id": "GOOGLE_SHEETS_SPREADSHEET_ID",
+    "google_application_credentials_path": "GOOGLE_APPLICATION_CREDENTIALS_PATH",
+    "google_service_account_json": "GOOGLE_SERVICE_ACCOUNT_JSON",
     "smtp_host": "SMTP_HOST",
     "smtp_port": "SMTP_PORT",
     "smtp_user": "SMTP_USER",
