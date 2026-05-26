@@ -4,3 +4,9 @@ node_modules/
 .DS_Store
 .n8n/
 tmp/
+.hermes/
+.agent-os/
+.graphify/
+.code-review-graph/
+obsidian/
+runtime/
