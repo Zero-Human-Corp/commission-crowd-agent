@@ -1,6 +1,6 @@
 """CLI entrypoint for Commission Crowd Agent.
 
-Provides operator-facing commands for running workflows and checking status.
+Provides operator-facing commands for the Hermes hooks architecture.
 """
 
 from __future__ import annotations
@@ -17,9 +17,7 @@ app = typer.Typer(help="Commission Crowd Agent CLI")
 console = Console()
 
 
-@app.command()
-def status() -> None:
-    """Show configuration readiness."""
+def _build_settings_table() -> Table:
     settings = load_settings()
     table = Table(title="CCA Configuration Status")
     table.add_column("Service", style="cyan")
@@ -28,15 +26,22 @@ def status() -> None:
     table.add_row("Telegram", "✅" if settings.telegram_ready else "❌")
     table.add_row("Google", "✅" if settings.google_ready else "❌")
     table.add_row("SMTP", "✅" if settings.smtp_ready else "❌")
-    console.print(table)
+    return table
 
 
 @app.command()
-def run_dry(
+def status() -> None:
+    """Show configuration readiness."""
+    console.print(_build_settings_table())
+
+
+@app.command(name="run-research-cycle")
+def run_research_cycle(
     client: str = typer.Option(default="DemoClient", help="Client name"),
+    dry_run: bool = typer.Option(default=False, help="Run with stub data, no external calls"),
 ) -> None:
-    """Run a dry workflow with placeholder data."""
-    runner = WorkflowRunner(dry_run=True)
+    """Fetch new leads, research, draft, and score."""
+    runner = WorkflowRunner(dry_run=dry_run)
     leads = [
         Lead(
             lead_id="L001",
@@ -54,9 +59,71 @@ def run_dry(
         ),
     ]
     result = runner.run_research_and_draft(client_name=client, leads=leads)
+    console.print(_build_settings_table())
     console.print(result.summary())
     for lead in leads:
         console.print(f"{lead.lead_id}: {lead.status.value} | Score: {lead.personalization_score}")
+
+
+@app.command(name="score-opportunities")
+def score_opportunities(
+    client: str = typer.Option(default="DemoClient", help="Client name"),
+    dry_run: bool = typer.Option(default=False, help="Run with stub data"),
+) -> None:
+    """Re-score existing leads."""
+    if dry_run:
+        console.print("[DRY] Scored 2 leads for", client)
+    else:
+        console.print("[LIVE] score-opportunities not yet wired to real adapter.")
+
+
+@app.command(name="draft-outreach")
+def draft_outreach(
+    client: str = typer.Option(default="DemoClient", help="Client name"),
+    dry_run: bool = typer.Option(default=False, help="Run with stub data"),
+) -> None:
+    """Generate email drafts for approved leads."""
+    if dry_run:
+        console.print("[DRY] Drafted 0 outreach emails for", client)
+    else:
+        console.print("[LIVE] draft-outreach not yet wired to real adapter.")
+
+
+@app.command(name="request-approval")
+def request_approval(
+    client: str = typer.Option(default="DemoClient", help="Client name"),
+    dry_run: bool = typer.Option(default=False, help="Run with stub data"),
+) -> None:
+    """Send operator a summary of leads awaiting approval."""
+    if dry_run:
+        console.print("[DRY] Approval request queued for", client)
+    else:
+        console.print("[LIVE] request-approval not yet wired to Telegram adapter.")
+
+
+@app.command(name="send-approved-outreach")
+def send_approved_outreach(
+    client: str = typer.Option(default="DemoClient", help="Client name"),
+    dry_run: bool = typer.Option(default=False, help="Run with stub data"),
+) -> None:
+    """Send emails for leads marked approved."""
+    if dry_run:
+        console.print("[DRY] Sent 0 approved emails for", client)
+    else:
+        console.print("[LIVE] send-approved-outreach not yet wired to SMTP adapter.")
+
+
+@app.command(name="daily-summary")
+def daily_summary(
+    client: str = typer.Option(default="DemoClient", help="Client name"),
+    dry_run: bool = typer.Option(default=False, help="Run with stub data"),
+) -> None:
+    """Report pipeline stats to operator."""
+    if dry_run:
+        console.print("[DRY] Daily summary for", client)
+        console.print("New: 2 | Researching: 0 | Draft Ready: 0 | Sent: 0")
+    else:
+        console.print("[LIVE] daily-summary not yet wired to Source adapter.")
 
 
 def main() -> None:

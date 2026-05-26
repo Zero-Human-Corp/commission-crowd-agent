@@ -2,8 +2,10 @@
 
 - SourceAdapter: reads/writes leads to Google Sheets.
 - ScoringAdapter: calls Ollama.com Cloud for research, writing, and scoring.
+- NotifierAdapter: sends Telegram Bot messages.
+- OutreachAdapter: sends emails via Gmail / SMTP.
 
-These are intentionally thin; the real implementations will add authentication,
+These are intentionally thin; real implementations will add authentication,
 retries, and structured JSON parsing in a later pass.
 """
 
@@ -46,3 +48,41 @@ class ScoringAdapter:
     def score(self, lead: Lead) -> int:
         """Return personalisation score 1–10."""
         return 0
+
+
+class NotifierAdapter:
+    """Stub: send Telegram Bot notifications."""
+
+    def __init__(self, bot_token: str = "", chat_id: str = "") -> None:
+        self.bot_token = bot_token
+        self.chat_id = chat_id
+
+    def send_message(self, text: str) -> bool:
+        """Send a plain-text message."""
+        return True
+
+    def send_summary(self, run_summary: dict[str, str | int]) -> bool:
+        """Send a formatted pipeline summary."""
+        return True
+
+
+class OutreachAdapter:
+    """Stub: dispatch personalised emails via Gmail / SMTP."""
+
+    def __init__(
+        self,
+        smtp_host: str = "",
+        smtp_port: int = 587,
+        smtp_user: str = "",
+        smtp_pass: str = "",
+        from_address: str = "",
+    ) -> None:
+        self.smtp_host = smtp_host
+        self.smtp_port = smtp_port
+        self.smtp_user = smtp_user
+        self.smtp_pass = smtp_pass
+        self.from_address = from_address
+
+    def send_email(self, lead: Lead) -> bool:
+        """Send a personalised email to a lead."""
+        return True
