@@ -33,3 +33,11 @@ runtime/
 .graphify/
 .code-review-graph/
 obsidian/
+
+# Secret-bearing files
+*secrets*.md
+*.env
+.env.*
+credentials.*
+tokens.*
+docs/archive/*secrets*
