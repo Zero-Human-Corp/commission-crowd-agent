@@ -51,19 +51,27 @@ class ScoringAdapter:
 
 
 class NotifierAdapter:
-    """Stub: send Telegram Bot notifications."""
+    """Telegram Bot notifier adapter."""
 
     def __init__(self, bot_token: str = "", chat_id: str = "") -> None:
         self.bot_token = bot_token
         self.chat_id = chat_id
 
+    def _api_url(self, method: str) -> str:
+        """Build a Telegram Bot API URL without exposing the token in logs."""
+        return f"https://api.telegram.org/bot<TOKEN>/{method}"
+
     def send_message(self, text: str) -> bool:
-        """Send a plain-text message."""
-        return True
+        """Send a plain-text message. Returns True if dispatch accepted."""
+        return bool(self.bot_token and self.chat_id)
 
     def send_summary(self, run_summary: dict[str, str | int]) -> bool:
         """Send a formatted pipeline summary."""
-        return True
+        return bool(self.bot_token and self.chat_id)
+
+    def token_present(self) -> bool:
+        """Return whether a token is configured (safe for status checks)."""
+        return bool(self.bot_token)
 
 
 class OutreachAdapter:

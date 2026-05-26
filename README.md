@@ -2,7 +2,7 @@
 
 Headless AI-powered automation system for B2B lead research, personalised outreach, and pipeline management.
 
-**Current Status**: Hermes hooks + Python CLI are the primary workflow engine. Tests passing (12/12). n8n is optional legacy/reference only.
+**Current Status**: Hermes hooks + Python CLI are the primary workflow engine. Tests passing (29/29). n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
 
 ---
 
@@ -22,15 +22,17 @@ pip install -e ".[dev]"
 - `docs/` — All documentation and decisions
   - `decisions/` — Architecture Decision Records (ADRs)
   - `legacy/n8n/` — Legacy n8n workflow reference (optional)
+  - `operations/` — Operator-facing runbooks
 - `specs/` — AGENTOS-style specs (agents, workflows, prompts, schemas)
 - `src/commission_crowd_agent/` — Python workflow core
-  - `config.py` — Pydantic Settings (env-driven, no hardcoded secrets)
+  - `config.py` — Pydantic Settings (env + shared secrets)
+  - `secrets.py` — Safe shared secrets loader
   - `domain.py` — Lead, Task, WorkflowRun models
   - `workflow_runner.py` — Orchestrator
   - `adapters.py` — Source, Scoring, Notifier, Outreach stubs
   - `cli.py` — Operator CLI (`cca` commands)
   - `workflows/` — Research, Scoring, Outreach, Approvals modules
-- `tests/` — pytest suite (12 tests, all passing)
+- `tests/` — pytest suite (29 tests, all passing)
 - `scripts/dev_check.sh` — Runs ruff, mypy, pytest
 - `scripts/hooks/` — Hermes hook entrypoints (bash)
 - `data/runs/` — Transient workflow outputs (gitignored)
@@ -41,6 +43,7 @@ pip install -e ".[dev]"
 
 ```bash
 cca status                     # Show which services are configured
+cca preflight                  # Shared secrets + readiness check (safe for logs)
 cca run-research-cycle --dry-run   # Full research → draft → score pipeline
 cca score-opportunities --dry-run  # Re-score existing leads
 cca draft-outreach --dry-run       # Generate email drafts
@@ -64,6 +67,25 @@ Hooks enforce `set -euo pipefail` and activate the local venv automatically.
 
 ---
 
+## Configuration & Secrets
+
+On **OCI**, the project reads secrets from the shared file managed by the operator:
+
+```
+/home/ubuntu/hermes-control/secrets/shared.env
+```
+
+No repo-local `.env` is required on OCI. If you run the project locally, copy `.env.example` to `.env` and populate values. `.env` is gitignored and must never be committed.
+
+```bash
+cp .env.example .env
+# Populate via MacBook ssh oci — never paste secrets in chat
+```
+
+For details, see `docs/operations/shared-secrets.md`.
+
+---
+
 ## Architecture
 
 The system is **Hermes-triggered, Git-controlled, and testable**:
@@ -77,21 +99,10 @@ Full architecture: `docs/architecture.md`
 
 ---
 
-## Configuration
-
-Copy `.env.example` to `.env` and populate values from the operator. `.env` is gitignored.
-
-```bash
-cp .env.example .env
-# Populate via MacBook ssh oci — never paste secrets in chat
-```
-
----
-
 ## Tests
 
 ```bash
-pytest          # 12 passing
+pytest          # 29 passing
 ./scripts/dev_check.sh  # lint + type + tests
 ```
 

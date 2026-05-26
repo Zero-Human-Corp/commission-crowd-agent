@@ -1,13 +1,19 @@
 """Typed configuration loader using Pydantic Settings.
 
-Reads from environment variables and optional `.env` file.
+Reads from environment variables, optional `.env` file, and the shared
+secrets file at /home/ubuntu/hermes-control/secrets/shared.env.
 No secrets are hardcoded; failures are loud.
 """
 
 from __future__ import annotations
 
+import os
+from typing import Any
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .secrets import MissingEnvFileError, load_shared_env
 
 
 class CcaSettings(BaseSettings):
@@ -70,7 +76,72 @@ class CcaSettings(BaseSettings):
     def smtp_ready(self) -> bool:
         return bool(self.smtp_host and self.smtp_user and self.smtp_pass)
 
+    def safe_repr(self) -> str:
+        """Return a settings summary with no secret values exposed."""
+        return (
+            f"CcaSettings(ollama_ready={self.ollama_ready}, "
+            f"telegram_ready={self.telegram_ready}, "
+            f"google_ready={self.google_ready}, "
+            f"smtp_ready={self.smtp_ready}, "
+            f"client={self.cca_client_name!r})"
+        )
+
+
+# Mapping of config field names to shared-env key names
+_SHARED_KEY_MAP: dict[str, str] = {
+    "ollama_base_url": "OLLAMA_BASE_URL",
+    "ollama_api_key": "OLLAMA_API_KEY",
+    "ollama_model": "OLLAMA_MODEL",
+    "telegram_bot_token": "TELEGRAM_BOT_TOKEN",
+    "telegram_chat_id": "TELEGRAM_CHAT_ID",
+    "google_client_id": "GOOGLE_CLIENT_ID",
+    "google_client_secret": "GOOGLE_CLIENT_SECRET",
+    "google_refresh_token": "GOOGLE_REFRESH_TOKEN",
+    "google_sheets_spreadsheet_id": "GOOGLE_SHEETS_SPREADSHEET_ID",
+    "smtp_host": "SMTP_HOST",
+    "smtp_port": "SMTP_PORT",
+    "smtp_user": "SMTP_USER",
+    "smtp_pass": "SMTP_PASS",
+    "smtp_from": "SMTP_FROM",
+    "n8n_base_url": "N8N_BASE_URL",
+    "n8n_api_key": "N8N_API_KEY",
+    "n8n_basic_auth_user": "N8N_BASIC_AUTH_USER",
+    "n8n_basic_auth_pass": "N8N_BASIC_AUTH_PASS",
+    "cca_client_name": "CCA_CLIENT_NAME",
+    "cca_daily_volume_limit": "CCA_DAILY_VOLUME_LIMIT",
+    "cca_log_level": "CCA_LOG_LEVEL",
+}
+
+
+def _merge_sources() -> dict[str, Any]:
+    """Build a merged dict: env vars take precedence, then shared.env, then defaults.
+
+    Returns a plain dict suitable for CcaSettings(**merged).
+    """
+    merged: dict[str, Any] = {}
+
+    # 1. Load shared env file (gracefully skip if missing)
+    try:
+        shared = load_shared_env()
+    except MissingEnvFileError:
+        shared = {}
+
+    # 2. For each known field, prefer os.environ, then shared env
+    for field, env_key in _SHARED_KEY_MAP.items():
+        env_val = os.getenv(env_key, "")
+        shared_val = shared.get(env_key, "")
+        value = env_val or shared_val
+        if value:
+            # Pydantic will coerce numeric strings to int automatically
+            merged[field] = value
+
+    return merged
+
 
 def load_settings() -> CcaSettings:
-    """Return a validated settings instance."""
-    return CcaSettings()
+    """Return a validated settings instance.
+
+    Merges os.environ (highest priority) with the shared secrets file.
+    """
+    merged = _merge_sources()
+    return CcaSettings(**merged)

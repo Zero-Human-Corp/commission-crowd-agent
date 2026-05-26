@@ -9,8 +9,13 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from .adapters import NotifierAdapter
 from .config import load_settings
 from .domain import Lead
+from .secrets import (
+    MissingEnvFileError,
+    load_shared_env,
+)
 from .workflow_runner import WorkflowRunner
 
 app = typer.Typer(help="Commission Crowd Agent CLI")
@@ -29,10 +34,52 @@ def _build_settings_table() -> Table:
     return table
 
 
+def _build_preflight_table() -> Table:
+    """Return a preflight readiness table with shared-env checks.
+
+    Never prints secret values.
+    """
+    settings = load_settings()
+    table = Table(title="CCA Preflight Checklist")
+    table.add_column("Check", style="cyan")
+    table.add_column("Result", style="green")
+
+    # Shared env file existence
+    try:
+        load_shared_env()
+        table.add_row("Shared env file", "✅ present")
+    except MissingEnvFileError:
+        table.add_row("Shared env file", "⚠️ missing (OK if using .env)")
+
+    # Token presence (value never shown)
+    notifier = NotifierAdapter(
+        bot_token=settings.telegram_bot_token,
+        chat_id=settings.telegram_chat_id,
+    )
+    if notifier.token_present():
+        table.add_row("Telegram token", "✅ configured")
+    else:
+        table.add_row("Telegram token", "❌ not configured")
+
+    # Service readiness
+    table.add_row("Ollama", "✅ ready" if settings.ollama_ready else "❌ missing")
+    table.add_row("Telegram", "✅ ready" if settings.telegram_ready else "❌ missing")
+    table.add_row("Google", "✅ ready" if settings.google_ready else "❌ missing")
+    table.add_row("SMTP", "✅ ready" if settings.smtp_ready else "❌ missing")
+
+    return table
+
+
 @app.command()
 def status() -> None:
     """Show configuration readiness."""
     console.print(_build_settings_table())
+
+
+@app.command()
+def preflight() -> None:
+    """Show preflight checks including shared secrets readiness."""
+    console.print(_build_preflight_table())
 
 
 @app.command(name="run-research-cycle")
@@ -128,3 +175,7 @@ def daily_summary(
 
 def main() -> None:
     app()
+
+
+if __name__ == "__main__":
+    main()
