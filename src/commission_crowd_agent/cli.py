@@ -82,6 +82,48 @@ def preflight() -> None:
     console.print(_build_preflight_table())
 
 
+@app.command(name="notify-test")
+def notify_test(
+    chat_id: str = typer.Option(
+        default="", help="Target Telegram chat ID (or default from config)"
+    ),
+    text: str = typer.Option(default="Hello from CCA notifier test", help="Message text to send"),
+    dry_run: bool = typer.Option(default=True, help="Simulate send without calling Telegram API"),
+    send: bool = typer.Option(default=False, help="Actually send the message (requires chat_id)"),
+) -> None:
+    """Test Telegram notifier adapter safely.
+
+    Default is dry-run. Use --send only when you explicitly want a real message.
+    """
+    settings = load_settings()
+    notifier = NotifierAdapter(
+        bot_token=settings.telegram_bot_token,
+        chat_id=chat_id or settings.telegram_chat_id,
+        dry_run=dry_run and not send,
+    )
+
+    if not notifier.token_present():
+        console.print("[red]❌ Telegram token not configured[/red]")
+        raise typer.Exit(1)
+
+    if send and not (chat_id or settings.telegram_chat_id):
+        console.print(
+            "[red]❌ chat_id is required for real send. "
+            "Pass --chat-id or set TELEGRAM_CHAT_ID.[/red]"
+        )
+        raise typer.Exit(1)
+
+    result = notifier.send_message(text=text)
+    status_icon = "✅" if result["ok"] else "❌"
+    console.print(f"{status_icon} Telegram notifier test")
+    console.print(f"   Dry run: {notifier.dry_run}")
+    console.print(f"   Status: {result['status']}")
+    if result["error"]:
+        console.print(f"   Error: {result['error']}")
+    if result["message_id"] is not None:
+        console.print(f"   Message ID: {result['message_id']}")
+
+
 @app.command(name="run-research-cycle")
 def run_research_cycle(
     client: str = typer.Option(default="DemoClient", help="Client name"),

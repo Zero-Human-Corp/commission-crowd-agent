@@ -55,6 +55,25 @@ cp .env.example .env
 # Fill in values
 ```
 
+## Smoke test (real Telegram message)
+
+**Do not run this unless you explicitly want to verify the live adapter.**
+
+```bash
+cd /home/ubuntu/projects/commission-crowd-agent
+source .venv/bin/activate
+python -m commission_crowd_agent.cli notify-test \
+  --chat-id YOUR_CHAT_ID \
+  --text "CCA smoke test" \
+  --send
+```
+
+Requirements:
+- `TELEGRAM_BOT_TOKEN` must be set in shared.env (already done)
+- `--chat-id` is required for real sends
+- `--send` is the explicit opt-in flag; without it, the command defaults to dry-run
+- No token value is printed in output
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

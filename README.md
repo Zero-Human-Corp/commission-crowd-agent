@@ -44,6 +44,7 @@ pip install -e ".[dev]"
 ```bash
 cca status                     # Show which services are configured
 cca preflight                  # Shared secrets + readiness check (safe for logs)
+cca notify-test --dry-run      # Test Telegram notifier safely (default dry-run)
 cca run-research-cycle --dry-run   # Full research → draft → score pipeline
 cca score-opportunities --dry-run  # Re-score existing leads
 cca draft-outreach --dry-run       # Generate email drafts
