@@ -7,7 +7,7 @@ Provides:
 Canonical approvals schema (live Sheet):
     approval_id, created_at_utc, entity_type, entity_id,
     requested_action, risk_level, status,
-    operator_decision, decided_at_utc, notes
+    operator_decision, decided_at_utc, source_url, notes
 
 All write operations are gated by dry_run.  Real sends require explicit flags.
 """
@@ -30,7 +30,7 @@ class ApprovalRequest:
     Canonical columns:
         approval_id, created_at_utc, entity_type, entity_id,
         requested_action, risk_level, status,
-        operator_decision, decided_at_utc, notes
+        operator_decision, decided_at_utc, source_url, notes
     """
 
     approval_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -42,6 +42,7 @@ class ApprovalRequest:
     status: str = "pending"
     operator_decision: str = ""
     decided_at_utc: str = ""
+    source_url: str = ""
     notes: str = ""
 
     def __post_init__(self) -> None:
@@ -61,6 +62,7 @@ class ApprovalRequest:
             self.status,
             self.operator_decision,
             self.decided_at_utc,
+            self.source_url,
             self.notes,
         ]
 
@@ -87,6 +89,7 @@ class ApprovalGate:
         requested_action: str,
         *,
         risk_level: str = "low",
+        source_url: str = "",
         notes: str = "",
         dry_run: bool = True,
     ) -> ApprovalRequest:
@@ -96,6 +99,7 @@ class ApprovalGate:
             entity_id=entity_id,
             requested_action=requested_action,
             risk_level=risk_level,
+            source_url=source_url,
             notes=notes,
             status="pending",
         )

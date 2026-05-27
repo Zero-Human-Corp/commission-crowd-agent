@@ -167,7 +167,8 @@ class LeadIngester:
                 entity_id=c.lead_id,
                 requested_action=action,
                 risk_level="low",
-                notes=c.provenance,
+                source_url=c.provenance,
+                notes="",
                 dry_run=dry_run,
             )
             results.append(

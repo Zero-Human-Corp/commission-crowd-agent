@@ -23,6 +23,7 @@ _APPROVALS_HEADER = [
     "status",
     "operator_decision",
     "decided_at_utc",
+    "source_url",
     "notes",
 ]
 
@@ -36,6 +37,7 @@ def _stub_row(approval_id: str, status: str) -> list[str]:
         "Draft outreach",
         "low",
         status,
+        "",
         "",
         "",
         "",
@@ -180,10 +182,11 @@ def test_create_approval_writes_correct_row():
     call = mock_adapter.append_row.call_args
     assert call[0][0] == "approvals"
     row = call[0][1]
-    assert len(row) == 10
+    assert len(row) == 11
     assert row[2] == "lead"
     assert row[3] == "LEAD-99"
     assert row[4] == "Send intro email"
     assert row[5] == "medium"
     assert row[6] == "pending"
-    assert row[9] == "roundtrip test"
+    assert row[9] == ""  # source_url
+    assert row[10] == "roundtrip test"

@@ -18,6 +18,7 @@ _APPROVALS_HEADER = [
     "status",
     "operator_decision",
     "decided_at_utc",
+    "source_url",
     "notes",
 ]
 
@@ -64,7 +65,8 @@ def test_create_approval_write_appends_row():
     assert row[6] == "pending"
     assert row[7] == ""  # operator_decision
     assert row[8] == ""  # decided_at_utc
-    assert row[9] == "stub test"  # notes
+    assert row[9] == ""  # source_url
+    assert row[10] == "stub test"  # notes
 
 
 def test_read_approval_status_found():
@@ -85,6 +87,7 @@ def test_read_approval_status_found():
                 "",
                 "",
                 "",
+                "",
             ],
             [
                 "A002",
@@ -94,6 +97,7 @@ def test_read_approval_status_found():
                 "Draft 2",
                 "low",
                 "approved",
+                "",
                 "",
                 "",
                 "",
@@ -120,6 +124,7 @@ def test_read_approval_status_missing():
                 "Draft 1",
                 "low",
                 "pending",
+                "",
                 "",
                 "",
                 "",

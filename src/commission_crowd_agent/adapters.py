@@ -274,6 +274,7 @@ class GoogleSheetsAdapter:
             "status",
             "operator_decision",
             "decided_at_utc",
+            "source_url",
             "notes",
         ],
         "runs": [

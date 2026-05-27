@@ -404,7 +404,7 @@ def approval_stub_smoke(
     if notify:
         gate.notify_operator(req, dry_run=not notify)
 
-    status_icon = "✅" if req.status == "pending" else "❌"
+    status_icon = "✅" if req.status == "approved" else "⏳" if req.status == "pending" else "❌"
     console.print(f"{status_icon} approval-stub-smoke")
     console.print(f"   Approval ID: {req.approval_id}")
     console.print(f"   Entity: {req.entity_type} — {req.entity_id}")
@@ -442,6 +442,7 @@ def approval_check(
     console.print(f"   Status: {status}")
     console.print(f"   Operator decision: {record.get('operator_decision') or '—'}")
     console.print(f"   Decided at: {record.get('decided_at_utc') or '—'}")
+    console.print(f"   Source URL: {record.get('source_url') or '—'}")
     console.print(f"   Notes: {record.get('notes') or '—'}")
     if status == "approved":
         console.print("   [green]Downstream action: ALLOWED[/green]")
