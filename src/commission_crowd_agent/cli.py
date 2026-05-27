@@ -630,20 +630,44 @@ def ingest_operator_sources(
     console.print(f"   Candidates: {result.get('candidates', 0)}")
     console.print(f"   Written: {result.get('written', 0)}")
     console.print(f"   Approvals: {result.get('approvals', 0)}")
-    console.print(f"   Skipped: {result.get('skipped', 0)}")
-    if result.get("sources"):
+    console.print(f"   Skipped placeholder sources: {result.get('skipped', 0)}")
+
+    if result.get("source_reports"):
+        console.print("   Per-source breakdown:")
+        for sr in result["source_reports"]:
+            status_icon = "✅" if sr.get("status") in ("success", "fallback") else "❌"
+            console.print(
+                f"      {status_icon} {sr.get('name')}: "
+                f"extracted={sr.get('extracted', 0)}, "
+                f"duplicates={sr.get('duplicates_skipped', 0)}, "
+                f"placeholders={sr.get('placeholders_blocked', 0)}, "
+                f"written={sr.get('written', 0)}, "
+                f"limit={sr.get('per_source_limit', 0)}"
+            )
+            if sr.get("error"):
+                console.print(f"         [red]Error: {sr['error'][:80]}[/red]")
+
+    if result.get("sources") and not result.get("source_reports"):
         for s in result["sources"]:
             console.print(f"   • {s.get('name')} ({s.get('source_type')})")
     console.print(f"   {result.get('message', '')}")
 
     # Notify
     if notify and result.get("candidates") and write:
+        per_source_lines = []
+        for sr in result.get("source_reports", []):
+            per_source_lines.append(
+                f"- {sr.get('name')}: "
+                f"extracted={sr.get('extracted', 0)}, "
+                f"written={sr.get('written', 0)}"
+            )
         text = (
             "📥 *Operator Source Ingestion*\n"
             f"Candidates: {result.get('candidates', 0)}\n"
             f"Written: {result.get('written', 0)}\n"
             f"Approvals: {result.get('approvals', 0)}\n"
-            "Mode: live"
+            f"Mode: live\n"
+            f"Sources:\n" + "\n".join(per_source_lines)
         )
         notifier = _build_notifier(settings, dry_run=False)
         notifier.send_message(text=text)

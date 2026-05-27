@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -161,10 +161,14 @@ class TestIngestSourcesDryRun:
         sources = [
             OperatorSource(name=f"S{i}", url=f"https://s{i}.dev", enabled=True) for i in range(10)
         ]
-        result = ingester.ingest_sources(sources, limit=10, dry_run=True)
+        with patch.object(ingester, "_fetch_html", return_value="<html></body></html>"):
+            result = ingester.ingest_sources(sources, limit=10, dry_run=True)
         # limit should be silently clamped to 5
         assert result["candidates"] == 5
-        assert len(result["sources"]) == 5
+        # sources list now includes all valid sources with per_source_limit metadata
+        assert len(result["sources"]) == 10
+        # source_reports should exist for every source
+        assert len(result["source_reports"]) == 10
 
     def test_provenance_is_url(self) -> None:
         ingester = OperatorSourceIngester()

@@ -37,6 +37,7 @@ class OperatorSource(BaseModel):
     source_type: str = ""  # e.g. public_directory, news_article, job_board
     notes: str = ""
     enabled: bool = True
+    per_source_limit: int = 0  # 0 = no per-source cap (falls back to global limit)
 
     @field_validator("url")
     @classmethod
@@ -135,13 +136,13 @@ class OperatorSourceIngester:
         limit: int = 5,
         dry_run: bool = True,
     ) -> dict[str, Any]:
-        """Ingest from validated operator sources.
+        """Ingest from validated operator sources with per-source caps.
 
         1. Fetch each source page HTML (public read-only).
-        2. Extract candidate companies via source-specific extractor.
+        2. Extract candidate companies with per-source_max limit.
         3. If extraction yields zero, fall back to source-page-as-lead.
         4. Dedup against existing leads.
-        5. Respect global limit.
+        5. Respect global limit across all sources.
         6. Write candidates and create pending approvals.
         """
         if limit > self.HARD_MAX_CANDIDATES:
@@ -167,13 +168,30 @@ class OperatorSourceIngester:
         existing_urls = self._get_existing_urls()
 
         candidates: list[CandidateLead] = []
-        extraction_log: list[dict[str, Any]] = []
+        source_reports: list[dict[str, Any]] = []
 
         for s in valid:
             if len(candidates) >= limit:
-                break
+                source_reports.append(
+                    {
+                        "name": s.name,
+                        "status": "skipped_global_cap",
+                        "extracted": 0,
+                        "duplicates_skipped": 0,
+                        "placeholders_blocked": 0,
+                        "written": 0,
+                    }
+                )
+                continue
 
-            extracted: list[dict[str, Any]] = []
+            # Per-source cap: 0 means "fall back to global limit"
+            per_cap = s.per_source_limit if s.per_source_limit > 0 else limit
+            remaining = limit - len(candidates)
+            source_max = min(per_cap, remaining)
+
+            extracted_raw: list[Any] = []
+            status = "error"
+            error_msg = ""
             try:
                 html = self._fetch_html(s.url)
                 extracted_raw = extract_candidates(
@@ -181,33 +199,39 @@ class OperatorSourceIngester:
                     source_url=s.url,
                     source_name=s.name,
                     source_type=s.source_type,
-                    max_candidates=limit,
+                    max_candidates=source_max,
                 )
                 extracted = [c.to_dict() for c in extracted_raw]
+                status = "success" if extracted else "fallback"
             except Exception as exc:
-                extraction_log.append(
-                    {
-                        "source": s.name,
-                        "status": "error",
-                        "error": f"{type(exc).__name__}: {exc}",
-                    }
-                )
-                # Fall through to fallback
+                error_msg = f"{type(exc).__name__}: {exc}"
+                status = "error"
+                extracted = []
+
+            source_extracted = 0
+            source_duplicates = 0
+            source_placeholders = 0
+            source_written = 0
 
             if extracted:
                 for ec in extracted:
                     if len(candidates) >= limit:
                         break
+                    if source_written >= source_max:
+                        break
                     candidate_url = ec.get("url", "")
                     if candidate_url in existing_urls:
-                        extraction_log.append(
-                            {
-                                "source": s.name,
-                                "candidate": ec.get("company"),
-                                "status": "skipped_duplicate",
-                            }
-                        )
+                        source_duplicates += 1
                         continue
+                    # Block placeholders
+                    if is_placeholder_candidate(
+                        name=ec.get("company", ""),
+                        url=candidate_url,
+                        notes=ec.get("notes", ""),
+                    ):
+                        source_placeholders += 1
+                        continue
+
                     extraction_method = ec.get("extraction_method", "")
                     extraction_confidence = ec.get("extraction_confidence", "")
                     extra_notes = ec.get("notes", "")
@@ -225,42 +249,42 @@ class OperatorSourceIngester:
                             ),
                         )
                     )
+                    source_extracted += 1
+                    source_written += 1
                     if candidate_url:
                         existing_urls.add(candidate_url)
-            else:
-                # Fallback: treat source page itself as a lead
-                if len(candidates) >= limit:
-                    break
-                if s.url in existing_urls:
-                    extraction_log.append(
-                        {
-                            "source": s.name,
-                            "status": "skipped_duplicate",
-                            "fallback": True,
-                        }
+            elif status != "error":
+                # Fallback: treat source page itself as a lead (only if fetch succeeded)
+                if len(candidates) < limit and s.url not in existing_urls:
+                    candidates.append(
+                        CandidateLead(
+                            lead_id=str(uuid.uuid4())[:8],
+                            source=s.source_type or "operator_provided",
+                            company=s.name,
+                            url=s.url,
+                            provenance=s.url,
+                            notes=s.notes
+                            or "Fallback source-page lead (no child candidates extracted).",
+                        )
                     )
-                    continue
-                candidates.append(
-                    CandidateLead(
-                        lead_id=str(uuid.uuid4())[:8],
-                        source=s.source_type or "operator_provided",
-                        company=s.name,
-                        url=s.url,
-                        provenance=s.url,
-                        notes=s.notes
-                        or "Fallback source-page lead (no child candidates extracted).",
-                    )
-                )
-                existing_urls.add(s.url)
-                extraction_log.append(
-                    {
-                        "source": s.name,
-                        "status": "fallback",
-                        "reason": (
-                            "No candidates extracted from directory; using source page as lead."
-                        ),
-                    }
-                )
+                    source_written += 1
+                    existing_urls.add(s.url)
+                    status = "fallback"
+                elif s.url in existing_urls:
+                    source_duplicates += 1
+
+            source_reports.append(
+                {
+                    "name": s.name,
+                    "status": status,
+                    "error": error_msg if status == "error" else "",
+                    "extracted": source_extracted,
+                    "duplicates_skipped": source_duplicates,
+                    "placeholders_blocked": source_placeholders,
+                    "written": source_written,
+                    "per_source_limit": per_cap,
+                }
+            )
 
         # Write candidates
         write_result: dict[str, Any] = {"ok": True, "written": 0}
@@ -280,8 +304,14 @@ class OperatorSourceIngester:
             "approvals": len(approvals),
             "skipped": skipped,
             "sources": [
-                {"name": s.name, "url": s.url, "source_type": s.source_type} for s in valid[:limit]
+                {
+                    "name": s.name,
+                    "url": s.url,
+                    "source_type": s.source_type,
+                    "per_source_limit": s.per_source_limit,
+                }
+                for s in valid
             ],
             "message": (f"Ingested {len(candidates)} candidate(s) from {len(sources)} source(s)."),
-            "extraction_log": extraction_log,
+            "source_reports": source_reports,
         }
