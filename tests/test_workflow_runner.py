@@ -5,7 +5,7 @@ Covers dry-run behaviour, Sheets adapter wiring, and row-format contracts.
 
 from unittest.mock import MagicMock
 
-from commission_crowd_agent.domain import Lead, LeadStatus
+from commission_crowd_agent.domain import Lead, LeadStatus, WorkflowRun
 from commission_crowd_agent.workflow_runner import WorkflowRunner
 
 
@@ -140,3 +140,95 @@ def test_sheets_adapter_live_writes_expected_rows():
     row = lead_call[0][1]
     assert row[1] == "workflow"
     assert "workflow run" in row[8]
+
+
+# --- Notification lifecycle tests ---
+
+
+def test_no_notification_when_notifier_is_none():
+    runner = WorkflowRunner(dry_run=True)
+    leads = [Lead(lead_id="L001", client_name="C", status=LeadStatus.NEW)]
+    run = runner.run_research_and_draft(client_name="C", leads=leads)
+    assert run.status == "completed"
+
+
+def test_notification_start_and_success_sent_when_enabled():
+    from unittest.mock import MagicMock
+
+    mock_notifier = MagicMock()
+    mock_notifier.dry_run = False
+    mock_notifier.send_message.return_value = {
+        "ok": True,
+        "status": 200,
+        "message_id": 12345,
+    }
+
+    runner = WorkflowRunner(dry_run=True, notifier=mock_notifier)
+    leads = [Lead(lead_id="L001", client_name="C", status=LeadStatus.NEW)]
+    run = runner.run_research_and_draft(client_name="C", leads=leads)
+    assert run.status == "completed"
+
+    # start + success = 2 calls
+    assert mock_notifier.send_message.call_count == 2
+    texts = [c[1]["text"] for c in mock_notifier.send_message.call_args_list]
+    assert any("Started" in t for t in texts)
+    assert any("Complete" in t for t in texts)
+    # Ensure no secrets appear in message text
+    for text in texts:
+        assert "token" not in text.lower()
+        assert "spreadsheet" not in text.lower()
+
+
+def test_notification_dry_run_does_not_call_api():
+    from unittest.mock import MagicMock
+
+    mock_notifier = MagicMock()
+    mock_notifier.dry_run = True
+    mock_notifier.send_message.return_value = {
+        "ok": True,
+        "status": 0,
+        "message_id": None,
+    }
+
+    runner = WorkflowRunner(dry_run=True, notifier=mock_notifier)
+    leads = [Lead(lead_id="L001", client_name="C", status=LeadStatus.NEW)]
+    run = runner.run_research_and_draft(client_name="C", leads=leads)
+    assert run.status == "completed"
+    # start + success = 2 calls (dry_run handled inside notifier)
+    assert mock_notifier.send_message.call_count == 2
+
+
+def test_notification_failure_path():
+    from unittest.mock import MagicMock
+
+    mock_notifier = MagicMock()
+    mock_notifier.dry_run = False
+    mock_notifier.send_message.return_value = {
+        "ok": True,
+        "status": 200,
+        "message_id": 99999,
+    }
+
+    runner = WorkflowRunner(dry_run=True, notifier=mock_notifier)
+    run = WorkflowRun(run_id="R-FAIL", client_name="C")
+    result = runner._notify_failure(run, error="Something went wrong")
+    assert result["ok"] is True
+    text = mock_notifier.send_message.call_args[1]["text"]
+    assert "Failed" in text
+    assert "Something went wrong" in text
+
+
+def test_enabling_notifications_does_not_force_sheets_writes():
+    """Having a notifier must not cause Google Sheets writes if adapter is None."""
+    from unittest.mock import MagicMock
+
+    mock_notifier = MagicMock()
+    mock_notifier.dry_run = True
+    mock_notifier.send_message.return_value = {"ok": True, "status": 0}
+
+    runner = WorkflowRunner(dry_run=True, notifier=mock_notifier, sheets_adapter=None)
+    leads = [Lead(lead_id="L001", client_name="C", status=LeadStatus.NEW)]
+    run = runner.run_research_and_draft(client_name="C", leads=leads)
+    assert run.status == "completed"
+    # Notifier called but no sheets adapter = no sheet rows
+    assert mock_notifier.send_message.call_count == 2

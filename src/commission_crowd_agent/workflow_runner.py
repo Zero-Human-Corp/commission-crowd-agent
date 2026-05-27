@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .adapters import GoogleSheetsAdapter
+    from .adapters import GoogleSheetsAdapter, NotifierAdapter
 
 from .domain import Lead, LeadStatus, Task, TaskType, WorkflowRun
 
@@ -22,9 +22,61 @@ class WorkflowRunner:
         self,
         dry_run: bool = True,
         sheets_adapter: GoogleSheetsAdapter | None = None,
+        notifier: NotifierAdapter | None = None,
     ) -> None:
         self.dry_run = dry_run
         self.sheets_adapter = sheets_adapter
+        self.notifier = notifier
+
+    def _notify_start(self, run: WorkflowRun, client_name: str) -> dict[str, Any]:
+        """Send workflow start notification if notifier is wired.
+
+        Message text is safe — no secrets, tokens, or spreadsheet IDs are included.
+        """
+        if self.notifier is None:
+            return {"ok": True, "status": 0, "sent": False}
+        text = (
+            f"🚀 *CCA Workflow Started*\n"
+            f"Workflow: research_cycle\n"
+            f"Run ID: `{run.run_id}`\n"
+            f"Client: {client_name}\n"
+            f"Mode: {'dry_run' if self.dry_run else 'live'}\n"
+            f"Sheets: {'enabled' if self.sheets_adapter is not None else 'disabled'}"
+        )
+        return self.notifier.send_message(text=text)
+
+    def _notify_success(self, run: WorkflowRun, rows_written: int = 0) -> dict[str, Any]:
+        """Send workflow success notification if notifier is wired.
+
+        Message text is safe — no secrets, tokens, or spreadsheet IDs are included.
+        """
+        if self.notifier is None:
+            return {"ok": True, "status": 0, "sent": False}
+        summary = run.summary()
+        text = (
+            f"✅ *CCA Workflow Complete*\n"
+            f"Run ID: `{run.run_id}`\n"
+            f"Status: {run.status}\n"
+            f"Tasks: {summary['done']}/{summary['total']} done, "
+            f"{summary['failed']} failed\n"
+            f"Rows written: {rows_written}"
+        )
+        return self.notifier.send_message(text=text)
+
+    def _notify_failure(self, run: WorkflowRun, error: str) -> dict[str, Any]:
+        """Send workflow failure notification if notifier is wired.
+
+        Message text is safe — no secrets, tokens, or spreadsheet IDs are included.
+        """
+        if self.notifier is None:
+            return {"ok": True, "status": 0, "sent": False}
+        text = (
+            f"❌ *CCA Workflow Failed*\n"
+            f"Run ID: `{run.run_id}`\n"
+            f"Status: {run.status}\n"
+            f"Error: {error[:200]}"
+        )
+        return self.notifier.send_message(text=text)
 
     def run_research_and_draft(
         self,
@@ -36,6 +88,8 @@ class WorkflowRunner:
             run_id=str(uuid.uuid4())[:8],
             client_name=client_name,
         )
+
+        self._notify_start(run, client_name)
 
         for lead in leads:
             if lead.status != LeadStatus.NEW:
@@ -93,22 +147,27 @@ class WorkflowRunner:
         run.finished_at = datetime.utcnow()
 
         # Write run record to Sheets if adapter is wired
+        rows_written = 0
         if self.sheets_adapter is not None:
             run_row = run.to_sheets_run_row(
                 workflow="research_cycle", extra={"client": client_name}
             )
             self.sheets_adapter.append_row("runs", run_row)
+            rows_written += 1
             for lead in leads:
                 lead_row = lead.to_sheets_lead_row(
                     source="workflow" if not self.dry_run else "stub",
                     notes="workflow run" if not self.dry_run else "stub smoke-test row",
                 )
                 self.sheets_adapter.append_row("leads", lead_row)
+                rows_written += 1
                 opp_row = lead.to_sheets_opportunity_row(
                     stage="research",
                     next_action="draft outreach",
                     created_at=datetime.utcnow(),
                 )
                 self.sheets_adapter.append_row("opportunities", opp_row)
+                rows_written += 1
 
+        self._notify_success(run, rows_written=rows_written)
         return run

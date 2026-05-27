@@ -132,18 +132,22 @@ def workflow_stub_smoke(
     write: bool = typer.Option(
         default=False, help="Actually write at most 3 stub rows to Google Sheets"
     ),
+    notify: bool = typer.Option(default=False, help="Send Telegram start/success notifications"),
 ) -> None:
     """Run a stub workflow and optionally write at most 3 rows (runs, leads, opportunities).
 
     Pass --write for a real append. Default is dry-run safe.
     All rows are tagged source=stub and workflow=stub_smoke_test.
+    Pass --notify to send Telegram lifecycle notifications.
     """
     settings = load_settings()
     adapter = _build_sheets_adapter(settings, dry_run=not write)
+    notifier = _build_notifier(settings, dry_run=not notify)
 
     runner = WorkflowRunner(
         dry_run=True,  # stub mode: no real AI/scraper calls
         sheets_adapter=adapter,
+        notifier=notifier,
     )
     leads = [
         Lead(
@@ -165,6 +169,22 @@ def workflow_stub_smoke(
         console.print("   [green]Rows appended to runs, leads, opportunities[/green]")
     else:
         console.print("   [dim](No rows written because --write was not passed)[/dim]")
+    if notify:
+        console.print("   [blue]Notifications sent[/blue]")
+    else:
+        console.print("   [dim](Notifications skipped; pass --notify to send)[/dim]")
+
+
+def _build_notifier(settings: CcaSettings, dry_run: bool = False) -> NotifierAdapter:
+    """Build a NotifierAdapter with credentials from settings.
+
+    Real sends are gated by dry_run=False; set dry_run=True for safe simulation.
+    """
+    return NotifierAdapter(
+        bot_token=settings.telegram_bot_token,
+        chat_id=settings.telegram_chat_id,
+        dry_run=dry_run,
+    )
 
 
 def _build_sheets_adapter(settings: CcaSettings, dry_run: bool = False) -> GoogleSheetsAdapter:
