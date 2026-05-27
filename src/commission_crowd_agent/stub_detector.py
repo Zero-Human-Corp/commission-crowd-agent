@@ -20,7 +20,9 @@ import re
 # Patterns that unambiguously mark a domain as non-real
 _INVALID_DOMAIN_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\.example\."),
+    re.compile(r"^https?://(?:[^/]*\.)?example\.(?:com|org|net)(?:/|$)", re.IGNORECASE),
     re.compile(r"\.test\."),
+    re.compile(r"^https?://(?:[^/]*\.)?test\.(?:com|io|dev)(?:/|$)", re.IGNORECASE),
     re.compile(r"localhost"),
 ]
 
@@ -70,6 +72,14 @@ def is_placeholder_lead(
                 return True
 
     return False
+
+
+def is_placeholder_candidate(name: str = "", url: str = "", notes: str = "") -> bool:
+    """Return True if source entry patterns indicate a stub/placeholder.
+
+    Thin wrapper over is_placeholder_lead for source-level detection.
+    """
+    return is_placeholder_lead(company_name=name, source_url=url, notes=notes)
 
 
 def classify_lead_row(row: list[str]) -> bool:

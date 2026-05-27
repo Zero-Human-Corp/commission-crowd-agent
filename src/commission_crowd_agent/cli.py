@@ -17,6 +17,7 @@ from .config import CcaSettings, load_settings
 from .domain import Lead
 from .lead_ingestion import LeadIngester
 from .lead_scoring import LeadScorer
+from .operator_source import OperatorSourceIngester
 from .secrets import (
     MissingEnvFileError,
     load_shared_env,
@@ -553,6 +554,105 @@ def ingest_leads_readonly(
         console.print("   [dim](Notification skipped; pass --notify to send)[/dim]")
 
     console.print("[green]✅ ingest-leads-readonly complete[/green]")
+
+
+@app.command(name="ingest-operator-sources")
+def ingest_operator_sources(
+    source_file: str = typer.Option(
+        default="",
+        help="Path to operator_sources JSON (e.g. config/operator_sources.json)",
+    ),
+    source_url: str = typer.Option(
+        default="",
+        help="One-off public URL to ingest (overrides file if both given)",
+    ),
+    limit: int = typer.Option(default=3, help="Max candidates to ingest (max 5)"),
+    write: bool = typer.Option(
+        default=False, help="Actually write discovered leads to Google Sheets"
+    ),
+    notify: bool = typer.Option(default=False, help="Send Telegram notification after writing"),
+) -> None:
+    """Ingest from operator-provided public sources. Dry-run by default.
+
+    Pass --source-file to load from JSON, or --source-url for a one-off URL.
+    Pass --write to persist leads and create pending approvals.
+    No scraping; no outreach; never sends emails.
+    """
+    if limit > 5:
+        console.print("[red]❌ limit must be ≤ 5[/red]")
+        raise typer.Exit(1)
+
+    settings = load_settings()
+    sheets_adapter = _build_sheets_adapter(settings, dry_run=not write)
+    approval_gate = ApprovalGate(sheets_adapter=sheets_adapter)
+    lead_ingester = LeadIngester(
+        sheets_adapter=sheets_adapter,
+        approval_gate=approval_gate,
+    )
+    operator_ingester = OperatorSourceIngester(lead_ingester=lead_ingester)
+
+    # Resolve sources
+    sources: list[Any] = []
+    if source_url:
+        try:
+            sources = [OperatorSourceIngester.parse_single_url(source_url)]
+            console.print(f"[blue]🔗 CLI source URL: {source_url[:60]}...[/blue]")
+        except ValueError as exc:
+            console.print(f"[red]❌ Invalid source URL: {exc}[/red]")
+            raise typer.Exit(1) from exc
+    elif source_file:
+        from pathlib import Path
+
+        path = Path(source_file)
+        if not path.exists():
+            console.print(f"[yellow]⚠ Source file not found: {source_file}[/yellow]")
+            console.print("   (No sources provided — exiting safely)")
+            raise typer.Exit(0)
+        try:
+            sources = OperatorSourceIngester.load_source_file(path)
+        except (ValueError, OSError) as exc:
+            console.print(f"[red]❌ Failed to load source file: {exc}[/red]")
+            raise typer.Exit(1) from exc
+        console.print(f"[blue]📁 Loaded {len(sources)} source(s) from {source_file}[/blue]")
+    else:
+        console.print("[yellow]⚠ No sources provided[/yellow]")
+        console.print("   Pass --source-file or --source-url")
+        console.print("   (Nothing to do — exiting safely)")
+        raise typer.Exit(0)
+
+    # Ingest
+    result = operator_ingester.ingest_sources(sources, limit=limit, dry_run=not write)
+
+    # Summary
+    dry_icon = "[DRY]" if result.get("dry_run") else "[LIVE]"
+    console.print(f"{dry_icon} ingest-operator-sources")
+    console.print(f"   Candidates: {result.get('candidates', 0)}")
+    console.print(f"   Written: {result.get('written', 0)}")
+    console.print(f"   Approvals: {result.get('approvals', 0)}")
+    console.print(f"   Skipped: {result.get('skipped', 0)}")
+    if result.get("sources"):
+        for s in result["sources"]:
+            console.print(f"   • {s.get('name')} ({s.get('source_type')})")
+    console.print(f"   {result.get('message', '')}")
+
+    # Notify
+    if notify and result.get("candidates") and write:
+        text = (
+            "📥 *Operator Source Ingestion*\n"
+            f"Candidates: {result.get('candidates', 0)}\n"
+            f"Written: {result.get('written', 0)}\n"
+            f"Approvals: {result.get('approvals', 0)}\n"
+            "Mode: live"
+        )
+        notifier = _build_notifier(settings, dry_run=False)
+        notifier.send_message(text=text)
+        console.print("   [blue]Notification sent[/blue]")
+    elif notify:
+        console.print("   [dim](Notify requires --write and at least one candidate)[/dim]")
+    else:
+        console.print("   [dim](Notification skipped; pass --notify to send)[/dim]")
+
+    console.print("[green]✅ ingest-operator-sources complete[/green]")
 
 
 @app.command(name="score-leads-dry-run")

@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Example Public Source",
+    "url": "https://example.io/public-directory",
+    "source_type": "public_directory",
+    "notes": "Example of a safe public source entry. Operators should copy this file to config/operator_sources.json and replace with real URLs.",
+    "enabled": false
+  }
+]
