@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from .adapters import GoogleSheetsAdapter, NotifierAdapter
-from .config import load_settings
+from .config import CcaSettings, load_settings
 from .domain import Lead
 from .secrets import (
     MissingEnvFileError,
@@ -127,14 +127,23 @@ def notify_test(
 # --- Google Sheets CLI commands ---
 
 
-@app.command(name="sheets-status")
-def sheets_status() -> None:
-    """Check Google Sheets adapter readiness (dry-run safe)."""
-    settings = load_settings()
-    adapter = GoogleSheetsAdapter(
+def _build_sheets_adapter(settings: CcaSettings, dry_run: bool = False) -> GoogleSheetsAdapter:
+    """Build a GoogleSheetsAdapter with service-account credentials if available."""
+    return GoogleSheetsAdapter(
         spreadsheet_id=settings.google_sheets_spreadsheet_id,
-        dry_run=True,
+        dry_run=dry_run,
+        credentials_path=settings.google_application_credentials_path,
+        service_account_json=settings.google_service_account_json,
     )
+
+
+@app.command(name="sheets-status")
+def sheets_status(
+    live: bool = typer.Option(default=False, help="Perform a real read-only health check"),
+) -> None:
+    """Check Google Sheets adapter readiness (dry-run safe by default)."""
+    settings = load_settings()
+    adapter = _build_sheets_adapter(settings, dry_run=not live)
     result = adapter.health_check()
     status_icon = "✅" if result["ok"] else "❌"
     console.print(f"{status_icon} Google Sheets status")
@@ -142,7 +151,9 @@ def sheets_status() -> None:
     creds_state = "ready" if settings.google_ready else "missing"
     console.print(f"   Spreadsheet ID: {ssid_state}")
     console.print(f"   Google credentials: {creds_state}")
-    console.print("   Dry run: True")
+    console.print(f"   Dry run: {adapter.dry_run}")
+    if result["error"]:
+        console.print(f"   Error: {result['error']}")
 
 
 @app.command(name="sheets-ensure-schema")
@@ -152,10 +163,7 @@ def sheets_ensure_schema(
 ) -> None:
     """Ensure all schema tabs exist. Defaults to dry-run."""
     settings = load_settings()
-    adapter = GoogleSheetsAdapter(
-        spreadsheet_id=settings.google_sheets_spreadsheet_id,
-        dry_run=dry_run and not write,
-    )
+    adapter = _build_sheets_adapter(settings, dry_run=dry_run and not write)
     result = adapter.ensure_schema()
     status_icon = "✅" if result["ok"] else "❌"
     console.print(f"{status_icon} sheets-ensure-schema")
@@ -172,10 +180,7 @@ def sheets_append_sample_lead(
 ) -> None:
     """Append a sample lead row to the leads tab. Defaults to dry-run."""
     settings = load_settings()
-    adapter = GoogleSheetsAdapter(
-        spreadsheet_id=settings.google_sheets_spreadsheet_id,
-        dry_run=dry_run and not write,
-    )
+    adapter = _build_sheets_adapter(settings, dry_run=dry_run and not write)
     sample = [
         "L-SAMPLE-001",
         "manual_test",

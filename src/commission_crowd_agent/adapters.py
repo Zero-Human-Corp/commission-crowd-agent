@@ -227,6 +227,8 @@ class GoogleSheetsAdapter:
     TOKEN_URL = "https://oauth2.googleapis.com/token"
     TIMEOUT_SECONDS = 15
 
+    _SCOPES: list[str] = ["https://www.googleapis.com/auth/spreadsheets"]
+
     # Minimal schema for auto-creation
     SCHEMA: dict[str, list[str]] = {
         "leads": [
@@ -296,6 +298,45 @@ class GoogleSheetsAdapter:
         """Return Authorization header with current access token."""
         return {"Authorization": f"Bearer {self.access_token}"}
 
+    def _ensure_access_token(self) -> None:
+        """Generate an access token from service-account credentials if needed.
+
+        Only called internally; never logs secret values.
+        """
+        if self.access_token:
+            return
+
+        sa_info: dict[str, Any] | None = None
+        if self.credentials_path:
+            try:
+                import json as _json
+
+                with open(self.credentials_path) as fh:
+                    sa_info = _json.load(fh)
+            except Exception:
+                return
+        elif self.service_account_json:
+            try:
+                import json as _json
+
+                sa_info = _json.loads(self.service_account_json)
+            except Exception:
+                return
+
+        if sa_info is None:
+            return
+
+        try:
+            from google.auth.transport import requests as _reqs
+            from google.oauth2 import service_account as _sa
+
+            credentials = _sa.Credentials.from_service_account_info(sa_info, scopes=self._SCOPES)  # type: ignore[no-untyped-call]
+            credentials.refresh(_reqs.Request())
+            self.access_token = credentials.token
+        except Exception:
+            # silently fail; callers will check access_token and report error
+            pass
+
     def health_check(self) -> dict[str, Any]:
         """Verify the spreadsheet is reachable.
 
@@ -319,6 +360,7 @@ class GoogleSheetsAdapter:
                 "error": None,
             }
 
+        self._ensure_access_token()
         if not self.access_token:
             return {
                 "ok": False,
@@ -364,9 +406,6 @@ class GoogleSheetsAdapter:
         if not self.spreadsheet_id:
             return self._error_result("read_rows", tab, "Missing spreadsheet_id")
 
-        if not self.access_token:
-            return self._error_result("read_rows", tab, "Missing access_token")
-
         if self.dry_run:
             return {
                 "ok": True,
@@ -376,6 +415,10 @@ class GoogleSheetsAdapter:
                 "rows_changed": 0,
                 "error": None,
             }
+
+        self._ensure_access_token()
+        if not self.access_token:
+            return self._error_result("read_rows", tab, "Missing access_token")
 
         range_name = f"{tab}!A1:Z1000"
         url = f"{self.API_BASE}/{self.spreadsheet_id}/values/{range_name}?majorDimension=ROWS"
@@ -405,9 +448,6 @@ class GoogleSheetsAdapter:
         if not self.spreadsheet_id:
             return self._error_result("append_row", tab, "Missing spreadsheet_id")
 
-        if not self.access_token:
-            return self._error_result("append_row", tab, "Missing access_token")
-
         if self.dry_run:
             return {
                 "ok": True,
@@ -416,6 +456,10 @@ class GoogleSheetsAdapter:
                 "rows_changed": 1,
                 "error": None,
             }
+
+        self._ensure_access_token()
+        if not self.access_token:
+            return self._error_result("append_row", tab, "Missing access_token")
 
         url = (
             f"{self.API_BASE}/{self.spreadsheet_id}/values/"
