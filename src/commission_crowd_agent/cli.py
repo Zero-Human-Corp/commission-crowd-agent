@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.table import Table
 
 from .adapters import GoogleSheetsAdapter, NotifierAdapter
+from .approval_gate import ApprovalGate
 from .config import CcaSettings, load_settings
 from .domain import Lead
 from .secrets import (
@@ -361,6 +362,48 @@ def daily_summary(
         console.print("New: 2 | Researching: 0 | Draft Ready: 0 | Sent: 0")
     else:
         console.print("[LIVE] daily-summary not yet wired to Source adapter.")
+
+
+@app.command(name="approval-stub-smoke")
+def approval_stub_smoke(
+    write: bool = typer.Option(
+        default=False, help="Actually append one pending approval row to Google Sheets"
+    ),
+    notify: bool = typer.Option(default=False, help="Send Telegram approval notification"),
+) -> None:
+    """Create a stub approval request and optionally write/notify.
+
+    Defaults to dry-run. Pass --write for a real Sheet row, --notify for a
+    Telegram notification. Stops after creating the request; no downstream
+    action is executed.
+    """
+    settings = load_settings()
+    adapter = _build_sheets_adapter(settings, dry_run=not write)
+    notifier = _build_notifier(settings, dry_run=not notify)
+    gate = ApprovalGate(sheets_adapter=adapter, notifier=notifier)
+
+    req = gate.create_approval(
+        opportunity_id="STUB-OPP-001",
+        draft_text="Approve draft outreach to StubCorp (Stub Alice)",
+        dry_run=not write,
+    )
+
+    if notify:
+        gate.notify_operator(req, dry_run=not notify)
+
+    status_icon = "✅" if req.approval_status == "pending" else "❌"
+    console.print(f"{status_icon} approval-stub-smoke")
+    console.print(f"   Approval ID: {req.approval_id}")
+    console.print(f"   Opportunity: {req.opportunity_id}")
+    console.print(f"   Dry run (sheets): {adapter.dry_run}")
+    if not adapter.dry_run:
+        console.print("   [green]Approval row appended to 'approvals' tab[/green]")
+    else:
+        console.print("   [dim](No Sheet row written because --write was not passed)[/dim]")
+    if notify:
+        console.print("   [blue]Notification sent[/blue]")
+    else:
+        console.print("   [dim](Notification skipped; pass --notify to send)[/dim]")
 
 
 def main() -> None:
