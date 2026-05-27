@@ -1,0 +1,32 @@
+[
+    {
+        "source": "web_search",
+        "company": "Acme Solutions",
+        "full_name": "Jane Smith",
+        "url": "https://acme-solutions.example.com",
+        "email": "jane.smith@acme-solutions.example.com",
+        "status": "discovered",
+        "notes": "B2B SaaS lead — enterprise analytics",
+        "provenance": "web search: enterprise analytics companies UK"
+    },
+    {
+        "source": "manual",
+        "company": "BetaCorp",
+        "full_name": "",
+        "url": "https://betacorp.example.com",
+        "email": "",
+        "status": "needs_review",
+        "notes": "No public contact found yet",
+        "provenance": "operator-provided URL list"
+    },
+    {
+        "source": "web_search",
+        "company": "Gamma Systems",
+        "full_name": "Robert Chen",
+        "url": "https://gammasystems.example.com",
+        "email": "robert@gammasystems.example.com",
+        "status": "discovered",
+        "notes": "Cybersecurity consulting",
+        "provenance": "web search: UK cybersecurity consulting firms"
+    }
+]

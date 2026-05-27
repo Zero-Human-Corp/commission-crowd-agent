@@ -13,6 +13,7 @@ from .adapters import GoogleSheetsAdapter, NotifierAdapter
 from .approval_gate import ApprovalGate
 from .config import CcaSettings, load_settings
 from .domain import Lead
+from .lead_ingestion import LeadIngester
 from .secrets import (
     MissingEnvFileError,
     load_shared_env,
@@ -469,6 +470,86 @@ def downstream_stub_smoke(
     else:
         console.print(f"[yellow]⚠ ALLOWED (live) — approval {approval_id} is approved[/yellow]")
         console.print("   [red]Live downstream actions are not yet implemented[/red]")
+
+
+@app.command(name="ingest-leads-readonly")
+def ingest_leads_readonly(
+    source: str = typer.Argument(..., help="Source: path/to/candidates.json or 'search:<query>'"),
+    limit: int = typer.Option(default=3, help="Max candidates to ingest (max 5)"),
+    write: bool = typer.Option(
+        default=False, help="Actually write discovered leads to Google Sheets"
+    ),
+    notify: bool = typer.Option(default=False, help="Send Telegram notification after writing"),
+) -> None:
+    """Ingest candidate leads from a public source and optionally write/notify.
+
+    Defaults to dry-run.  Pass --write to persist leads to the 'leads' tab.
+    Creates pending approval requests for every written candidate.
+    Never sends outreach.
+    """
+    if limit > 5:
+        console.print("[red]❌ limit must be ≤ 5 for this mission[/red]")
+        raise typer.Exit(1)
+
+    settings = load_settings()
+    sheets_adapter = _build_sheets_adapter(settings, dry_run=not write)
+    approval_gate = ApprovalGate(sheets_adapter=sheets_adapter)
+    ingester = LeadIngester(
+        sheets_adapter=sheets_adapter,
+        approval_gate=approval_gate,
+    )
+
+    # Discovery
+    if source.startswith("search:"):
+        query = source[len("search:") :]
+        candidates = ingester.discover_from_search(query, limit=limit)
+    else:
+        from pathlib import Path
+
+        candidates = ingester.discover_from_json(Path(source))[:limit]
+
+    console.print(f"[blue]🔍 Discovered {len(candidates)} candidates[/blue]")
+    for c in candidates:
+        console.print(f"   • {c.company} — {c.full_name or 'no contact'} ({c.source})")
+
+    # Write
+    write_result = ingester.write_candidates(candidates, dry_run=not write)
+    if write_result.get("dry_run"):
+        console.print("[dim]   (Dry-run — no Sheet rows written)[/dim]")
+    else:
+        ok = write_result.get("ok")
+        written = write_result.get("written", 0)
+        icon = "✅" if ok else "❌"
+        console.print(f"   [{icon}] Written {written}/{len(candidates)} leads")
+        if write_result.get("errors"):
+            for err in write_result["errors"]:
+                console.print(f"   [red]Error: {err}[/red]")
+
+    # Approvals
+    approval_results = ingester.create_approval_requests(candidates, dry_run=not write)
+    for res in approval_results:
+        console.print(
+            f"   ⏳ Approval {res['approval_id']} for {res['company']} (dry_run={res['dry_run']})"
+        )
+
+    # Notify
+    if notify and candidates and write:
+        text = (
+            "📥 *Lead Ingestion Complete*\n"
+            f"Discovered: {len(candidates)}\n"
+            f"Written: {write_result.get('written', 0)}\n"
+            f"Approvals: {len(approval_results)}\n"
+            "Mode: live"
+        )
+        notifier = _build_notifier(settings, dry_run=False)
+        notifier.send_message(text=text)
+        console.print("   [blue]Notification sent[/blue]")
+    elif notify:
+        console.print("   [dim](Notify requires both --write and real candidates)[/dim]")
+    else:
+        console.print("   [dim](Notification skipped; pass --notify to send)[/dim]")
+
+    console.print("[green]✅ ingest-leads-readonly complete[/green]")
 
 
 def main() -> None:
