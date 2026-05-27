@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
+from .stub_detector import is_placeholder_lead
+
 if TYPE_CHECKING:
     from .adapters import GoogleSheetsAdapter
     from .approval_gate import ApprovalGate
@@ -44,6 +46,7 @@ class DeeperResearchResult(BaseModel):
     missing_data: list[str] = Field(default_factory=list)
     recommended_next_action: str = ""
     notes: str = ""
+    is_placeholder: bool = False
 
     def to_outcome_row(self) -> list[str]:
         """Serialise to outcomes tab (10 columns)."""
@@ -108,6 +111,23 @@ class DeeperResearchService:
             confidence="low",
             missing_data=[],
         )
+
+        # Mark placeholder/stub leads explicitly
+        result.is_placeholder = is_placeholder_lead(
+            company_name=company_name,
+            source_url=source_url,
+            contact_email=contact_email,
+            notes=notes,
+        )
+        if result.is_placeholder:
+            result.notes = (
+                f"Placeholder fixture lead detected for {company_name}. "
+                "Skipped from real outreach-draft progression."
+            )
+            result.confidence = "low"
+            result.recommended_next_action = "manual_research_and_contact_hunt"
+            result.missing_data.append("placeholder_or_fixture")
+            return result
 
         if source_url:
             text, ok = self._try_fetch(source_url)
@@ -193,9 +213,19 @@ class DeeperResearchService:
         sheets_adapter: GoogleSheetsAdapter | None = None,
         dry_run: bool = True,
     ) -> dict[str, Any]:
-        """Create a pending approval for outreach-draft creation only."""
+        """Create a pending approval for outreach-draft creation only.
+
+        Skips if the lead has been detected as placeholder / fixture.
+        """
         if approval_gate is None or sheets_adapter is None:
             return {"ok": False, "error": "Missing gate or adapter"}
+        if result.is_placeholder:
+            return {
+                "ok": True,
+                "dry_run": dry_run,
+                "approval_id": "BLOCKED",
+                "reason": "placeholder lead — outreach-draft approval suppressed",
+            }
         if dry_run:
             return {"ok": True, "dry_run": True, "approval_id": "DRY-RUN"}
         action = (

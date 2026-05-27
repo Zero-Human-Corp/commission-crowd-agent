@@ -19,10 +19,10 @@ _ACME_FULL = [
     "81091b6c",
     "2026-05-27T10:00:00",
     "web_search",
-    "https://acme.example.com",
+    "https://acme-solutions.io",
     "Acme Solutions",
     "Jane Smith",
-    "jane@acme.example.com",
+    "jane.smith@acme-solutions.io",
     "CEO",
     "SaaS",
     "UK",
@@ -55,7 +55,7 @@ _GAMMA_PARTIAL = [
     "d82d639a",
     "2026-05-27T10:00:00",
     "web_search",
-    "https://gamma.example.com",
+    "https://gammatech.dev",
     "Gamma Systems",
     "Robert Chen",
     "",
@@ -140,7 +140,7 @@ def test_write_opportunities_live():
 def test_write_opportunities_blocks_on_header_mismatch():
     """write_opportunities must abort if header mismatch."""
     mock_adapter = MagicMock()
-    mock_adapter.read_rows.return_value = {"ok": True, "rows": []}  # no duplicates
+    mock_adapter.read_last_rows.return_value = {"ok": True, "rows": []}  # no duplicates
     mock_adapter.validate_tab_header.return_value = {
         "ok": False,
         "error": "Header mismatch for 'opportunities'",
@@ -159,7 +159,7 @@ def test_research_approval_above_threshold():
     mock_gate = MagicMock()
     mock_gate.create_approval.return_value = MagicMock(approval_id="APP-001", status="pending")
     mock_adapter = MagicMock()
-    mock_adapter.read_rows.return_value = {"ok": True, "rows": []}  # no existing approvals
+    mock_adapter.read_last_rows.return_value = {"ok": True, "rows": []}  # no existing approvals
     scores = [scorer.from_lead_row(_ACME_FULL)]  # fit_score >= 70
     results = scorer.request_deeper_research_approvals(
         scores, approval_gate=mock_gate, sheets_adapter=mock_adapter, dry_run=False

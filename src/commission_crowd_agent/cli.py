@@ -746,7 +746,12 @@ def research_approved_lead(
     approval_result = service.request_outreach_draft_approval(
         result, approval_gate=approval_gate, sheets_adapter=sheets_adapter, dry_run=not write
     )
-    if approval_result.get("dry_run"):
+    if approval_result.get("approval_id") == "BLOCKED":
+        console.print(
+            "[yellow]   ⛔ Outreach-draft approval BLOCKED — "
+            "placeholder/ fixture lead detected[/yellow]"
+        )
+    elif approval_result.get("dry_run"):
         console.print("[dim]   (Dry-run — outreach-draft approval not created)[/dim]")
     elif approval_result.get("ok"):
         console.print(

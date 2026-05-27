@@ -18,6 +18,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
+from .stub_detector import is_placeholder_lead
+
 if TYPE_CHECKING:
     from .adapters import GoogleSheetsAdapter
     from .approval_gate import ApprovalGate
@@ -33,6 +35,7 @@ class ScoreOutput(BaseModel):
     reasons: list[str] = Field(default_factory=list)
     missing_data: list[str] = Field(default_factory=list)
     recommended_next_action: str = ""
+    is_placeholder: bool = False
 
     def to_opportunity_row(self) -> list[str]:
         """Serialise to opportunities tab (14 columns)."""
@@ -141,6 +144,13 @@ class LeadScorer:
         elif _source == "manual":
             reasons.append("Manual entry")
 
+        is_placeholder = is_placeholder_lead(
+            company_name=company_name,
+            source_url=_source_url,
+            contact_email=contact_email,
+            notes=notes,
+        )
+
         confidence = (
             "high" if contact_email and len(missing) <= 1 else "medium" if contact_email else "low"
         )
@@ -165,6 +175,7 @@ class LeadScorer:
             reasons=reasons,
             missing_data=missing,
             recommended_next_action=recommended,
+            is_placeholder=is_placeholder,
         )
 
     def score_leads(
@@ -248,7 +259,7 @@ class LeadScorer:
         dry_run: bool = True,
     ) -> dict[str, Any]:
         """Write scored opportunities to the opportunities tab, skipping
-        duplicates and sub-threshold leads.
+        duplicates, sub-threshold leads, and placeholder fixture leads.
 
         In dry-run mode, still checks for existing rows and reports what would
         happen.
@@ -260,16 +271,25 @@ class LeadScorer:
                 "written": 0,
                 "skipped": 0,
                 "below_threshold": 0,
+                "placeholder": 0,
             }
 
         written = 0
         skipped = 0
         below_threshold = 0
+        placeholder = 0
         errors: list[str] = []
         skipped_ids: list[str] = []
         below_threshold_ids: list[str] = []
+        placeholder_ids: list[str] = []
 
         for s in scores:
+            # Block placeholder / fixture leads from becoming real opportunities
+            if s.is_placeholder:
+                placeholder += 1
+                placeholder_ids.append(s.lead_id)
+                continue
+
             # Reject sub-threshold leads before any duplicate or write logic
             if s.fit_score < self.RESEARCH_THRESHOLD:
                 below_threshold += 1
@@ -300,8 +320,10 @@ class LeadScorer:
             "written": written,
             "skipped": skipped,
             "below_threshold": below_threshold,
+            "placeholder": placeholder,
             "skipped_ids": skipped_ids,
             "below_threshold_ids": below_threshold_ids,
+            "placeholder_ids": placeholder_ids,
             "errors": errors,
             "dry_run": dry_run,
         }
@@ -323,7 +345,7 @@ class LeadScorer:
             return []
         results: list[dict[str, Any]] = []
         for s in scores:
-            if s.fit_score < self.RESEARCH_THRESHOLD:
+            if s.is_placeholder or s.fit_score < self.RESEARCH_THRESHOLD:
                 continue
             dup = self._find_existing_pending_approval(
                 "opportunity",

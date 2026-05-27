@@ -17,10 +17,10 @@ _ACME_LEAD = [
     "81091b6c",
     "2026-05-27T10:00:00",
     "web_search",
-    "https://acme-solutions.example.com",
+    "https://acme-solutions.io",
     "Acme Solutions",
     "Jane Smith",
-    "jane.smith@acme-solutions.example.com",
+    "jane.smith@acme-solutions.io",
     "CEO",
     "SaaS",
     "UK",
@@ -54,7 +54,7 @@ def test_research_one_lead_marks_unverifiable_source():
     result = svc.research_one_lead(
         lead_id="81091b6c",
         company_name="Acme Solutions",
-        source_url="https://fake-homepage.example.com",
+        source_url="https://unreachable-test.local",
     )
     homepage = [f for f in result.findings if f.source_label == "company_homepage"]
     assert len(homepage) == 1
