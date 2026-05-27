@@ -466,28 +466,17 @@ class GoogleSheetsAdapter:
     def read_last_rows(self, tab: str, count: int = 10) -> dict[str, Any]:
         """Read the last `count` rows from a tab, bounded and safe.
 
-        Uses the Sheet dimension API to find actual data extent, avoiding
-        assumptions about where rows landed after append operations.
+        Reads full tab up to 5000 rows, trims trailing empties, and returns
+        the last `count` actual data rows. Never assumes position.
         """
         if not self.spreadsheet_id:
             return self._error_result("read_last_rows", tab, "Missing spreadsheet_id")
-
-        if self.dry_run:
-            return {
-                "ok": True,
-                "action": "read_last_rows",
-                "tab": tab,
-                "rows": [],
-                "rows_changed": 0,
-                "error": None,
-            }
 
         self._ensure_access_token()
         if not self.access_token:
             return self._error_result("read_last_rows", tab, "Missing access_token")
 
         try:
-            # Read A1:Z with large row count to find last non-empty
             range_name = f"{tab}!A1:Z5000"
             url = f"{self.API_BASE}/{self.spreadsheet_id}/values/{range_name}?majorDimension=ROWS"
             response = httpx.get(url, headers=self._auth_headers(), timeout=self.TIMEOUT_SECONDS)
@@ -497,9 +486,10 @@ class GoogleSheetsAdapter:
             # Trim trailing empty rows
             while all_rows and not any(cell for cell in all_rows[-1] if cell):
                 all_rows.pop()
-            # Return last `count` rows (including header if count exceeds data)
-            start = max(0, len(all_rows) - count)
-            rows = all_rows[start:]
+            # Filter to only non-empty rows (handles preallocated blanks in the middle)
+            non_empty = [row for row in all_rows if any(cell for cell in row if cell)]
+            start = max(0, len(non_empty) - count)
+            rows = non_empty[start:]
             return {
                 "ok": True,
                 "action": "read_last_rows",

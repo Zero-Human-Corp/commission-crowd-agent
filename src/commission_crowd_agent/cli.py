@@ -5,6 +5,8 @@ Provides operator-facing commands for the Hermes hooks architecture.
 
 from __future__ import annotations
 
+from typing import Any
+
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -14,6 +16,7 @@ from .approval_gate import ApprovalGate
 from .config import CcaSettings, load_settings
 from .domain import Lead
 from .lead_ingestion import LeadIngester
+from .lead_scoring import LeadScorer
 from .secrets import (
     MissingEnvFileError,
     load_shared_env,
@@ -550,6 +553,97 @@ def ingest_leads_readonly(
         console.print("   [dim](Notification skipped; pass --notify to send)[/dim]")
 
     console.print("[green]✅ ingest-leads-readonly complete[/green]")
+
+
+@app.command(name="score-leads-dry-run")
+def score_leads_dry_run(
+    lead_id: str = typer.Option(default="", help="Score specific lead by ID"),
+    limit: int = typer.Option(default=3, help="Max leads to score"),
+    write: bool = typer.Option(
+        default=False, help="Write score/opportunity records to Google Sheets"
+    ),
+    notify: bool = typer.Option(default=False, help="Send Telegram notification"),
+) -> None:
+    """Score existing leads and optionally write opportunities + approvals.
+
+    Default is dry-run.  Pass --write to persist scored opportunities.
+    Creates pending deeper-research approvals for above-threshold leads.
+    Never sends outreach.
+    """
+    settings = load_settings()
+    sheets_adapter = _build_sheets_adapter(settings, dry_run=not write)
+    approval_gate = ApprovalGate(sheets_adapter=sheets_adapter)
+    scorer = LeadScorer()
+
+    # Read leads
+    read_result = sheets_adapter.read_last_rows("leads", count=50)
+    if not read_result.get("ok"):
+        console.print(f"[red]❌ Failed to read leads: {read_result.get('error')}[/red]")
+        raise typer.Exit(1)
+
+    rows = read_result.get("rows", [])
+    if lead_id:
+        # Filter to specific lead
+        rows = [r for r in rows if r and r[0] == lead_id]
+        if not rows:
+            console.print(f"[red]❌ Lead {lead_id} not found[/red]")
+            raise typer.Exit(1)
+
+    # Score
+    scores = scorer.score_leads(rows[:limit])
+    console.print(f"[blue]🔍 Scored {len(scores)} leads[/blue]")
+    for s in scores:
+        icon = "🟢" if s.fit_score >= 70 else "🟡" if s.fit_score >= 40 else "🔴"
+        console.print(
+            f"   {icon} {s.company_name or s.lead_id}: fit_score={s.fit_score} "
+            f"confidence={s.confidence}"
+        )
+        console.print(f"      reasons: {', '.join(s.reasons)}")
+        if s.missing_data:
+            console.print(f"      missing: {', '.join(s.missing_data)}")
+
+    # Write opportunities
+    write_result = scorer.write_opportunities(
+        scores, sheets_adapter=sheets_adapter, dry_run=not write
+    )
+    if write_result.get("dry_run"):
+        console.print("[dim]   (Dry-run — no opportunities written)[/dim]")
+    else:
+        ok = write_result.get("ok")
+        written = write_result.get("written", 0)
+        icon = "✅" if ok else "❌"
+        console.print(f"   [{icon}] Written {written}/{len(scores)} opportunities")
+
+    # Approval requests for deeper research
+    approval_results: list[dict[str, Any]] = []
+    if scores:
+        approval_results = scorer.request_deeper_research_approvals(
+            scores, approval_gate=approval_gate, dry_run=not write
+        )
+        for res in approval_results:
+            console.print(
+                f"   ⏳ Approval {res['approval_id']} for {res['company']} "
+                f"(fit={res['fit_score']}, dry_run={res['dry_run']})"
+            )
+
+    # Notify
+    if notify and write and scores:
+        text = (
+            "📊 *Lead Scoring Complete*\n"
+            f"Scored: {len(scores)}\n"
+            f"Written: {write_result.get('written', 0)}\n"
+            f"Approvals: {len(approval_results)}\n"
+            "No outreach performed"
+        )
+        notifier = _build_notifier(settings, dry_run=False)
+        notifier.send_message(text=text)
+        console.print("   [blue]Notification sent[/blue]")
+    elif notify:
+        console.print("   [dim](Notify requires --write, real scores)[/dim]")
+    else:
+        console.print("   [dim](Notification skipped; pass --notify to send)[/dim]")
+
+    console.print("[green]✅ score-leads-dry-run complete[/green]")
 
 
 def main() -> None:
