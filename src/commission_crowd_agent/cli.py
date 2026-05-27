@@ -127,6 +127,46 @@ def notify_test(
 # --- Google Sheets CLI commands ---
 
 
+@app.command(name="workflow-stub-smoke")
+def workflow_stub_smoke(
+    write: bool = typer.Option(
+        default=False, help="Actually write at most 3 stub rows to Google Sheets"
+    ),
+) -> None:
+    """Run a stub workflow and optionally write at most 3 rows (runs, leads, opportunities).
+
+    Pass --write for a real append. Default is dry-run safe.
+    All rows are tagged source=stub and workflow=stub_smoke_test.
+    """
+    settings = load_settings()
+    adapter = _build_sheets_adapter(settings, dry_run=not write)
+
+    runner = WorkflowRunner(
+        dry_run=True,  # stub mode: no real AI/scraper calls
+        sheets_adapter=adapter,
+    )
+    leads = [
+        Lead(
+            lead_id="STUB-L001",
+            client_name="StubClient",
+            full_name="Stub Alice",
+            company="StubCorp",
+            email="alice@stubcorp.com",
+        ),
+    ]
+    run = runner.run_research_and_draft(client_name="StubClient", leads=leads)
+
+    status_icon = "✅" if run.status == "completed" else "❌"
+    console.print(f"{status_icon} workflow-stub-smoke")
+    console.print(f"   Dry run: {adapter.dry_run}")
+    console.print(f"   Run ID: {run.run_id}")
+    console.print(f"   Leads: {len(leads)}")
+    if not adapter.dry_run:
+        console.print("   [green]Rows appended to runs, leads, opportunities[/green]")
+    else:
+        console.print("   [dim](No rows written because --write was not passed)[/dim]")
+
+
 def _build_sheets_adapter(settings: CcaSettings, dry_run: bool = False) -> GoogleSheetsAdapter:
     """Build a GoogleSheetsAdapter with service-account credentials if available."""
     return GoogleSheetsAdapter(
@@ -206,9 +246,17 @@ def sheets_append_sample_lead(
 def run_research_cycle(
     client: str = typer.Option(default="DemoClient", help="Client name"),
     dry_run: bool = typer.Option(default=False, help="Run with stub data, no external calls"),
+    write: bool = typer.Option(
+        default=False, help="Write run/leads/opportunities rows to Google Sheets"
+    ),
 ) -> None:
     """Fetch new leads, research, draft, and score."""
-    runner = WorkflowRunner(dry_run=dry_run)
+    settings = load_settings()
+    adapter = _build_sheets_adapter(settings, dry_run=not write) if write else None
+    runner = WorkflowRunner(
+        dry_run=dry_run,
+        sheets_adapter=adapter,
+    )
     leads = [
         Lead(
             lead_id="L001",
@@ -230,6 +278,8 @@ def run_research_cycle(
     console.print(result.summary())
     for lead in leads:
         console.print(f"{lead.lead_id}: {lead.status.value} | Score: {lead.personalization_score}")
+    if adapter is not None and not adapter.dry_run:
+        console.print("[green]Workflow ledgers written to Google Sheets[/green]")
 
 
 @app.command(name="score-opportunities")

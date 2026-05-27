@@ -7,6 +7,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .adapters import GoogleSheetsAdapter
 
 from .domain import Lead, LeadStatus, Task, TaskType, WorkflowRun
 
@@ -14,8 +18,13 @@ from .domain import Lead, LeadStatus, Task, TaskType, WorkflowRun
 class WorkflowRunner:
     """Orchestrate a batch of leads through research → draft → score."""
 
-    def __init__(self, dry_run: bool = True) -> None:
+    def __init__(
+        self,
+        dry_run: bool = True,
+        sheets_adapter: GoogleSheetsAdapter | None = None,
+    ) -> None:
         self.dry_run = dry_run
+        self.sheets_adapter = sheets_adapter
 
     def run_research_and_draft(
         self,
@@ -82,4 +91,24 @@ class WorkflowRunner:
 
         run.status = "completed" if run.is_complete else "running"
         run.finished_at = datetime.utcnow()
+
+        # Write run record to Sheets if adapter is wired
+        if self.sheets_adapter is not None:
+            run_row = run.to_sheets_run_row(
+                workflow="research_cycle", extra={"client": client_name}
+            )
+            self.sheets_adapter.append_row("runs", run_row)
+            for lead in leads:
+                lead_row = lead.to_sheets_lead_row(
+                    source="workflow" if not self.dry_run else "stub",
+                    notes="workflow run" if not self.dry_run else "stub smoke-test row",
+                )
+                self.sheets_adapter.append_row("leads", lead_row)
+                opp_row = lead.to_sheets_opportunity_row(
+                    stage="research",
+                    next_action="draft outreach",
+                    created_at=datetime.utcnow(),
+                )
+                self.sheets_adapter.append_row("opportunities", opp_row)
+
         return run

@@ -5,6 +5,7 @@ All models are Pydantic BaseModels for validation and serialisation.
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
@@ -71,6 +72,44 @@ class Lead(BaseModel):
             "Error Log": self.error_log,
         }
 
+    def to_sheets_opportunity_row(
+        self,
+        opportunity_id: str = "",
+        stage: str = "new",
+        next_action: str = "",
+        created_at: datetime | None = None,
+        updated_at: datetime | None = None,
+    ) -> list[str]:
+        """Serialise to ordered list[str] aligned with adapter SCHEMA['opportunities']."""
+        return [
+            opportunity_id or f"OPP-{self.lead_id}",
+            self.lead_id,
+            f"{self.company} — {self.full_name}",
+            str(self.personalization_score) if self.personalization_score is not None else "",
+            stage,
+            next_action,
+            (created_at or self.created_at).isoformat() if (created_at or self.created_at) else "",
+            updated_at.isoformat() if updated_at else "",
+        ]
+
+    def to_sheets_lead_row(
+        self,
+        source: str = "workflow",
+        notes: str = "",
+    ) -> list[str]:
+        """Serialise to ordered list[str] aligned with adapter SCHEMA['leads']."""
+        return [
+            self.lead_id,
+            source,
+            self.full_name,
+            self.company,
+            "",  # url not modelled on Lead yet
+            self.email,
+            self.status.value,
+            self.created_at.isoformat() if self.created_at else "",
+            notes,
+        ]
+
 
 class Task(BaseModel):
     """A unit of work inside a workflow run."""
@@ -125,3 +164,23 @@ class WorkflowRun(BaseModel):
             "done": done,
             "failed": failed,
         }
+
+    def to_sheets_run_row(
+        self,
+        workflow: str = "research_cycle",
+        extra: dict[str, Any] | None = None,
+    ) -> list[str]:
+        """Serialise to ordered list[str] aligned with adapter SCHEMA['runs']."""
+        summary = self.summary()
+        summary_json = json.dumps(
+            {"total": summary["total"], "done": summary["done"], "failed": summary["failed"]}
+            | (extra or {})
+        )
+        return [
+            self.run_id,
+            workflow,
+            self.status,
+            self.started_at.isoformat() if self.started_at else "",
+            self.finished_at.isoformat() if self.finished_at else "",
+            summary_json,
+        ]
