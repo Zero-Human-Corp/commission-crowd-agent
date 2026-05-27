@@ -389,3 +389,115 @@ def test_no_approval_create_when_no_sheets_adapter():
         scores, approval_gate=mock_gate, sheets_adapter=None, dry_run=False
     )
     assert result == []
+
+
+# ── Threshold enforcement tests ───────────────────────────────────────────────
+
+
+def test_sub_threshold_lead_skipped_in_write_opportunities():
+    """Leads below RESEARCH_THRESHOLD must not create opportunity rows."""
+    mock_adapter = _make_mock_adapter({"opportunities": []})
+    scorer = LeadScorer()
+    scores = [scorer.from_lead_row(_BETA_NO_EMAIL)]  # fit_score < 50
+    result = scorer.write_opportunities(scores, sheets_adapter=mock_adapter, dry_run=False)
+    assert result["written"] == 0
+    assert result["skipped"] == 0
+    assert result["below_threshold"] == 1
+    assert scores[0].lead_id in result["below_threshold_ids"]
+    mock_adapter.append_row.assert_not_called()
+
+
+def test_below_threshold_reported_in_dry_run():
+    """Dry-run must report below-threshold leads without writing."""
+    mock_adapter = _make_mock_adapter({"opportunities": []})
+    scorer = LeadScorer()
+    scores = [scorer.from_lead_row(_BETA_NO_EMAIL)]  # fit_score < 50
+    result = scorer.write_opportunities(scores, sheets_adapter=mock_adapter, dry_run=True)
+    assert result["dry_run"] is True
+    assert result["below_threshold"] == 1
+    assert scores[0].lead_id in result["below_threshold_ids"]
+    mock_adapter.append_row.assert_not_called()
+
+
+def test_eligible_lead_above_threshold_creates_opportunity_and_approval():
+    """Above-threshold leads create both opportunity and approval when new."""
+    scorer = LeadScorer()
+    mock_gate = MagicMock()
+    mock_gate.create_approval.return_value = MagicMock(approval_id="APP-002", status="pending")
+    scores = [scorer.from_lead_row(_ACME_FULL)]  # fit_score >= 70
+
+    # Opportunity write (new)
+    mock_adapter = _make_mock_adapter({"opportunities": []})
+    opp_result = scorer.write_opportunities(scores, sheets_adapter=mock_adapter, dry_run=False)
+    assert opp_result["written"] == 1
+    assert opp_result["skipped"] == 0
+    assert opp_result["below_threshold"] == 0
+    mock_adapter.append_row.assert_called_once()
+
+    # Approval create (new)
+    mock_adapter2 = _make_mock_adapter({"approvals": []})
+    app_result = scorer.request_deeper_research_approvals(
+        scores, approval_gate=mock_gate, sheets_adapter=mock_adapter2, dry_run=False
+    )
+    assert len(app_result) == 1
+    assert app_result[0]["skipped"] is False
+    mock_gate.create_approval.assert_called_once()
+
+
+def test_repeated_scoring_idempotent_with_threshold_and_dedupe():
+    """Re-running scoring must produce zero new writes
+    (threshold + dedupe both active)."""
+    scorer = LeadScorer()
+    mock_gate = MagicMock()
+    mock_gate.create_approval.return_value = MagicMock(approval_id="APP-OLD", status="pending")
+
+    # Both leads already exist as opportunities
+    opp_rows = [
+        ["opportunity_id", "lead_id", "created_at_utc", "company_name"],
+        ["OPP-81091b", "81091b6c", "2026-05-27T10:00:00", "Acme Solutions"],
+        ["OPP-c55716", "c5571629", "2026-05-27T10:00:00", "BetaCorp"],
+    ]
+
+    # Only above-threshold approval exists
+    app_rows = [
+        [
+            "approval_id",
+            "created_at_utc",
+            "entity_type",
+            "entity_id",
+            "requested_action",
+            "risk_level",
+            "status",
+        ],
+        [
+            "APP-OLD",
+            "2026-05-27T10:00:00",
+            "opportunity",
+            "81091b6c",
+            "Do research",
+            "medium",
+            "pending",
+        ],
+    ]
+
+    mock_adapter = _make_mock_adapter({"opportunities": opp_rows, "approvals": app_rows})
+
+    acme_score = scorer.from_lead_row(_ACME_FULL)
+    beta_score = scorer.from_lead_row(_BETA_NO_EMAIL)
+    scores = [acme_score, beta_score]
+
+    # Opportunities
+    opp_result = scorer.write_opportunities(scores, sheets_adapter=mock_adapter, dry_run=False)
+    assert opp_result["written"] == 0
+    assert opp_result["skipped"] == 1  # Acme exists
+    assert opp_result["below_threshold"] == 1  # Beta below threshold
+
+    # Approvals
+    app_result = scorer.request_deeper_research_approvals(
+        scores, approval_gate=mock_gate, sheets_adapter=mock_adapter, dry_run=False
+    )
+    # Acme approval exists, Beta below threshold -> 0 new approvals
+    assert len(app_result) == 1  # only Acme returned (existing)
+    assert app_result[0]["skipped"] is True
+    assert app_result[0]["status"] == "pending"
+    mock_gate.create_approval.assert_not_called()

@@ -608,19 +608,21 @@ def score_leads_dry_run(
     )
     if write_result.get("dry_run"):
         skipped = write_result.get("skipped", 0)
-        if skipped:
-            console.print(f"[dim]   (Dry-run — {skipped} opportunity(s) already exist)[/dim]")
-        else:
-            console.print("[dim]   (Dry-run — no opportunities written)[/dim]")
+        below = write_result.get("below_threshold", 0)
+        console.print(f"[dim]   (Dry-run — {skipped} already exist, {below} below threshold)[/dim]")
     else:
         ok = write_result.get("ok")
         written = write_result.get("written", 0)
         skipped = write_result.get("skipped", 0)
+        below = write_result.get("below_threshold", 0)
         icon = "✅" if ok else "❌"
         console.print(f"[{icon}] Written {written}/{len(scores)} opportunities")
-        console.print(f"   Skipped {skipped} existing")
+        console.print(f"   Skipped {skipped} existing, {below} below threshold")
         for sid in write_result.get("skipped_ids", []):
             console.print(f"   [dim]   Skipped existing {sid}[/dim]")
+        if below:
+            for bid in write_result.get("below_threshold_ids", []):
+                console.print(f"   [dim]   ⬇️ Below threshold {bid}[/dim]")
 
     # Approval requests for deeper research
     approval_results: list[dict[str, Any]] = []

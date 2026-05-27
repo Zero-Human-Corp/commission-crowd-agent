@@ -247,19 +247,35 @@ class LeadScorer:
         sheets_adapter: GoogleSheetsAdapter | None = None,
         dry_run: bool = True,
     ) -> dict[str, Any]:
-        """Write scored opportunities to the opportunities tab, skipping duplicates.
+        """Write scored opportunities to the opportunities tab, skipping
+        duplicates and sub-threshold leads.
 
-        In dry-run mode, still checks for existing rows and reports what would happen.
+        In dry-run mode, still checks for existing rows and reports what would
+        happen.
         """
         if sheets_adapter is None:
-            return {"ok": False, "error": "No sheets adapter", "written": 0, "skipped": 0}
+            return {
+                "ok": False,
+                "error": "No sheets adapter",
+                "written": 0,
+                "skipped": 0,
+                "below_threshold": 0,
+            }
 
         written = 0
         skipped = 0
+        below_threshold = 0
         errors: list[str] = []
         skipped_ids: list[str] = []
+        below_threshold_ids: list[str] = []
 
         for s in scores:
+            # Reject sub-threshold leads before any duplicate or write logic
+            if s.fit_score < self.RESEARCH_THRESHOLD:
+                below_threshold += 1
+                below_threshold_ids.append(s.lead_id)
+                continue
+
             dup = self._find_existing_opportunity_for_lead(s.lead_id, sheets_adapter=sheets_adapter)
             if dup.get("exists"):
                 skipped += 1
@@ -283,7 +299,9 @@ class LeadScorer:
             "ok": len(errors) == 0,
             "written": written,
             "skipped": skipped,
+            "below_threshold": below_threshold,
             "skipped_ids": skipped_ids,
+            "below_threshold_ids": below_threshold_ids,
             "errors": errors,
             "dry_run": dry_run,
         }
