@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Rewardful SaaS Affiliate Programs",
+    "url": "https://www.rewardful.com/saas-affiliate-programs",
+    "source_type": "public_affiliate_program_directory",
+    "notes": "Public SaaS affiliate program list. No login. Use bounded read-only ingestion only.",
+    "enabled": true
+  },
+  {
+    "name": "Affiverse Partner Directory",
+    "url": "https://www.affiversemedia.com/directory/",
+    "source_type": "public_partner_directory",
+    "notes": "Public affiliate/partner directory. No login. Use bounded read-only ingestion only.",
+    "enabled": true
+  },
+  {
+    "name": "Affiliate Watch Directory",
+    "url": "https://affiliate.watch/",
+    "source_type": "public_affiliate_program_directory",
+    "notes": "Public affiliate program directory. No login. Use bounded read-only ingestion only.",
+    "enabled": true
+  }
+]

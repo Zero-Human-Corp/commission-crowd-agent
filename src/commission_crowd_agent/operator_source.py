@@ -21,8 +21,10 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import httpx
 from pydantic import BaseModel, Field, field_validator
 
+from .directory_extractor import extract_candidates
 from .lead_ingestion import CandidateLead, LeadIngester
 from .stub_detector import is_placeholder_candidate
 
@@ -93,6 +95,39 @@ class OperatorSourceIngester:
             raise ValueError("Placeholder or stub URL detected — not accepted")
         return source
 
+    def _fetch_html(self, url: str) -> str:
+        """Fetch public HTML with bounded timeout and clear UA."""
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; CCA-Bot/1.0; +https://syntaxis-labs.dev/bot-info)",
+            "Accept": "text/html",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        resp = httpx.get(url, headers=headers, timeout=15.0, follow_redirects=True)
+        resp.raise_for_status()
+        return resp.text
+
+    def _get_existing_urls(self) -> set[str]:
+        """Read existing lead URLs from the 'leads' tab for deduplication."""
+        if not self.lead_ingester or not self.lead_ingester.sheets_adapter:
+            return set()
+        adapter = self.lead_ingester.sheets_adapter
+        result = adapter.read_last_rows("leads", count=200)
+        if not result.get("ok"):
+            return set()
+        rows = result.get("rows", [])
+        if not rows:
+            return set()
+        # Determine schema: header row present or not
+        # If first row starts with 'lead_id' treat as header
+        data_rows = rows[1:] if rows[0] and rows[0][0] == "lead_id" else rows
+        existing: set[str] = set()
+        for row in data_rows:
+            if len(row) > 4 and row[4]:
+                existing.add(str(row[4]).strip())
+            if len(row) > 3 and row[3]:
+                existing.add(str(row[3]).strip())
+        return existing
+
     def ingest_sources(
         self,
         sources: list[OperatorSource],
@@ -102,10 +137,12 @@ class OperatorSourceIngester:
     ) -> dict[str, Any]:
         """Ingest from validated operator sources.
 
-        Returns structured result with candidate count, writes, approvals, errors.
-        Does NOT fetch remote URLs (no scraping yet). A future mission may add
-        remote fetching when operator provides public pages that can be read
-        without login walls.
+        1. Fetch each source page HTML (public read-only).
+        2. Extract candidate companies via source-specific extractor.
+        3. If extraction yields zero, fall back to source-page-as-lead.
+        4. Dedup against existing leads.
+        5. Respect global limit.
+        6. Write candidates and create pending approvals.
         """
         if limit > self.HARD_MAX_CANDIDATES:
             limit = self.HARD_MAX_CANDIDATES
@@ -126,19 +163,104 @@ class OperatorSourceIngester:
                 "message": "No enabled non-placeholder sources found.",
             }
 
-        # Convert each source to a CandidateLead (provenance = source URL)
+        # Read existing URLs for deduplication (if we have an adapter)
+        existing_urls = self._get_existing_urls()
+
         candidates: list[CandidateLead] = []
-        for s in valid[:limit]:
-            candidates.append(
-                CandidateLead(
-                    lead_id=str(uuid.uuid4())[:8],
-                    source=s.source_type or "operator_provided",
-                    company=s.name,
-                    url=s.url,
-                    provenance=s.url,
-                    notes=s.notes,
+        extraction_log: list[dict[str, Any]] = []
+
+        for s in valid:
+            if len(candidates) >= limit:
+                break
+
+            extracted: list[dict[str, Any]] = []
+            try:
+                html = self._fetch_html(s.url)
+                extracted_raw = extract_candidates(
+                    html,
+                    source_url=s.url,
+                    source_name=s.name,
+                    source_type=s.source_type,
+                    max_candidates=limit,
                 )
-            )
+                extracted = [c.to_dict() for c in extracted_raw]
+            except Exception as exc:
+                extraction_log.append(
+                    {
+                        "source": s.name,
+                        "status": "error",
+                        "error": f"{type(exc).__name__}: {exc}",
+                    }
+                )
+                # Fall through to fallback
+
+            if extracted:
+                for ec in extracted:
+                    if len(candidates) >= limit:
+                        break
+                    candidate_url = ec.get("url", "")
+                    if candidate_url in existing_urls:
+                        extraction_log.append(
+                            {
+                                "source": s.name,
+                                "candidate": ec.get("company"),
+                                "status": "skipped_duplicate",
+                            }
+                        )
+                        continue
+                    extraction_method = ec.get("extraction_method", "")
+                    extraction_confidence = ec.get("extraction_confidence", "")
+                    extra_notes = ec.get("notes", "")
+                    candidates.append(
+                        CandidateLead(
+                            lead_id=ec["lead_id"],
+                            source=ec.get("source_type") or s.source_type or "operator_provided",
+                            company=ec["company"],
+                            url=candidate_url,
+                            provenance=s.url,
+                            notes=(
+                                f"Extraction: {extraction_method}"
+                                f" (confidence={extraction_confidence})."
+                                f" {extra_notes}"
+                            ),
+                        )
+                    )
+                    if candidate_url:
+                        existing_urls.add(candidate_url)
+            else:
+                # Fallback: treat source page itself as a lead
+                if len(candidates) >= limit:
+                    break
+                if s.url in existing_urls:
+                    extraction_log.append(
+                        {
+                            "source": s.name,
+                            "status": "skipped_duplicate",
+                            "fallback": True,
+                        }
+                    )
+                    continue
+                candidates.append(
+                    CandidateLead(
+                        lead_id=str(uuid.uuid4())[:8],
+                        source=s.source_type or "operator_provided",
+                        company=s.name,
+                        url=s.url,
+                        provenance=s.url,
+                        notes=s.notes
+                        or "Fallback source-page lead (no child candidates extracted).",
+                    )
+                )
+                existing_urls.add(s.url)
+                extraction_log.append(
+                    {
+                        "source": s.name,
+                        "status": "fallback",
+                        "reason": (
+                            "No candidates extracted from directory; using source page as lead."
+                        ),
+                    }
+                )
 
         # Write candidates
         write_result: dict[str, Any] = {"ok": True, "written": 0}
@@ -161,4 +283,5 @@ class OperatorSourceIngester:
                 {"name": s.name, "url": s.url, "source_type": s.source_type} for s in valid[:limit]
             ],
             "message": (f"Ingested {len(candidates)} candidate(s) from {len(sources)} source(s)."),
+            "extraction_log": extraction_log,
         }
