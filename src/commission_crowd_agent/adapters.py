@@ -276,6 +276,8 @@ class GoogleSheetsAdapter:
             "decided_at_utc",
             "source_url",
             "notes",
+            "entity_name",
+            "approval_action",
         ],
         "runs": [
             "run_id",

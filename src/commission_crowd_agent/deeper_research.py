@@ -235,6 +235,8 @@ class DeeperResearchService:
         req = approval_gate.create_approval(
             entity_type="opportunity",
             entity_id=result.lead_id,
+            entity_name=result.company_name,
+            approval_action="outreach_draft",
             requested_action=action,
             risk_level="low",
             notes=result.notes[:500],

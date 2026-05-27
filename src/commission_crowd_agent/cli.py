@@ -437,7 +437,9 @@ def approval_check(
     icon = "✅" if status == "approved" else "⏳" if status == "pending" else "❌"
     console.print(f"{icon} Approval {approval_id}")
     console.print(f"   Entity: {record.get('entity_type', '—')} — {record.get('entity_id', '—')}")
-    console.print(f"   Action: {record.get('requested_action', '—')}")
+    console.print(f"   Entity Name: {record.get('entity_name') or '—'}")
+    console.print(f"   Approval Action: {record.get('approval_action') or '—'}")
+    console.print(f"   Requested Action: {record.get('requested_action', '—')}")
     console.print(f"   Risk: {record.get('risk_level', '—')}")
     console.print(f"   Status: {status}")
     console.print(f"   Operator decision: {record.get('operator_decision') or '—'}")

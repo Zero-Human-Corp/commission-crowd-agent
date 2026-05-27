@@ -20,6 +20,8 @@ _APPROVALS_HEADER = [
     "decided_at_utc",
     "source_url",
     "notes",
+    "entity_name",
+    "approval_action",
 ]
 
 
@@ -97,6 +99,8 @@ def test_read_approval_status_found():
                 "Draft 2",
                 "low",
                 "approved",
+                "",
+                "",
                 "",
                 "",
                 "",

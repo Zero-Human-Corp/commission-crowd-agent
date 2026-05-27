@@ -165,6 +165,8 @@ class LeadIngester:
             req = self.approval_gate.create_approval(
                 entity_type="lead",
                 entity_id=c.lead_id,
+                entity_name=c.company,
+                approval_action="research_scoring",
                 requested_action=action,
                 risk_level="low",
                 source_url=c.provenance,

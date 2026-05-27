@@ -37,6 +37,8 @@ class ApprovalRequest:
     created_at_utc: str = ""
     entity_type: str = ""
     entity_id: str = ""
+    entity_name: str = ""
+    approval_action: str = ""
     requested_action: str = ""
     risk_level: str = ""
     status: str = "pending"
@@ -64,6 +66,8 @@ class ApprovalRequest:
             self.decided_at_utc,
             self.source_url,
             self.notes,
+            self.entity_name,
+            self.approval_action,
         ]
 
 
@@ -88,6 +92,8 @@ class ApprovalGate:
         entity_id: str,
         requested_action: str,
         *,
+        entity_name: str = "",
+        approval_action: str = "",
         risk_level: str = "low",
         source_url: str = "",
         notes: str = "",
@@ -97,6 +103,8 @@ class ApprovalGate:
         req = ApprovalRequest(
             entity_type=entity_type,
             entity_id=entity_id,
+            entity_name=entity_name,
+            approval_action=approval_action,
             requested_action=requested_action,
             risk_level=risk_level,
             source_url=source_url,
@@ -195,8 +203,8 @@ class ApprovalGate:
         text = (
             f"⏳ *Approval Required*\n"
             f"Approval ID: `{req.approval_id}`\n"
-            f"Entity: {req.entity_type} — {req.entity_id}\n"
-            f"Action: {req.requested_action[:100]}\n"
+            f"Entity: {req.entity_type} — {req.entity_name or req.entity_id}\n"
+            f"Action: {req.approval_action or req.requested_action[:100]}\n"
             f"Risk: {req.risk_level}\n"
             f"Status: {req.status}\n"
             f"\n"

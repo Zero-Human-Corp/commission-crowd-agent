@@ -370,8 +370,10 @@ class LeadScorer:
                 f"(fit_score={s.fit_score}, confidence={s.confidence})"
             )
             req = approval_gate.create_approval(
-                entity_type="opportunity",
+                entity_type="lead",
                 entity_id=s.lead_id,
+                entity_name=s.company_name,
+                approval_action="deeper_research",
                 requested_action=action,
                 risk_level="medium",
                 notes=" | ".join(s.reasons),
