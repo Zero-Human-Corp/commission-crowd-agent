@@ -382,19 +382,27 @@ def approval_stub_smoke(
     notifier = _build_notifier(settings, dry_run=not notify)
     gate = ApprovalGate(sheets_adapter=adapter, notifier=notifier)
 
+    if write:
+        header_check = gate.validate_header()
+        if not header_check["ok"]:
+            console.print(f"[red]❌ {header_check['error']}[/red]")
+            raise typer.Exit(1)
+
     req = gate.create_approval(
-        opportunity_id="STUB-OPP-001",
-        draft_text="Approve draft outreach to StubCorp (Stub Alice)",
+        entity_type="opportunity",
+        entity_id="STUB-OPP-001",
+        requested_action="Approve draft outreach to StubCorp (Stub Alice)",
+        risk_level="low",
         dry_run=not write,
     )
 
     if notify:
         gate.notify_operator(req, dry_run=not notify)
 
-    status_icon = "✅" if req.approval_status == "pending" else "❌"
+    status_icon = "✅" if req.status == "pending" else "❌"
     console.print(f"{status_icon} approval-stub-smoke")
     console.print(f"   Approval ID: {req.approval_id}")
-    console.print(f"   Opportunity: {req.opportunity_id}")
+    console.print(f"   Entity: {req.entity_type} — {req.entity_id}")
     console.print(f"   Dry run (sheets): {adapter.dry_run}")
     if not adapter.dry_run:
         console.print("   [green]Approval row appended to 'approvals' tab[/green]")

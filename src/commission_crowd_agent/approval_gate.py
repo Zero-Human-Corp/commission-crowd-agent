@@ -1,8 +1,13 @@
 """Approval gate service for human-in-the-loop control.
 
 Provides:
-- ApprovalRequest dataclass aligned with the Google Sheets approvals tab schema
+- ApprovalRequest dataclass aligned with the live Google Sheets approvals tab schema
 - ApprovalGate service: create, read, check, notify
+
+Canonical approvals schema (live Sheet):
+    approval_id, created_at_utc, entity_type, entity_id,
+    requested_action, risk_level, status,
+    operator_decision, decided_at_utc, notes
 
 All write operations are gated by dry_run.  Real sends require explicit flags.
 """
@@ -20,32 +25,43 @@ if TYPE_CHECKING:
 
 @dataclass
 class ApprovalRequest:
-    """A human approval request aligned with the approvals tab schema.
+    """A human approval request aligned with the live approvals tab schema.
 
-    Schema mapping (adapter SCHEMA["approvals"]):
-        approval_id, opportunity_id, draft_text, approval_status,
-        approved_by, approved_at, telegram_message_id
+    Canonical columns:
+        approval_id, created_at_utc, entity_type, entity_id,
+        requested_action, risk_level, status,
+        operator_decision, decided_at_utc, notes
     """
 
     approval_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
-    opportunity_id: str = ""
-    draft_text: str = ""
-    approval_status: str = "pending"
-    approved_by: str = ""
-    approved_at: str = ""
-    telegram_message_id: str = ""
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at_utc: str = ""
+    entity_type: str = ""
+    entity_id: str = ""
+    requested_action: str = ""
+    risk_level: str = ""
+    status: str = "pending"
+    operator_decision: str = ""
+    decided_at_utc: str = ""
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        """Set created_at_utc if not provided."""
+        if not self.created_at_utc:
+            self.created_at_utc = datetime.utcnow().isoformat()
 
     def to_sheets_row(self) -> list[str]:
         """Serialise to ordered list[str] aligned with adapter SCHEMA['approvals']."""
         return [
             self.approval_id,
-            self.opportunity_id,
-            self.draft_text,
-            self.approval_status,
-            self.approved_by,
-            self.approved_at,
-            self.telegram_message_id,
+            self.created_at_utc,
+            self.entity_type,
+            self.entity_id,
+            self.requested_action,
+            self.risk_level,
+            self.status,
+            self.operator_decision,
+            self.decided_at_utc,
+            self.notes,
         ]
 
 
@@ -66,16 +82,22 @@ class ApprovalGate:
 
     def create_approval(
         self,
-        opportunity_id: str,
-        draft_text: str,
+        entity_type: str,
+        entity_id: str,
+        requested_action: str,
         *,
+        risk_level: str = "low",
+        notes: str = "",
         dry_run: bool = True,
     ) -> ApprovalRequest:
         """Create a pending approval request and optionally write to Sheets."""
         req = ApprovalRequest(
-            opportunity_id=opportunity_id,
-            draft_text=draft_text,
-            approval_status="pending",
+            entity_type=entity_type,
+            entity_id=entity_id,
+            requested_action=requested_action,
+            risk_level=risk_level,
+            notes=notes,
+            status="pending",
         )
         if self.sheets_adapter is not None and not dry_run:
             self.sheets_adapter.append_row("approvals", req.to_sheets_row())
@@ -97,7 +119,7 @@ class ApprovalGate:
         header = rows[0]
         try:
             idx = header.index("approval_id")
-            status_idx = header.index("approval_status")
+            status_idx = header.index("status")
         except ValueError:
             return "missing"
         for row in rows[1:]:
@@ -108,6 +130,15 @@ class ApprovalGate:
     def is_approved(self, approval_id: str) -> bool:
         """Return True only if the approval status is explicitly 'approved'."""
         return self.read_approval_status(approval_id) == "approved"
+
+    def validate_header(self) -> dict[str, Any]:
+        """Check whether the live Sheet approvals header matches SCHEMA.
+
+        Returns a structured result so callers can decide to abort.
+        """
+        if self.sheets_adapter is None:
+            return {"ok": False, "error": "No sheets adapter", "live_header": []}
+        return self.sheets_adapter.validate_tab_header("approvals")
 
     def notify_operator(
         self,
@@ -124,10 +155,11 @@ class ApprovalGate:
         text = (
             f"⏳ *Approval Required*\n"
             f"Approval ID: `{req.approval_id}`\n"
-            f"Opportunity: {req.opportunity_id}\n"
-            f"Action: {req.draft_text[:100]}\n"
-            f"Status: {req.approval_status}\n"
+            f"Entity: {req.entity_type} — {req.entity_id}\n"
+            f"Action: {req.requested_action[:100]}\n"
+            f"Risk: {req.risk_level}\n"
+            f"Status: {req.status}\n"
             f"\n"
-            f"To approve, update the 'approvals' tab in the Sheet to 'approved'."
+            f"To approve, update the 'approvals' tab status to 'approved'."
         )
         return self.notifier.send_message(text=text)

@@ -254,12 +254,15 @@ class GoogleSheetsAdapter:
         ],
         "approvals": [
             "approval_id",
-            "opportunity_id",
-            "draft_text",
-            "approval_status",
-            "approved_by",
-            "approved_at",
-            "telegram_message_id",
+            "created_at_utc",
+            "entity_type",
+            "entity_id",
+            "requested_action",
+            "risk_level",
+            "status",
+            "operator_decision",
+            "decided_at_utc",
+            "notes",
         ],
         "runs": [
             "run_id",
@@ -439,6 +442,29 @@ class GoogleSheetsAdapter:
             return self._error_result("read_rows", tab, f"HTTP {exc.response.status_code}")
         except (httpx.RequestError, httpx.TimeoutException) as exc:
             return self._error_result("read_rows", tab, f"Network: {type(exc).__name__}")
+
+    def validate_tab_header(self, tab: str) -> dict[str, Any]:
+        """Verify live Sheet header for a tab matches adapter SCHEMA.
+
+        Returns structured result so callers can abort before writing.
+        """
+        if not self.spreadsheet_id:
+            return {"ok": False, "error": "Missing spreadsheet_id", "live_header": []}
+        result = self.read_rows(tab)
+        if not result.get("ok"):
+            return {"ok": False, "error": "Failed to read header", "live_header": []}
+        rows = result.get("rows", [])
+        if not rows:
+            return {"ok": False, "error": f"Empty tab: {tab}", "live_header": []}
+        live_header = rows[0]
+        expected = self.SCHEMA.get(tab, [])
+        if live_header != expected:
+            return {
+                "ok": False,
+                "error": (f"Header mismatch for '{tab}': live={live_header} expected={expected}"),
+                "live_header": live_header,
+            }
+        return {"ok": True, "error": None, "live_header": live_header}
 
     def append_row(self, tab: str, values: list[str]) -> dict[str, Any]:
         """Append a single row to the bottom of a tab.
