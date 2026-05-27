@@ -120,7 +120,7 @@ def test_to_sheets_lead_row_no_email():
     """Serialised row must have empty email when not provided."""
     lead = CandidateLead(company="X", source="test")
     row = lead.to_sheets_lead_row()
-    assert row[5] == ""  # email column
+    assert row[6] == ""  # email column (index 6 in 15-col schema)
 
 
 def test_to_sheets_lead_row_has_provenance():
@@ -129,8 +129,8 @@ def test_to_sheets_lead_row_has_provenance():
         company="X", source="web_search", notes="found via DDG", provenance="ddg: X"
     )
     row = lead.to_sheets_lead_row()
-    assert row[1] == "web_search"
-    assert row[8] == "found via DDG"
+    assert row[2] == "web_search"  # source column
+    assert row[14] == "found via DDG"  # notes column
 
 
 def test_discover_from_json_respects_limit():

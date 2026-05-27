@@ -46,13 +46,19 @@ class CandidateLead(BaseModel):
         """Serialise to ordered list[str] aligned with adapter SCHEMA['leads']."""
         return [
             self.lead_id,
-            self.source,
-            self.full_name,
-            self.company,
-            self.url,
-            self.email,
-            self.status,
             self.created_at.isoformat() if self.created_at else "",
+            self.source,
+            self.url,  # source_url
+            self.company,
+            self.full_name,
+            self.email,
+            "",  # role_title
+            "",  # market
+            "",  # country
+            "",  # problem_signal
+            "",  # commission_signal
+            "",  # fit_score
+            self.status,
             self.notes,
         ]
 
@@ -121,6 +127,15 @@ class LeadIngester:
             return {"ok": False, "error": "No sheets adapter", "written": 0}
         if dry_run:
             return {"ok": True, "dry_run": True, "written": 0, "candidates": len(candidates)}
+
+        # Validate header before any writes
+        header_result = self.sheets_adapter.validate_tab_header("leads")
+        if not header_result["ok"]:
+            return {
+                "ok": False,
+                "error": f"Schema validation failed: {header_result['error']}",
+                "written": 0,
+            }
 
         written = 0
         errors: list[str] = []

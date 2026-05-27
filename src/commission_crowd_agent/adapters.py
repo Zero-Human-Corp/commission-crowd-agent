@@ -233,24 +233,36 @@ class GoogleSheetsAdapter:
     SCHEMA: dict[str, list[str]] = {
         "leads": [
             "lead_id",
+            "created_at_utc",
             "source",
-            "name",
-            "company",
-            "url",
-            "email",
+            "source_url",
+            "company_name",
+            "contact_name",
+            "contact_email",
+            "role_title",
+            "market",
+            "country",
+            "problem_signal",
+            "commission_signal",
+            "fit_score",
             "status",
-            "created_at",
             "notes",
         ],
         "opportunities": [
             "opportunity_id",
             "lead_id",
-            "title",
-            "score",
-            "stage",
+            "created_at_utc",
+            "company_name",
+            "opportunity_type",
+            "offer_summary",
+            "estimated_commission_min",
+            "estimated_commission_max",
+            "currency",
+            "probability",
+            "priority",
+            "status",
             "next_action",
-            "created_at",
-            "updated_at",
+            "notes",
         ],
         "approvals": [
             "approval_id",
@@ -266,19 +278,27 @@ class GoogleSheetsAdapter:
         ],
         "runs": [
             "run_id",
+            "created_at_utc",
             "workflow",
+            "agent",
             "status",
-            "started_at",
-            "completed_at",
-            "summary",
+            "input_ref",
+            "output_ref",
+            "duration_seconds",
+            "error_summary",
+            "notes",
         ],
         "outcomes": [
             "outcome_id",
+            "created_at_utc",
             "opportunity_id",
-            "result",
-            "revenue_signal",
+            "lead_id",
+            "outcome_type",
+            "amount",
+            "currency",
+            "paid_status",
+            "payment_ref",
             "notes",
-            "recorded_at",
         ],
     }
 
@@ -443,6 +463,56 @@ class GoogleSheetsAdapter:
         except (httpx.RequestError, httpx.TimeoutException) as exc:
             return self._error_result("read_rows", tab, f"Network: {type(exc).__name__}")
 
+    def read_last_rows(self, tab: str, count: int = 10) -> dict[str, Any]:
+        """Read the last `count` rows from a tab, bounded and safe.
+
+        Uses the Sheet dimension API to find actual data extent, avoiding
+        assumptions about where rows landed after append operations.
+        """
+        if not self.spreadsheet_id:
+            return self._error_result("read_last_rows", tab, "Missing spreadsheet_id")
+
+        if self.dry_run:
+            return {
+                "ok": True,
+                "action": "read_last_rows",
+                "tab": tab,
+                "rows": [],
+                "rows_changed": 0,
+                "error": None,
+            }
+
+        self._ensure_access_token()
+        if not self.access_token:
+            return self._error_result("read_last_rows", tab, "Missing access_token")
+
+        try:
+            # Read A1:Z with large row count to find last non-empty
+            range_name = f"{tab}!A1:Z5000"
+            url = f"{self.API_BASE}/{self.spreadsheet_id}/values/{range_name}?majorDimension=ROWS"
+            response = httpx.get(url, headers=self._auth_headers(), timeout=self.TIMEOUT_SECONDS)
+            response.raise_for_status()
+            data = response.json()
+            all_rows = data.get("values", [])
+            # Trim trailing empty rows
+            while all_rows and not any(cell for cell in all_rows[-1] if cell):
+                all_rows.pop()
+            # Return last `count` rows (including header if count exceeds data)
+            start = max(0, len(all_rows) - count)
+            rows = all_rows[start:]
+            return {
+                "ok": True,
+                "action": "read_last_rows",
+                "tab": tab,
+                "rows": rows,
+                "rows_changed": len(rows),
+                "error": None,
+            }
+        except httpx.HTTPStatusError as exc:
+            return self._error_result("read_last_rows", tab, f"HTTP {exc.response.status_code}")
+        except (httpx.RequestError, httpx.TimeoutException) as exc:
+            return self._error_result("read_last_rows", tab, f"Network: {type(exc).__name__}")
+
     def validate_tab_header(self, tab: str) -> dict[str, Any]:
         """Verify live Sheet header for a tab matches adapter SCHEMA.
 
@@ -480,6 +550,7 @@ class GoogleSheetsAdapter:
                 "action": "append_row",
                 "tab": tab,
                 "rows_changed": 1,
+                "updated_range": "",
                 "error": None,
             }
 
@@ -497,11 +568,15 @@ class GoogleSheetsAdapter:
                 url, json=payload, headers=self._auth_headers(), timeout=self.TIMEOUT_SECONDS
             )
             response.raise_for_status()
+            data = response.json()
+            updates = data.get("updates", {})
+            updated_range = updates.get("updatedRange", "")
             return {
                 "ok": True,
                 "action": "append_row",
                 "tab": tab,
-                "rows_changed": 1,
+                "rows_changed": updates.get("updatedRows", 1),
+                "updated_range": updated_range,
                 "error": None,
             }
         except httpx.HTTPStatusError as exc:

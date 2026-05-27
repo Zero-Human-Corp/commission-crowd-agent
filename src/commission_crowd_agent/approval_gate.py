@@ -100,6 +100,9 @@ class ApprovalGate:
             status="pending",
         )
         if self.sheets_adapter is not None and not dry_run:
+            header_result = self.sheets_adapter.validate_tab_header("approvals")
+            if not header_result["ok"]:
+                raise RuntimeError(f"Approval write aborted: {header_result['error']}")
             self.sheets_adapter.append_row("approvals", req.to_sheets_row())
         return req
 
