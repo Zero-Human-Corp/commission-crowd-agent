@@ -70,7 +70,7 @@ def test_create_approval_write_appends_row():
 def test_read_approval_status_found():
     """Reading by approval_id must return the matching status."""
     mock_adapter = MagicMock()
-    mock_adapter.read_rows.return_value = {
+    mock_adapter.read_last_rows.return_value = {
         "ok": True,
         "rows": [
             _APPROVALS_HEADER,
@@ -108,7 +108,7 @@ def test_read_approval_status_found():
 def test_read_approval_status_missing():
     """Reading a non-existent approval_id must return 'missing'."""
     mock_adapter = MagicMock()
-    mock_adapter.read_rows.return_value = {
+    mock_adapter.read_last_rows.return_value = {
         "ok": True,
         "rows": [
             _APPROVALS_HEADER,
@@ -133,7 +133,7 @@ def test_read_approval_status_missing():
 def test_is_approved_true_only_for_approved():
     """is_approved must return True only when status == 'approved'."""
     mock_adapter = MagicMock()
-    mock_adapter.read_rows.return_value = {
+    mock_adapter.read_last_rows.return_value = {
         "ok": True,
         "rows": [
             ["approval_id", "status"],
@@ -151,7 +151,7 @@ def test_is_approved_true_only_for_approved():
 def test_is_approved_missing_is_false():
     """Missing approval must be treated as not approved."""
     mock_adapter = MagicMock()
-    mock_adapter.read_rows.return_value = {"ok": True, "rows": []}
+    mock_adapter.read_last_rows.return_value = {"ok": True, "rows": []}
     gate = ApprovalGate(sheets_adapter=mock_adapter)
     assert gate.is_approved("A999") is False
 
@@ -193,7 +193,7 @@ def test_notify_operator_sends_safe_text():
 def test_downstream_guard_blocks_pending():
     """A simulated downstream action must be blocked when approval is pending."""
     mock_adapter = MagicMock()
-    mock_adapter.read_rows.return_value = {
+    mock_adapter.read_last_rows.return_value = {
         "ok": True,
         "rows": [
             ["approval_id", "status"],
@@ -213,7 +213,7 @@ def test_downstream_guard_blocks_pending():
 def test_downstream_guard_allows_approved():
     """A simulated downstream action must execute when approval is approved."""
     mock_adapter = MagicMock()
-    mock_adapter.read_rows.return_value = {
+    mock_adapter.read_last_rows.return_value = {
         "ok": True,
         "rows": [
             ["approval_id", "status"],

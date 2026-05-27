@@ -662,6 +662,121 @@ def score_leads_dry_run(
     console.print("[green]✅ score-leads-dry-run complete[/green]")
 
 
+@app.command(name="research-approved-lead")
+def research_approved_lead(
+    lead_id: str = typer.Option(..., help="Lead ID to research"),
+    approval_id: str = typer.Option(..., help="Approval ID that must be approved"),
+    write: bool = typer.Option(default=False, help="Write research findings to Google Sheets"),
+    notify: bool = typer.Option(default=False, help="Send Telegram notification"),
+) -> None:
+    """Run deeper research for one approved lead.
+
+    Requires an approved approval ID.
+    Default is dry-run.
+    Creates a pending approval for outreach-draft creation.
+    Never creates outreach drafts in this command.
+    """
+    from .approval_gate import ApprovalGate
+    from .deeper_research import DeeperResearchService
+
+    settings = load_settings()
+    sheets_adapter = _build_sheets_adapter(settings, dry_run=not write)
+    approval_gate = ApprovalGate(sheets_adapter=sheets_adapter)
+    service = DeeperResearchService()
+
+    # Verify approval is approved
+    check = approval_gate.read_approval_record(approval_id)
+    status = check.get("status", "missing")
+    if status != "approved":
+        console.print(f"[red]❌ BLOCKED — approval {approval_id} is {status}, not approved[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"[green]✅ Approval {approval_id} is approved — proceeding[/green]")
+
+    # Fetch lead
+    read_result = sheets_adapter.read_last_rows("leads", count=50)
+    if not read_result.get("ok"):
+        console.print("[red]❌ Failed to read leads[/red]")
+        raise typer.Exit(1)
+    rows = read_result.get("rows", [])
+    lead_row: list[str] = []
+    for row in rows:
+        if row and row[0] == lead_id:
+            lead_row = row
+            break
+    if not lead_row:
+        console.print(f"[red]❌ Lead {lead_id} not found[/red]")
+        raise typer.Exit(1)
+
+    company_name = lead_row[3] if len(lead_row) > 3 else ""
+    source_url = lead_row[4] if len(lead_row) > 4 else ""
+    contact_email = lead_row[5] if len(lead_row) > 5 else ""
+    notes = lead_row[8] if len(lead_row) > 8 else ""
+
+    console.print(f"[blue]🔍 Researching {company_name} (lead_id={lead_id})[/blue]")
+    result = service.research_one_lead(
+        lead_id=lead_id,
+        company_name=company_name,
+        source_url=source_url,
+        contact_email=contact_email,
+        notes=notes,
+    )
+
+    for f in result.findings:
+        verified_icon = "✅" if f.verified else "❓"
+        console.print(f"   {verified_icon} [{f.source_label}] {f.finding[:80]}...")
+
+    console.print(f"   Confidence: {result.confidence}")
+    if result.missing_data:
+        console.print(f"   Missing: {', '.join(result.missing_data)}")
+    console.print(f"   Recommended next action: {result.recommended_next_action}")
+
+    # Write findings
+    write_result = service.write_research_result(
+        result, sheets_adapter=sheets_adapter, dry_run=not write
+    )
+    if write_result.get("dry_run"):
+        console.print("[dim]   (Dry-run — research result not written)[/dim]")
+    elif write_result.get("ok"):
+        console.print("[green]   ✅ Research result written[/green]")
+    else:
+        console.print(f"[red]   ❌ Write failed: {write_result.get('error')}[/red]")
+
+    # Request outreach-draft approval
+    approval_result = service.request_outreach_draft_approval(
+        result, approval_gate=approval_gate, sheets_adapter=sheets_adapter, dry_run=not write
+    )
+    if approval_result.get("dry_run"):
+        console.print("[dim]   (Dry-run — outreach-draft approval not created)[/dim]")
+    elif approval_result.get("ok"):
+        console.print(
+            "[green]   ⏳ Outreach-draft approval created: "
+            f"{approval_result.get('approval_id')}[/green]"
+        )
+    else:
+        console.print("[red]   ❌ Approval creation failed[/red]")
+
+    # Notify
+    if notify and write:
+        text = (
+            "🔬 *Deeper Research Complete*\n"
+            f"Company: {company_name}\n"
+            f"Confidence: {result.confidence}\n"
+            f"Missing: {', '.join(result.missing_data) if result.missing_data else 'none'}\n"
+            f"Outreach-draft approval: {approval_result.get('approval_id', '—')}\n"
+            "No outreach performed"
+        )
+        notifier = _build_notifier(settings, dry_run=False)
+        notifier.send_message(text=text)
+        console.print("   [blue]Notification sent[/blue]")
+    elif notify:
+        console.print("   [dim](Notify requires --write)[/dim]")
+    else:
+        console.print("   [dim](Notification skipped)[/dim]")
+
+    console.print("[green]✅ research-approved-lead complete[/green]")
+
+
 def main() -> None:
     app()
 

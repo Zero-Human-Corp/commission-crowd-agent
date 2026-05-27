@@ -110,10 +110,13 @@ class ApprovalGate:
         """Read approval status from Sheets by approval_id.
 
         Returns 'missing' if the row is not found or Sheets is unavailable.
+
+        Uses read_last_rows so this works even when the adapter is in dry_run
+        mode — reads are side-effect-free.
         """
         if self.sheets_adapter is None:
             return "missing"
-        result = self.sheets_adapter.read_rows("approvals")
+        result = self.sheets_adapter.read_last_rows("approvals", count=5000)
         if not result.get("ok"):
             return "missing"
         rows = result.get("rows", [])
@@ -135,10 +138,13 @@ class ApprovalGate:
 
         Returns a dict with non-secret fields.  Returns empty dict on
         missing/unavailable data.
+
+        Uses read_last_rows so this works even when the adapter is in dry_run
+        mode — reads are side-effect-free.
         """
         if self.sheets_adapter is None:
             return {}
-        result = self.sheets_adapter.read_rows("approvals")
+        result = self.sheets_adapter.read_last_rows("approvals", count=5000)
         if not result.get("ok"):
             return {}
         rows = result.get("rows", [])
