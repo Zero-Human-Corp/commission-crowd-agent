@@ -310,15 +310,6 @@ class GoogleSheetsAdapter:
                 "error": "Missing spreadsheet_id",
             }
 
-        if not self.access_token:
-            return {
-                "ok": False,
-                "action": "health_check",
-                "tab": "",
-                "rows_changed": 0,
-                "error": "Missing access_token",
-            }
-
         if self.dry_run:
             return {
                 "ok": True,
@@ -326,6 +317,15 @@ class GoogleSheetsAdapter:
                 "tab": "",
                 "rows_changed": 0,
                 "error": None,
+            }
+
+        if not self.access_token:
+            return {
+                "ok": False,
+                "action": "health_check",
+                "tab": "",
+                "rows_changed": 0,
+                "error": "Missing access_token",
             }
 
         url = f"{self.API_BASE}/{self.spreadsheet_id}?fields=properties.title"
