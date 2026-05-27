@@ -179,6 +179,67 @@ class LeadScorer:
             results.append(self.from_lead_row(row))
         return results
 
+    def _find_existing_opportunity_for_lead(
+        self,
+        lead_id: str,
+        *,
+        sheets_adapter: GoogleSheetsAdapter | None = None,
+    ) -> dict[str, Any]:
+        """Return whether an opportunity already exists for the given lead_id.
+
+        Uses read_last_rows (not read_rows) so it works even when the adapter
+        is in dry_run mode — reads are side-effect-free.
+
+        Returns {"exists": bool, "opportunity_id": str | ""}.
+        """
+        if sheets_adapter is None:
+            return {"exists": False, "opportunity_id": ""}
+        result = sheets_adapter.read_last_rows("opportunities", count=5000)
+        if not result.get("ok"):
+            return {"exists": False, "opportunity_id": "", "error": result.get("error")}
+        rows = result.get("rows", [])
+        if not rows:
+            return {"exists": False, "opportunity_id": ""}
+        if rows and rows[0] and rows[0][0] == "opportunity_id":
+            rows = rows[1:]
+        for row in rows:
+            if len(row) > 1 and row[1] == lead_id:
+                opp_id = row[0] if row and len(row) > 0 else ""
+                return {"exists": True, "opportunity_id": opp_id}
+        return {"exists": False, "opportunity_id": ""}
+
+    def _find_existing_pending_approval(
+        self,
+        entity_type: str,
+        entity_id: str,
+        *,
+        sheets_adapter: GoogleSheetsAdapter | None = None,
+    ) -> dict[str, Any]:
+        """Return whether a non-terminal approval already exists for the entity.
+
+        Uses read_last_rows (not read_rows) so it works even when the adapter
+        is in dry_run mode — reads are side-effect-free.
+
+        Returns {"exists": bool, "approval_id": str, "status": str}.
+        """
+        if sheets_adapter is None:
+            return {"exists": False, "approval_id": "", "status": ""}
+        result = sheets_adapter.read_last_rows("approvals", count=5000)
+        if not result.get("ok"):
+            return {"exists": False, "approval_id": "", "status": "", "error": result.get("error")}
+        rows = result.get("rows", [])
+        if not rows:
+            return {"exists": False, "approval_id": "", "status": ""}
+        if rows and rows[0] and rows[0][0] == "approval_id":
+            rows = rows[1:]
+        for row in rows:
+            if len(row) > 3 and row[3] == entity_id and len(row) > 2 and row[2] == entity_type:
+                status = row[6] if len(row) > 6 else ""
+                if status in ("pending", "approved"):
+                    approval_id = row[0] if len(row) > 0 else ""
+                    return {"exists": True, "approval_id": approval_id, "status": status}
+        return {"exists": False, "approval_id": "", "status": ""}
+
     def write_opportunities(
         self,
         scores: list[ScoreOutput],
@@ -186,62 +247,104 @@ class LeadScorer:
         sheets_adapter: GoogleSheetsAdapter | None = None,
         dry_run: bool = True,
     ) -> dict[str, Any]:
-        """Write scored opportunities to the opportunities tab."""
-        if sheets_adapter is None:
-            return {"ok": False, "error": "No sheets adapter", "written": 0}
-        if dry_run:
-            return {"ok": True, "dry_run": True, "written": 0, "scores": len(scores)}
+        """Write scored opportunities to the opportunities tab, skipping duplicates.
 
-        header_result = sheets_adapter.validate_tab_header("opportunities")
-        if not header_result["ok"]:
-            return {
-                "ok": False,
-                "error": f"Schema validation failed: {header_result['error']}",
-                "written": 0,
-            }
+        In dry-run mode, still checks for existing rows and reports what would happen.
+        """
+        if sheets_adapter is None:
+            return {"ok": False, "error": "No sheets adapter", "written": 0, "skipped": 0}
 
         written = 0
+        skipped = 0
         errors: list[str] = []
+        skipped_ids: list[str] = []
+
         for s in scores:
+            dup = self._find_existing_opportunity_for_lead(s.lead_id, sheets_adapter=sheets_adapter)
+            if dup.get("exists"):
+                skipped += 1
+                skipped_ids.append(dup.get("opportunity_id", "") or s.lead_id)
+                continue
+            if dry_run:
+                # In dry-run we don't actually write, but we don't count as skipped
+                # because nothing exists yet — just report would-create
+                continue
+            header_result = sheets_adapter.validate_tab_header("opportunities")
+            if not header_result["ok"]:
+                errors.append(f"Schema validation failed: {header_result['error']}")
+                continue
             result = sheets_adapter.append_row("opportunities", s.to_opportunity_row())
             if result.get("ok"):
                 written += 1
             else:
                 errors.append(result.get("error", "unknown"))
-        return {"ok": len(errors) == 0, "written": written, "errors": errors}
+
+        return {
+            "ok": len(errors) == 0,
+            "written": written,
+            "skipped": skipped,
+            "skipped_ids": skipped_ids,
+            "errors": errors,
+            "dry_run": dry_run,
+        }
 
     def request_deeper_research_approvals(
         self,
         scores: list[ScoreOutput],
         *,
         approval_gate: ApprovalGate | None = None,
+        sheets_adapter: GoogleSheetsAdapter | None = None,
         dry_run: bool = True,
     ) -> list[dict[str, Any]]:
-        """Create pending approvals for leads scoring above threshold."""
-        if approval_gate is None:
+        """Create pending approvals for leads scoring above threshold, skipping duplicates.
+
+        Duplicate detection is based on (entity_type, entity_id) with non-terminal status
+        in the approvals tab.
+        """
+        if approval_gate is None or sheets_adapter is None:
             return []
         results: list[dict[str, Any]] = []
         for s in scores:
-            if s.fit_score >= self.RESEARCH_THRESHOLD:
-                action = (
-                    f"Approve deeper research for {s.company_name} "
-                    f"(fit_score={s.fit_score}, confidence={s.confidence})"
-                )
-                req = approval_gate.create_approval(
-                    entity_type="opportunity",
-                    entity_id=s.lead_id,
-                    requested_action=action,
-                    risk_level="medium",
-                    notes=" | ".join(s.reasons),
-                    dry_run=dry_run,
-                )
+            if s.fit_score < self.RESEARCH_THRESHOLD:
+                continue
+            dup = self._find_existing_pending_approval(
+                "opportunity",
+                s.lead_id,
+                sheets_adapter=sheets_adapter,
+            )
+            if dup.get("exists"):
                 results.append(
                     {
-                        "approval_id": req.approval_id,
+                        "approval_id": dup.get("approval_id", ""),
                         "lead_id": s.lead_id,
                         "company": s.company_name,
                         "fit_score": s.fit_score,
+                        "status": dup.get("status", ""),
+                        "skipped": True,
                         "dry_run": dry_run,
                     }
                 )
+                continue
+            action = (
+                f"Approve deeper research for {s.company_name} "
+                f"(fit_score={s.fit_score}, confidence={s.confidence})"
+            )
+            req = approval_gate.create_approval(
+                entity_type="opportunity",
+                entity_id=s.lead_id,
+                requested_action=action,
+                risk_level="medium",
+                notes=" | ".join(s.reasons),
+                dry_run=dry_run,
+            )
+            results.append(
+                {
+                    "approval_id": req.approval_id,
+                    "lead_id": s.lead_id,
+                    "company": s.company_name,
+                    "fit_score": s.fit_score,
+                    "skipped": False,
+                    "dry_run": dry_run,
+                }
+            )
         return results

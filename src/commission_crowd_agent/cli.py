@@ -607,24 +607,38 @@ def score_leads_dry_run(
         scores, sheets_adapter=sheets_adapter, dry_run=not write
     )
     if write_result.get("dry_run"):
-        console.print("[dim]   (Dry-run — no opportunities written)[/dim]")
+        skipped = write_result.get("skipped", 0)
+        if skipped:
+            console.print(f"[dim]   (Dry-run — {skipped} opportunity(s) already exist)[/dim]")
+        else:
+            console.print("[dim]   (Dry-run — no opportunities written)[/dim]")
     else:
         ok = write_result.get("ok")
         written = write_result.get("written", 0)
+        skipped = write_result.get("skipped", 0)
         icon = "✅" if ok else "❌"
-        console.print(f"   [{icon}] Written {written}/{len(scores)} opportunities")
+        console.print(f"[{icon}] Written {written}/{len(scores)} opportunities")
+        console.print(f"   Skipped {skipped} existing")
+        for sid in write_result.get("skipped_ids", []):
+            console.print(f"   [dim]   Skipped existing {sid}[/dim]")
 
     # Approval requests for deeper research
     approval_results: list[dict[str, Any]] = []
     if scores:
         approval_results = scorer.request_deeper_research_approvals(
-            scores, approval_gate=approval_gate, dry_run=not write
+            scores, approval_gate=approval_gate, sheets_adapter=sheets_adapter, dry_run=not write
         )
         for res in approval_results:
-            console.print(
-                f"   ⏳ Approval {res['approval_id']} for {res['company']} "
-                f"(fit={res['fit_score']}, dry_run={res['dry_run']})"
-            )
+            if res.get("skipped"):
+                console.print(
+                    f"   🔄 Approval {res['approval_id']} already exists for {res['company']} "
+                    f"(status={res['status']}) — skipped"
+                )
+            else:
+                console.print(
+                    f"   ⏳ Approval {res['approval_id']} for {res['company']} "
+                    f"(fit={res['fit_score']}, dry_run={res['dry_run']})"
+                )
 
     # Notify
     if notify and write and scores:
