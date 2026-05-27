@@ -127,6 +127,33 @@ class ApprovalGate:
                 return row[status_idx] if len(row) > status_idx else "missing"
         return "missing"
 
+    def read_approval_record(self, approval_id: str) -> dict[str, Any]:
+        """Read a full approval record from Sheets by approval_id.
+
+        Returns a dict with non-secret fields.  Returns empty dict on
+        missing/unavailable data.
+        """
+        if self.sheets_adapter is None:
+            return {}
+        result = self.sheets_adapter.read_rows("approvals")
+        if not result.get("ok"):
+            return {}
+        rows = result.get("rows", [])
+        if not rows:
+            return {}
+        header = rows[0]
+        try:
+            idx = header.index("approval_id")
+        except ValueError:
+            return {}
+        for row in rows[1:]:
+            if len(row) > idx and row[idx] == approval_id:
+                record: dict[str, Any] = {}
+                for i, col in enumerate(header):
+                    record[col] = row[i] if i < len(row) else ""
+                return record
+        return {}
+
     def is_approved(self, approval_id: str) -> bool:
         """Return True only if the approval status is explicitly 'approved'."""
         return self.read_approval_status(approval_id) == "approved"

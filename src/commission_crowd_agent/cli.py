@@ -414,6 +414,63 @@ def approval_stub_smoke(
         console.print("   [dim](Notification skipped; pass --notify to send)[/dim]")
 
 
+@app.command(name="approval-check")
+def approval_check(
+    approval_id: str = typer.Argument(..., help="Approval ID to inspect"),
+) -> None:
+    """Read a single approval record from the Sheet and print status safely."""
+    settings = load_settings()
+    adapter = _build_sheets_adapter(settings, dry_run=False)
+    gate = ApprovalGate(sheets_adapter=adapter)
+
+    record = gate.read_approval_record(approval_id)
+    if not record:
+        console.print(f"[red]❌ Approval {approval_id} not found[/red]")
+        raise typer.Exit(1)
+
+    status = record.get("status", "unknown")
+    icon = "✅" if status == "approved" else "⏳" if status == "pending" else "❌"
+    console.print(f"{icon} Approval {approval_id}")
+    console.print(f"   Entity: {record.get('entity_type', '—')} — {record.get('entity_id', '—')}")
+    console.print(f"   Action: {record.get('requested_action', '—')}")
+    console.print(f"   Risk: {record.get('risk_level', '—')}")
+    console.print(f"   Status: {status}")
+    console.print(f"   Operator decision: {record.get('operator_decision') or '—'}")
+    console.print(f"   Decided at: {record.get('decided_at_utc') or '—'}")
+    console.print(f"   Notes: {record.get('notes') or '—'}")
+    if status == "approved":
+        console.print("   [green]Downstream action: ALLOWED[/green]")
+    else:
+        console.print("   [yellow]Downstream action: BLOCKED[/yellow]")
+
+
+@app.command(name="downstream-stub-smoke")
+def downstream_stub_smoke(
+    approval_id: str = typer.Option(..., help="Approval ID required for downstream action"),
+    dry_run: bool = typer.Option(default=True, help="Simulate only; do not perform real actions"),
+) -> None:
+    """Simulate a downstream action guarded by approval status.
+
+    If the approval status is not 'approved', the action is blocked.
+    Defaults to dry-run even when the approval is approved.
+    """
+    settings = load_settings()
+    adapter = _build_sheets_adapter(settings, dry_run=False)
+    gate = ApprovalGate(sheets_adapter=adapter)
+
+    is_ok = gate.is_approved(approval_id)
+    if not is_ok:
+        console.print(f"[red]❌ BLOCKED — approval {approval_id} is not approved[/red]")
+        raise typer.Exit(1)
+
+    if dry_run:
+        console.print(f"[green]✅ ALLOWED (dry-run) — approval {approval_id} is approved[/green]")
+        console.print("   [dim]No real action taken (dry-run)[/dim]")
+    else:
+        console.print(f"[yellow]⚠ ALLOWED (live) — approval {approval_id} is approved[/yellow]")
+        console.print("   [red]Live downstream actions are not yet implemented[/red]")
+
+
 def main() -> None:
     app()
 
