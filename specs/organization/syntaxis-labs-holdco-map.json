@@ -1,0 +1,307 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-05-29",
+  "operator": "Gopolang Makokwe",
+  "review_status": "PENDING_APPROVAL",
+  "holdco": {
+    "name": "Syntaxis Labs",
+    "role": "Holding Company",
+    "operator_name": "Gopolang Makokwe",
+    "location": "Johannesburg, South Africa",
+    "github_identity": {
+      "org_name": "Zero-Human-Corp",
+      "org_display": "Zero Human Corp (Autonomous arm of Syntaxis Labs)",
+      "org_rename_planned": false,
+      "note": "Renaming a GitHub org would break SSH remotes, CI webhooks, and forks. Keep current name and add profile README instead."
+    }
+  },
+  "arms": {
+    "autonomous": {
+      "name": "Zero Human Corp",
+      "short_name": "ZHC",
+      "tagline": "Autonomous, agentic systems that run without human intervention.",
+      "governance_model": "policy_driven_control_plane",
+      "human_approval_required": false,
+      "operator_override": "telegram_strategic_direction",
+      "business_units": [
+        {
+          "id": "zhc-search",
+          "name": "ZHC Search",
+          "purpose": "Autonomous research and data intelligence. AI-driven lead discovery, opportunity scoring, and market intel.",
+          "repositories": [
+            {
+              "name": "zero-human-corp",
+              "github_path": "Zero-Human-Corp/zero-human-corp",
+              "role": "umbrella",
+              "current_local_path": null,
+              "action": "add_topic_tag_zhc_search"
+            }
+          ],
+          "status": "proposed",
+          "revenue_model": "future_saas_or_data_license"
+        },
+        {
+          "id": "zhc-ventures",
+          "name": "ZHC Ventures",
+          "purpose": "Autonomous project incubation and portfolio management. Spins up, monitors, and sunsets agent-run businesses.",
+          "repositories": [
+            {
+              "name": "zero-human-corp",
+              "github_path": "Zero-Human-Corp/zero-human-corp",
+              "role": "umbrella",
+              "current_local_path": null,
+              "action": "add_topic_tag_zhc_ventures"
+            }
+          ],
+          "status": "proposed",
+          "revenue_model": "profit_share_from_portfolio"
+        },
+        {
+          "id": "zhc-publishing",
+          "name": "ZHC Publishing",
+          "purpose": "Autonomous content production pipelines \u2014 STEM books, technical documentation, blog series.",
+          "repositories": [
+            {
+              "name": "applied-robotics-math",
+              "github_path": "Zero-Human-Corp/applied-robotics-math",
+              "role": "parent_workspace",
+              "current_local_path": "/home/ubuntu/applied-robotics-math",
+              "action": "add_topic_tag_zhc_publishing"
+            },
+            {
+              "name": "applied-robotics-math-3d-transformations",
+              "github_path": "Zero-Human-Corp/applied-robotics-math-3d-transformations",
+              "role": "book_repo",
+              "current_local_path": "/home/ubuntu/applied-robotics-math/applied-robotics-math-3d-transformations",
+              "action": "none_keep_name"
+            },
+            {
+              "name": "applied-robotics-math-factory",
+              "github_path": "Zero-Human-Corp/applied-robotics-math-factory",
+              "role": "book_repo",
+              "current_local_path": "/home/ubuntu/applied-robotics-math/applied-robotics-math-factory",
+              "action": "none_keep_name"
+            },
+            {
+              "name": "applied-robotics-math-linear-algebra",
+              "github_path": "Zero-Human-Corp/applied-robotics-math-linear-algebra",
+              "role": "book_repo",
+              "current_local_path": "/home/ubuntu/applied-robotics-math/applied-robotics-math-linear-algebra",
+              "action": "none_keep_name"
+            },
+            {
+              "name": "applied-robotics-math-path-planning",
+              "github_path": "Zero-Human-Corp/applied-robotics-math-path-planning",
+              "role": "book_repo",
+              "current_local_path": "/home/ubuntu/applied-robotics-math/applied-robotics-math-path-planning",
+              "action": "none_keep_name"
+            },
+            {
+              "name": "applied-robotics-math-sensor-probability",
+              "github_path": "Zero-Human-Corp/applied-robotics-math-sensor-probability",
+              "role": "book_repo",
+              "current_local_path": "/home/ubuntu/applied-robotics-math/applied-robotics-math-sensor-probability",
+              "action": "none_keep_name"
+            }
+          ],
+          "status": "active",
+          "revenue_model": "amazon_kdp_gitbook_sales"
+        },
+        {
+          "id": "zhc-infrastructure",
+          "name": "ZHC Infrastructure",
+          "purpose": "Control plane, orchestration, shared tools, and platform engineering. The glue that makes the other units autonomous.",
+          "repositories": [
+            {
+              "name": "zero-human-corp",
+              "github_path": "Zero-Human-Corp/zero-human-corp",
+              "role": "umbrella",
+              "current_local_path": null,
+              "action": "add_topic_tag_zhc_infrastructure"
+            }
+          ],
+          "status": "active",
+          "revenue_model": "internal_cost_center"
+        }
+      ]
+    },
+    "human_in_the_loop": {
+      "name": "Human-in-the-Loop Ventures",
+      "short_name": "HITL Ventures",
+      "tagline": "Human-operated partnerships and products where operator judgment is the core value.",
+      "governance_model": "approval_gated_operator_controlled",
+      "human_approval_required": true,
+      "approval_system": "google_sheet_crm_plus_supervisor_relay",
+      "business_units": [
+        {
+          "id": "syntaxis-commission-partners",
+          "name": "Syntaxis Commission Partners",
+          "purpose": "Commission-only sales representation for B2B vendors. Sources, qualifies, and introduces prospects. Revenue: commission on closed deals.",
+          "repositories": [
+            {
+              "name": "commission-crowd-agent",
+              "github_path": "Zero-Human-Corp/commission-crowd-agent",
+              "role": "primary_platform",
+              "current_local_path": "/home/ubuntu/projects/commission-crowd-agent",
+              "action": "add_topic_tag_syntaxis_commission_partners"
+            }
+          ],
+          "status": "active",
+          "revenue_model": "commission_from_closed_deals",
+          "primary_platform": "CommissionCrowd",
+          "territories": [
+            "Global",
+            "North America",
+            "USA",
+            "Canada",
+            "Africa",
+            "EU",
+            "Middle East"
+          ]
+        },
+        {
+          "id": "syntaxis-sales-desk",
+          "name": "Syntaxis Sales Desk",
+          "purpose": "Human-operated sales execution \u2014 appointment setting, demos, pipeline development, handoff. Revenue: performance fees / commission.",
+          "repositories": [
+            {
+              "name": "commission-crowd-agent",
+              "github_path": "Zero-Human-Corp/commission-crowd-agent",
+              "role": "operations_within_cca_until_split",
+              "current_local_path": "/home/ubuntu/projects/commission-crowd-agent",
+              "action": "add_topic_tag_syntaxis_sales_desk"
+            }
+          ],
+          "status": "active",
+          "revenue_model": "performance_fees_commission",
+          "note": "Currently co-located in commission-crowd-agent repo. Split when scale demands."
+        },
+        {
+          "id": "syntaxis-digital-products",
+          "name": "Syntaxis Digital Products",
+          "purpose": "Human-designed and -approved digital products, tools, and SaaS micro-products sold to end customers.",
+          "repositories": [
+            {
+              "name": "future_repo_reserved",
+              "github_path": null,
+              "role": "future",
+              "current_local_path": null,
+              "action": "none_pending_creation"
+            }
+          ],
+          "status": "proposed",
+          "revenue_model": "product_sales_saas_subscriptions",
+          "note": "May reuse ZHC Publishing outputs under HITL branding after operator review."
+        },
+        {
+          "id": "global-oval-analytics",
+          "name": "Global Oval Analytics",
+          "purpose": "Autonomous +EV sports analytics platform with gated human oversight on capital-at-risk decisions. Rugby Union and T20 Cricket player props.",
+          "repositories": [
+            {
+              "name": "global-oval-analytics",
+              "github_path": "Zero-Human-Corp/global-oval-analytics",
+              "role": "primary_platform",
+              "current_local_path": "/home/ubuntu/global-oval-analytics",
+              "action": "add_topic_tag_global_oval_analytics"
+            }
+          ],
+          "status": "active",
+          "revenue_model": "subscription_tiers_free_standard_vip",
+          "distribution": "whop_plus_discord",
+          "note": "Market-facing brand retained as-is. Classified under HITL because picks and capital-at-risk require operator approval."
+        }
+      ]
+    }
+  },
+  "shared_services": {
+    "name": "Syntaxis Labs Shared Services",
+    "classification": "horizontal_infrastructure",
+    "entities": [
+      {
+        "name": "Hermes Control Plane",
+        "function": "Agent orchestration, Supervisor Relay, model routing, approval gates",
+        "status": "active",
+        "local_path": "/home/ubuntu/hermes-control",
+        "github_repo": null
+      },
+      {
+        "name": "gstack",
+        "function": "AI engineering workflow toolkit \u2014 skills, benchmarks, browser automation, QA",
+        "status": "active",
+        "local_path": "/home/ubuntu/gstack",
+        "github_repo": "garrytan/gstack",
+        "external": true
+      },
+      {
+        "name": "AgentOS",
+        "function": "Agent operating system and standard library",
+        "status": "active",
+        "local_path": "/home/ubuntu/shared-tools/agent-os",
+        "github_repo": "buildermethods/agent-os",
+        "external": true
+      },
+      {
+        "name": "Graphify",
+        "function": "Knowledge graph, wiki, and codebase intelligence",
+        "status": "active",
+        "local_path": "/home/ubuntu/shared-tools/graphify",
+        "github_repo": "safishamsi/graphify",
+        "external": true
+      },
+      {
+        "name": "Code Review Graph",
+        "function": "Structured code review and dependency analysis",
+        "status": "active",
+        "local_path": "/home/ubuntu/shared-tools/code-review-graph",
+        "github_repo": "tirth8205/code-review-graph",
+        "external": true
+      },
+      {
+        "name": "Hermes Workspace",
+        "function": "Workspace management and multi-context session handling",
+        "status": "active",
+        "local_path": "/home/ubuntu/shared-tools/hermes-workspace",
+        "github_repo": "outsourc-e/hermes-workspace",
+        "external": true
+      },
+      {
+        "name": "Hermes Agent",
+        "function": "The Hermes agent platform itself",
+        "status": "active",
+        "local_path": "/home/ubuntu/.hermes/hermes-agent",
+        "github_repo": "NousResearch/hermes-agent",
+        "external": true
+      }
+    ]
+  },
+  "hard_constraints": {
+    "no_repo_moves": true,
+    "no_repo_renames": true,
+    "no_github_org_rename": true,
+    "no_file_deletes": true,
+    "no_website_publish": true,
+    "no_commissioncrowd_login": true,
+    "no_application_submission": true,
+    "no_credential_commits": true,
+    "no_secret_printing": true,
+    "approval_gates": {
+      "login": "required",
+      "apply": "required",
+      "submit": "required",
+      "send": "required",
+      "spend": "required",
+      "approve_status_change": "required",
+      "publish": "required"
+    }
+  },
+  "future_actions_pending_approval": [
+    "Add GitHub topic tags to all ZHC repos indicating business unit",
+    "Add GitHub topic tags to all HITL repos indicating business unit",
+    "Draft public org profile README for Zero-Human-Corp GitHub org",
+    "Update commission-crowd-agent README to reference business unit",
+    "Update docs/supervisor-overall-goal.md with arm tags",
+    "Create holdco-claimer micro-copy for websites (not linked/published)",
+    "Update CommissionCrowd profile language to reflect HoldCo structure"
+  ]
+}
