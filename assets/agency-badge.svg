@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Syntaxis Labs geometric agency emblem">
+  <defs>
+    <linearGradient id="emblemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer hexagon -->
+  <polygon points="80,8 148,48 148,112 80,152 12,112 12,48" fill="none" stroke="url(#emblemGrad)" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- Inner connected lines -->
+  <line x1="80" y1="38" x2="80" y2="122" stroke="url(#emblemGrad)" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="40" y1="58" x2="120" y2="102" stroke="url(#emblemGrad)" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="120" y1="58" x2="40" y2="102" stroke="url(#emblemGrad)" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Center node -->
+  <circle cx="80" cy="80" r="14" fill="#0f172a" stroke="url(#emblemGrad)" stroke-width="2.5"/>
+  <circle cx="80" cy="80" r="5" fill="url(#emblemGrad)"/>
+</svg>
