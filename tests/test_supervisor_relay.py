@@ -21,8 +21,21 @@ from commission_crowd_agent.supervisor_relay import (
     SupervisorResponse,
     SupervisorResponseValidationError,
     SupervisorTaskType,
+    _check_model_available,
     _is_blocked_action,
 )
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _patch_available(monkeypatch) -> None:
+    """Patch _check_model_available so every model appears available."""
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
 
 
 def _make_settings(**overrides: Any) -> CcaSettings:
@@ -34,7 +47,12 @@ def _make_settings(**overrides: Any) -> CcaSettings:
         "supervisor_primary_model": "glm-5.1",
         "supervisor_code_review_model": "qwen3-coder-next",
         "supervisor_reasoning_fallback_model": "deepseek-v3.2",
-        "supervisor_draft_review_model": "kimi-k2-thinking",
+        "supervisor_draft_review_model": "gemma3:27b-cloud",
+        "supervisor_long_context_model": "nemotron-3-super:cloud",
+        "supervisor_emergency_fallback_model": "kimi-k2.6:cloud",
+        "supervisor_allow_fallback": False,
+        "supervisor_fallback_model": "",
+        "supervisor_telegram_notify": True,
         "smtp_port": 587,
         "cca_daily_volume_limit": 50,
     }
@@ -53,7 +71,9 @@ def test_supervisor_defaults_from_config() -> None:
     assert settings.supervisor_primary_model == "glm-5.1"
     assert settings.supervisor_code_review_model == "qwen3-coder-next"
     assert settings.supervisor_reasoning_fallback_model == "deepseek-v3.2"
-    assert settings.supervisor_draft_review_model == "kimi-k2-thinking"
+    assert settings.supervisor_draft_review_model == "gemma3:27b-cloud"
+    assert settings.supervisor_long_context_model == "nemotron-3-super:cloud"
+    assert settings.supervisor_emergency_fallback_model == "kimi-k2.6:cloud"
     assert settings.supervisor_base_url == "http://localhost:9999/v1"
 
 
@@ -164,7 +184,7 @@ def test_relay_model_map_populated() -> None:
     assert relay._model_map[SupervisorTaskType.PRIMARY_SUPERVISOR] == "glm-5.1"
     assert relay._model_map[SupervisorTaskType.CODE_REVIEW] == "qwen3-coder-next"
     assert relay._model_map[SupervisorTaskType.REASONING_FALLBACK] == "deepseek-v3.2"
-    assert relay._model_map[SupervisorTaskType.DRAFT_REVIEW] == "kimi-k2-thinking"
+    assert relay._model_map[SupervisorTaskType.DRAFT_REVIEW] == "gemma3:27b-cloud"
 
 
 def test_relay_safe_repr_no_secrets() -> None:
@@ -174,7 +194,7 @@ def test_relay_safe_repr_no_secrets() -> None:
     assert "glm-5.1" in text
     assert "qwen3-coder-next" in text
     assert "deepseek-v3.2" in text
-    assert "kimi-k2-thinking" in text
+    assert "gemma3:27b-cloud" in text
     assert "local" in text
     assert "Bearer" not in text
     assert "sk-secret" not in text
@@ -240,7 +260,11 @@ def _mock_response(content: str) -> httpx.Response:
     )
 
 
-def test_primary_routes_to_glm51() -> None:
+def test_primary_routes_to_glm51(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response('{"approved": true, "reason": "looks good"}')
@@ -254,7 +278,11 @@ def test_primary_routes_to_glm51() -> None:
     assert payload["model"] == "glm-5.1"
 
 
-def test_code_review_routes_to_qwen3_coder_next() -> None:
+def test_code_review_routes_to_qwen3_coder_next(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response('{"approved": true, "reason": "clean code"}')
@@ -265,7 +293,11 @@ def test_code_review_routes_to_qwen3_coder_next() -> None:
     assert payload["model"] == "qwen3-coder-next"
 
 
-def test_reasoning_fallback_routes_to_deepseek_v32() -> None:
+def test_reasoning_fallback_routes_to_deepseek_v32(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response('{"approved": true, "reason": "solid logic"}')
@@ -276,7 +308,11 @@ def test_reasoning_fallback_routes_to_deepseek_v32() -> None:
     assert payload["model"] == "deepseek-v3.2"
 
 
-def test_draft_review_routes_to_kimi_k2_thinking() -> None:
+def test_draft_review_routes_to_kimi_k2_thinking(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response('{"approved": true, "reason": "well written"}')
@@ -284,7 +320,7 @@ def test_draft_review_routes_to_kimi_k2_thinking() -> None:
     resp = relay.draft_review("evaluate outreach draft")
     call_args = mock_client.post.call_args
     payload = call_args.kwargs["json"]
-    assert payload["model"] == "kimi-k2-thinking"
+    assert payload["model"] == "gemma3:27b-cloud"
 
 
 # ---------------------------------------------------------------------------
@@ -292,7 +328,8 @@ def test_draft_review_routes_to_kimi_k2_thinking() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_blocked_action_raises_on_send() -> None:
+def test_blocked_action_raises_on_send(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response(
@@ -303,7 +340,8 @@ def test_blocked_action_raises_on_send() -> None:
         relay.primary_check("Can I send this?")
 
 
-def test_blocked_action_raises_on_apply() -> None:
+def test_blocked_action_raises_on_apply(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response(
@@ -314,7 +352,8 @@ def test_blocked_action_raises_on_apply() -> None:
         relay.primary_check("Can I apply?")
 
 
-def test_blocked_action_raises_on_login() -> None:
+def test_blocked_action_raises_on_login(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response(
@@ -325,7 +364,8 @@ def test_blocked_action_raises_on_login() -> None:
         relay.primary_check("Can I log in?")
 
 
-def test_blocked_action_raises_on_api_call() -> None:
+def test_blocked_action_raises_on_api_call(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response(
@@ -336,7 +376,8 @@ def test_blocked_action_raises_on_api_call() -> None:
         relay.primary_check("Call the API.")
 
 
-def test_blocked_action_raises_on_spend() -> None:
+def test_blocked_action_raises_on_spend(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response(
@@ -347,7 +388,8 @@ def test_blocked_action_raises_on_spend() -> None:
         relay.primary_check("Spend credit.")
 
 
-def test_blocked_action_raises_on_approval_status_change() -> None:
+def test_blocked_action_raises_on_approval_status_change(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response(
@@ -358,7 +400,8 @@ def test_blocked_action_raises_on_approval_status_change() -> None:
         relay.primary_check("Change status.")
 
 
-def test_allowed_action_does_not_raise() -> None:
+def test_allowed_action_does_not_raise(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response(
@@ -375,7 +418,8 @@ def test_allowed_action_does_not_raise() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_malformed_json_raises_validation_error() -> None:
+def test_malformed_json_raises_validation_error(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response("not json at all")
@@ -384,7 +428,8 @@ def test_malformed_json_raises_validation_error() -> None:
         relay.primary_check("whatever")
 
 
-def test_invalid_schema_raises_validation_error() -> None:
+def test_invalid_schema_raises_validation_error(monkeypatch) -> None:
+    _patch_available(monkeypatch)
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response('{"approved": "maybe", "reason": "not sure"}')
@@ -430,3 +475,90 @@ def test_schema_description_has_required_fields() -> None:
     assert "risk_level" in SUPERVISOR_SCHEMA_DESCRIPTION["properties"]
     assert "notes" in SUPERVISOR_SCHEMA_DESCRIPTION["properties"]
     assert SUPERVISOR_SCHEMA_DESCRIPTION["required"] == ["approved", "reason"]
+
+
+
+# ---------------------------------------------------------------------------
+# Model independence — self-review guard
+# ---------------------------------------------------------------------------
+
+
+def test_self_review_guard_triggers_on_kimi(monkeypatch) -> None:
+    """When the actual reviewer is from the same family as the Hermes worker,
+    review_independence should be 'low' and human_approval_required True."""
+    monkeypatch.setenv("HERMES_ACTIVE_MODEL", "kimi-k2.6:cloud")
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
+    settings = _make_settings(
+        supervisor_draft_review_model="kimi-k2.6:cloud",
+    )
+    mock_client = MagicMock(spec=httpx.Client)
+    mock_client.post.return_value = _mock_response(
+        '{"approved": true, "reason": "looks good", "recommended_action": "review"}'
+    )
+    relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
+    resp = relay.draft_review("Review this draft.")
+    assert resp.review_independence == "low"
+    assert resp.human_approval_required is True
+    assert "SELF-REVIEW GUARD" in resp.notes
+
+
+def test_self_review_guard_does_not_trigger_on_different_family(monkeypatch) -> None:
+    """When reviewer is a different model family, independence stays high."""
+    monkeypatch.setenv("HERMES_ACTIVE_MODEL", "kimi-k2.6:cloud")
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
+    settings = _make_settings(
+        supervisor_draft_review_model="gemma3:27b-cloud",
+    )
+    mock_client = MagicMock(spec=httpx.Client)
+    mock_client.post.return_value = _mock_response(
+        '{"approved": true, "reason": "looks good", "recommended_action": "review"}'
+    )
+    relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
+    resp = relay.draft_review("Review this draft.")
+    assert resp.review_independence == "high"
+    assert resp.human_approval_required is False
+    assert "SELF-REVIEW GUARD" not in resp.notes
+
+
+def test_long_context_route_uses_nemotron(monkeypatch) -> None:
+    """LONG_CONTEXT_REVIEW should route to nemotron-3-super:cloud."""
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
+    settings = _make_settings()
+    mock_client = MagicMock(spec=httpx.Client)
+    mock_client.post.return_value = _mock_response(
+        '{"approved": true, "reason": "context ok", "recommended_action": "review"}'
+    )
+    relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
+    resp = relay.long_context_review("Long context prompt." * 100)
+    call_args = mock_client.post.call_args
+    payload = call_args.kwargs["json"]
+    assert payload["model"] == "nemotron-3-super:cloud"
+    assert resp.approved is True
+
+
+def test_draft_review_routes_to_gemma(monkeypatch) -> None:
+    """DRAFT_REVIEW should route to gemma3:27b-cloud."""
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
+    settings = _make_settings()
+    mock_client = MagicMock(spec=httpx.Client)
+    mock_client.post.return_value = _mock_response(
+        '{"approved": true, "reason": "draft ok", "recommended_action": "review"}'
+    )
+    relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
+    resp = relay.draft_review("Draft outreach text.")
+    call_args = mock_client.post.call_args
+    payload = call_args.kwargs["json"]
+    assert payload["model"] == "gemma3:27b-cloud"
+    assert resp.approved is True

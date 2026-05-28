@@ -28,7 +28,12 @@ def _make_settings(**overrides: Any) -> Any:
         "supervisor_primary_model": "glm-5.1",
         "supervisor_code_review_model": "qwen3-coder-next",
         "supervisor_reasoning_fallback_model": "deepseek-v3.2",
-        "supervisor_draft_review_model": "kimi-k2-thinking",
+        "supervisor_draft_review_model": "gemma3:27b-cloud",
+        "supervisor_long_context_model": "nemotron-3-super:cloud",
+        "supervisor_emergency_fallback_model": "kimi-k2.6:cloud",
+        "supervisor_allow_fallback": False,
+        "supervisor_fallback_model": "",
+        "supervisor_telegram_notify": True,
         "smtp_port": 587,
         "cca_daily_volume_limit": 50,
     }
@@ -68,7 +73,11 @@ def _mock_good_response(recommended_action: str = "review") -> httpx.Response:
     )
 
 
-def test_smoke_primary_supervisor_on_mission_report() -> None:
+def test_smoke_primary_supervisor_on_mission_report(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_good_response("review")
@@ -90,7 +99,11 @@ def test_smoke_primary_supervisor_on_mission_report() -> None:
     assert "mission report" in messages[1]["content"]
 
 
-def test_smoke_code_review_on_mission_script() -> None:
+def test_smoke_code_review_on_mission_script(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_good_response("review")
@@ -105,7 +118,11 @@ def test_smoke_code_review_on_mission_script() -> None:
     assert payload["model"] == "qwen3-coder-next"
 
 
-def test_smoke_reasoning_fallback_on_risky_mission() -> None:
+def test_smoke_reasoning_fallback_on_risky_mission(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_good_response("deeper_research")
@@ -119,7 +136,11 @@ def test_smoke_reasoning_fallback_on_risky_mission() -> None:
     assert payload["model"] == "deepseek-v3.2"
 
 
-def test_smoke_draft_review_on_outreach_text() -> None:
+def test_smoke_draft_review_on_outreach_text(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_good_response("revise")
@@ -130,10 +151,14 @@ def test_smoke_draft_review_on_outreach_text() -> None:
     assert resp.approved is True
     call_args = mock_client.post.call_args
     payload = call_args.kwargs["json"]
-    assert payload["model"] == "kimi-k2-thinking"
+    assert payload["model"] == "gemma3:27b-cloud"
 
 
-def test_smoke_blocked_action_in_mission_report_review() -> None:
+def test_smoke_blocked_action_in_mission_report_review(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = httpx.Response(
@@ -156,7 +181,11 @@ def test_smoke_blocked_action_in_mission_report_review() -> None:
         )
 
 
-def test_smoke_high_risk_detected_no_block() -> None:
+def test_smoke_high_risk_detected_no_block(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = httpx.Response(
@@ -179,13 +208,18 @@ def test_smoke_high_risk_detected_no_block() -> None:
     assert resp.recommended_action == "deeper_research"
 
 
-def test_smoke_all_task_types_unique_models() -> None:
+def test_smoke_all_task_types_unique_models(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "commission_crowd_agent.supervisor_relay._check_model_available",
+        lambda _base_url, _model_name, **_kwargs: True,
+    )
     settings = _make_settings()
     expected = {
         SupervisorTaskType.PRIMARY_SUPERVISOR: "glm-5.1",
         SupervisorTaskType.CODE_REVIEW: "qwen3-coder-next",
         SupervisorTaskType.REASONING_FALLBACK: "deepseek-v3.2",
-        SupervisorTaskType.DRAFT_REVIEW: "kimi-k2-thinking",
+        SupervisorTaskType.DRAFT_REVIEW: "gemma3:27b-cloud",
+        SupervisorTaskType.LONG_CONTEXT_REVIEW: "nemotron-3-super:cloud",
     }
     for task_type, expected_model in expected.items():
         mock_client = MagicMock(spec=httpx.Client)

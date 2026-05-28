@@ -71,7 +71,23 @@ class CcaSettings(BaseSettings):
     supervisor_primary_model: str = Field(default="glm-5.1")
     supervisor_code_review_model: str = Field(default="qwen3-coder-next")
     supervisor_reasoning_fallback_model: str = Field(default="deepseek-v3.2")
-    supervisor_draft_review_model: str = Field(default="kimi-k2-thinking")
+    supervisor_draft_review_model: str = Field(default="gemma3:27b-cloud")
+    supervisor_long_context_model: str = Field(default="nemotron-3-super:cloud")
+    supervisor_emergency_fallback_model: str = Field(default="kimi-k2.6:cloud")
+    supervisor_allow_fallback: bool = Field(
+        default=False,
+        description=(
+            "Allow fallback to another model when the configured route model is unavailable"
+        ),
+    )
+    supervisor_fallback_model: str = Field(
+        default="",
+        description="Fallback model name when route model unavailable and fallback enabled",
+    )
+    supervisor_telegram_notify: bool = Field(
+        default=True,
+        description="Send Telegram acknowledgement after supervisor decisions",
+    )
 
     @property
     def ollama_ready(self) -> bool:
@@ -139,6 +155,11 @@ _SHARED_KEY_MAP: dict[str, str] = {
     "supervisor_code_review_model": "SUPERVISOR_CODE_REVIEW_MODEL",
     "supervisor_reasoning_fallback_model": "SUPERVISOR_REASONING_FALLBACK_MODEL",
     "supervisor_draft_review_model": "SUPERVISOR_DRAFT_REVIEW_MODEL",
+    "supervisor_long_context_model": "SUPERVISOR_LONG_CONTEXT_MODEL",
+    "supervisor_emergency_fallback_model": "SUPERVISOR_EMERGENCY_FALLBACK_MODEL",
+    "supervisor_allow_fallback": "SUPERVISOR_ALLOW_FALLBACK",
+    "supervisor_fallback_model": "SUPERVISOR_FALLBACK_MODEL",
+    "supervisor_telegram_notify": "SUPERVISOR_TELEGRAM_NOTIFY",
 }
 
 
