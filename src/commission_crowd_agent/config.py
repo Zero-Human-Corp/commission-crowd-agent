@@ -64,6 +64,15 @@ class CcaSettings(BaseSettings):
     cca_daily_volume_limit: int = Field(default=50, ge=1)
     cca_log_level: str = Field(default="INFO")
 
+    # --- Supervisor Relay (local model routing) ---
+    supervisor_mode: str = Field(default="local", description="local | disabled | openai")
+    supervisor_base_url: str = Field(default="http://localhost:11434/v1")
+    supervisor_api_key: str = Field(default="")
+    supervisor_primary_model: str = Field(default="glm-5.1")
+    supervisor_code_review_model: str = Field(default="qwen3-coder-next")
+    supervisor_reasoning_fallback_model: str = Field(default="deepseek-v3.2")
+    supervisor_draft_review_model: str = Field(default="kimi-k2-thinking")
+
     @property
     def ollama_ready(self) -> bool:
         return bool(self.ollama_base_url and self.ollama_api_key)
@@ -123,6 +132,13 @@ _SHARED_KEY_MAP: dict[str, str] = {
     "cca_client_name": "CCA_CLIENT_NAME",
     "cca_daily_volume_limit": "CCA_DAILY_VOLUME_LIMIT",
     "cca_log_level": "CCA_LOG_LEVEL",
+    "supervisor_mode": "SUPERVISOR_MODE",
+    "supervisor_base_url": "SUPERVISOR_BASE_URL",
+    "supervisor_api_key": "SUPERVISOR_API_KEY",
+    "supervisor_primary_model": "SUPERVISOR_PRIMARY_MODEL",
+    "supervisor_code_review_model": "SUPERVISOR_CODE_REVIEW_MODEL",
+    "supervisor_reasoning_fallback_model": "SUPERVISOR_REASONING_FALLBACK_MODEL",
+    "supervisor_draft_review_model": "SUPERVISOR_DRAFT_REVIEW_MODEL",
 }
 
 

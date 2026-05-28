@@ -22,6 +22,12 @@ from .secrets import (
     MissingEnvFileError,
     load_shared_env,
 )
+from .supervisor_relay import (
+    SupervisorBlockedActionError,
+    SupervisorRelay,
+    SupervisorResponseValidationError,
+    SupervisorTaskType,
+)
 from .workflow_runner import WorkflowRunner
 
 app = typer.Typer(help="Commission Crowd Agent CLI")
@@ -906,7 +912,70 @@ def research_approved_lead(
     else:
         console.print("   [dim](Notification skipped)[/dim]")
 
-    console.print("[green]✅ research-approved-lead complete[/green]")
+    console.print(f"[green]✅ research-approved-lead complete[/green]")
+
+
+@app.command(name="supervisor-status")
+def supervisor_status() -> None:
+    """Show Supervisor Relay configuration summary (no secrets)."""
+    settings = load_settings()
+    relay = SupervisorRelay(settings=settings, dry_run=True)
+    console.print(relay.safe_repr())
+    if settings.supervisor_mode != "local":
+        console.print(
+            "[yellow]⚠️ Supervisor Relay is NOT in local mode. "
+            f"SUPERVISOR_MODE={settings.supervisor_mode!r}[/yellow]"
+        )
+
+
+@app.command(name="supervisor-check")
+def supervisor_check(
+    action: str = typer.Argument(..., help="Recommended action to check against human-only gate"),
+) -> None:
+    """Check whether a recommended action would be blocked.
+
+    Useful for dry-run audits before asking a local model.
+    """
+    settings = load_settings()
+    relay = SupervisorRelay(settings=settings, dry_run=True)
+    result = relay.check_blocked(action)
+    if result["blocked"]:
+        console.print(
+            f"[red]⛔ BLOCKED[/red]: {action}\n"
+            f"   [dim]{result['block_reason']}[/dim]"
+        )
+    else:
+        console.print(f"[green]✅ ALLOWED[/green]: {action}")
+
+
+@app.command(name="supervisor-smoke")
+def supervisor_smoke(
+    model: str = typer.Option(default="", help="Override model to use (default: primary)"),
+) -> None:
+    """Smoke-test Supervisor Relay in dry-run mode.
+
+    Loads settings, routes a safe prompt to the configured primary
+    supervisor, and validates the JSON response.
+    """
+    settings = load_settings()
+    if settings.supervisor_mode != "local":
+        console.print(
+            f"[red]❌ Supervisor Relay disabled (mode={settings.supervisor_mode!r})[/red]"
+        )
+        raise typer.Exit(1)
+    console.print(
+        f"[blue]Running supervisor smoke test — mode={settings.supervisor_mode!r}[/blue]"
+    )
+    console.print(
+        f"   Primary: {settings.supervisor_primary_model}\n"
+        f"   Code review: {settings.supervisor_code_review_model}\n"
+        f"   Reasoning fallback: {settings.supervisor_reasoning_fallback_model}\n"
+        f"   Draft review: {settings.supervisor_draft_review_model}"
+    )
+    # Dry-run — no real inference, just validate wiring
+    relay = SupervisorRelay(settings=settings, dry_run=True)
+    result = relay.primary_check("Ping test.")
+    console.print(f"[green]✅ Supervisor dry-run response: {result.model_dump_json()}[/green]")
 
 
 def main() -> None:
