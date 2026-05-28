@@ -142,7 +142,11 @@ class SupervisorRelay:
         )
 
     def _url(self, path: str) -> str:
-        return f"{self._base_url}{path}"
+        base = self._base_url.rstrip("/")
+        # Avoid double /v1 when base_url already includes it (e.g. Ollama default)
+        if base.endswith("/v1") and path.startswith("/v1"):
+            base = base[:-3]
+        return f"{base}{path}"
 
     def _headers(self) -> dict[str, str]:
         h: dict[str, str] = {"Content-Type": "application/json"}
