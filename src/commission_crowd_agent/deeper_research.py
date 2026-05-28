@@ -38,6 +38,7 @@ class DeeperResearchResult(BaseModel):
 
     lead_id: str = ""
     company_name: str = ""
+    source_url: str = ""
     researched_at_utc: str = ""
     findings: list[ResearchFinding] = Field(default_factory=list)
     problem_signals: list[str] = Field(default_factory=list)
@@ -107,6 +108,7 @@ class DeeperResearchService:
         result = DeeperResearchResult(
             lead_id=lead_id,
             company_name=company_name,
+            source_url=source_url,
             researched_at_utc=datetime.utcnow().isoformat(),
             confidence="low",
             missing_data=[],
@@ -239,6 +241,7 @@ class DeeperResearchService:
             approval_action="outreach_draft",
             requested_action=action,
             risk_level="low",
+            source_url=result.source_url,
             notes=result.notes[:500],
             dry_run=False,
         )

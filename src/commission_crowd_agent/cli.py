@@ -835,10 +835,10 @@ def research_approved_lead(
         console.print(f"[red]❌ Lead {lead_id} not found[/red]")
         raise typer.Exit(1)
 
-    company_name = lead_row[3] if len(lead_row) > 3 else ""
-    source_url = lead_row[4] if len(lead_row) > 4 else ""
-    contact_email = lead_row[5] if len(lead_row) > 5 else ""
-    notes = lead_row[8] if len(lead_row) > 8 else ""
+    company_name = lead_row[4] if len(lead_row) > 4 else ""
+    source_url = lead_row[3] if len(lead_row) > 3 else ""
+    contact_email = lead_row[6] if len(lead_row) > 6 else ""
+    notes = lead_row[14] if len(lead_row) > 14 else ""
 
     console.print(f"[blue]🔍 Researching {company_name} (lead_id={lead_id})[/blue]")
     result = service.research_one_lead(

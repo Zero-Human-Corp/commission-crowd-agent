@@ -1,0 +1,23 @@
+[
+  {
+    "name": "CommissionCrowd Banking Opportunities",
+    "url": "https://www.commissioncrowd.com/listings/commission-only-sales-opportunities/industry/banking/",
+    "source_type": "public_commissioncrowd_industry_listing",
+    "enabled": true,
+    "per_source_limit": 2
+  },
+  {
+    "name": "CommissionCrowd Security & Investigations Opportunities",
+    "url": "https://www.commissioncrowd.com/listings/commission-only-sales-opportunities/industry/security-investigations/",
+    "source_type": "public_commissioncrowd_industry_listing",
+    "enabled": true,
+    "per_source_limit": 2
+  },
+  {
+    "name": "CommissionCrowd Translation & Localization Opportunities",
+    "url": "https://www.commissioncrowd.com/listings/commission-only-sales-opportunities/industry/translation-localization/",
+    "source_type": "public_commissioncrowd_industry_listing",
+    "enabled": true,
+    "per_source_limit": 1
+  }
+]

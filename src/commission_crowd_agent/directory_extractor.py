@@ -189,6 +189,91 @@ def _extract_affiverse(
     return candidates
 
 
+"""CommissionCrowd public listing page extractor.
+
+Pattern: each opportunity appears in a card div with class 'job-item-list-info'.
+The card contains:
+- an <h4> with an <a> linking to /listings/commission-only-sales-opportunities/{slug}/
+  (the anchor text is the opportunity title)
+- a <p class="description"> with a short public description snippet
+- a meta list (<ul class="meta-list">) with Territory, Agent type, Commission fields
+
+We extract only the public fields visible on the listing page without logging in.
+"""
+
+def _extract_commissioncrowd(
+    html: str, source_url: str, source_name: str, source_type: str
+) -> list[ExtractedCandidate]:
+    """Extract public opportunity cards from CommissionCrowd industry listing pages."""
+    soup = BeautifulSoup(html, "lxml")
+    candidates: list[ExtractedCandidate] = []
+    seen: set[str] = set()
+
+    cards = soup.find_all(class_="job-item-list-info")
+    for card in cards:
+        # Title link
+        a = card.find("a", href=re.compile(r"/listings/commission-only-sales-opportunities/[^/]+/", re.I))
+        if not a:
+            continue
+        href = str(a.get("href", "") or "").strip()
+        if not href:
+            continue
+        title = a.get_text(strip=True)
+        if not title:
+            continue
+        # Resolve relative URLs
+        opp_url = urljoin(source_url, href)
+        if opp_url in seen:
+            continue
+        seen.add(opp_url)
+
+        # Description snippet (public short text)
+        description = ""
+        desc_p = card.find("p", class_="description")
+        if desc_p:
+            description = desc_p.get_text(strip=True)
+
+        # Meta fields: territory, agent type, commission (only if publicly visible)
+        meta: dict[str, str] = {}
+        for li in card.find_all("li"):
+            strong = li.find("strong")
+            if not strong:
+                continue
+            key = strong.get_text(strip=True).rstrip(":").lower()
+            val_span = li.find("span")
+            val = val_span.get_text(strip=True) if val_span else li.get_text(strip=True)
+            # Remove the key text itself from the value if it leaked in
+            val = val.replace(strong.get_text(strip=True), "").strip()
+            if key in ("territory", "agent type", "commission") and val:
+                meta[key] = val
+
+        territory = meta.get("territory", "")
+        commission = meta.get("commission", "")
+        notes_parts: list[str] = []
+        if description:
+            notes_parts.append(f"Snippet: {description}")
+        if territory:
+            notes_parts.append(f"Territory: {territory}")
+        if commission:
+            notes_parts.append(f"Commission: {commission}")
+        notes = " | ".join(notes_parts)
+
+        candidates.append(
+            ExtractedCandidate(
+                company=title,
+                url=opp_url,
+                source_name=source_name,
+                source_url=source_url,
+                source_type=source_type,
+                extraction_method="commissioncrowd_public_card",
+                extraction_confidence="high" if territory and commission else "medium",
+                notes=notes,
+            )
+        )
+
+    return candidates
+
+
 def extract_candidates(
     html: str,
     *,
@@ -209,6 +294,10 @@ def extract_candidates(
             candidates = _extract_rewardful(html, source_url, source_name, source_type)
         elif "affiverse" in domain:
             candidates = _extract_affiverse(html, source_url, source_name, source_type)
+        elif "commissioncrowd.com" in domain:
+            candidates = _extract_commissioncrowd(
+                html, source_url, source_name, source_type
+            )
         else:
             # Unknown or JS-app sources: explicit zero result
             return []
