@@ -125,6 +125,21 @@ This README is created in a special `.github/profile/README.md` on the org level
 
 ---
 
+## Dormant / Reserved / Unclassified Repositories
+
+These repositories exist in the `Zero-Human-Corp` GitHub organization but are **not mapped to active business units**. They are retained as-is for historical or future-use purposes.
+
+| Repository | GitHub Path | Status | Classification | Local Path | Action |
+|------------|------------|--------|--------------|------------|--------|
+| `Zero-Human-Workflows` | `Zero-Human-Corp/Zero-Human-Workflows` | Private | Dormant / Reserved / Legacy-unverified | None | Keep in org. Do not treat as active dependency. Re-evaluate if operator activates. |
+
+**Notes:**
+- `Zero-Human-Workflows` is currently unused, appears to have been created during original org setup (auto-created or early experimentation). It is **not part of ZHC Infrastructure.**
+- ZHC Infrastructure active repo is `zero-human-corp`.
+- No deletion, no rename, no move.
+
+---
+
 ## Verification
 
 All paths in this document were verified on 2026-05-29:

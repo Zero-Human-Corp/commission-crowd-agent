@@ -205,7 +205,7 @@ These live under the HoldCo and serve both arms:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.1 | 2026-05-29 | Hermes / commission-crowd-agent | Operator-approved revision. Removed `Zero-Human-Workflows` — confirmed accidental fork, not operator-owned. |
+| 1.1 | 2026-05-29 | Hermes / commission-crowd-agent | Operator-approved revision. Reclassified `Zero-Human-Workflows` as dormant/reserved — private, harmless, currently unused. Not an active business-unit dependency. |
 | 1.0 | 2026-05-29 | Hermes / commission-crowd-agent | Initial draft. HoldCo structure, arms, business units, repo mapping, governance. |
 
 ---

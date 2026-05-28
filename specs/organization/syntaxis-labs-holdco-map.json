@@ -303,5 +303,18 @@
     "Update docs/supervisor-overall-goal.md with arm tags",
     "Create holdco-claimer micro-copy for websites (not linked/published)",
     "Update CommissionCrowd profile language to reflect HoldCo structure"
+  ],
+  "dormant_reserved_repos": [
+    {
+      "name": "Zero-Human-Workflows",
+      "github_path": "Zero-Human-Corp/Zero-Human-Workflows",
+      "classification": "dormant_reserved_legacy_unverified",
+      "active": false,
+      "mapped_to_business_unit": false,
+      "status": "private_harmless_unused",
+      "local_path": null,
+      "note": "Kept in org for historical purposes. Not an active business-unit dependency. Re-evaluate if operator activates.",
+      "action": "none_keep_in_org"
+    }
   ]
 }
