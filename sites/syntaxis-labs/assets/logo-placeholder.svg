@@ -1,0 +1,11 @@
+<!-- logo-placeholder.svg -->
+<!--
+  ⚠️ OPERATOR_REQUIRED
+  Replace this placeholder with your final Syntaxis Labs logo.
+  Recommended: SVG or PNG, transparent background, monochrome version for dark header.
+  Save as: logo.svg or logo.png and update references in nav + favicon across all pages.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" fill="none">
+  <rect x="0" y="5" width="30" height="30" rx="4" fill="#2563eb"/>
+  <text x="40" y="26" fill="#0f172a" font-family="system-ui,sans-serif" font-size="18" font-weight="600">Syntaxis Labs</text>
+</svg>

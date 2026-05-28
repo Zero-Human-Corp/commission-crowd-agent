@@ -1,0 +1,13 @@
+<!-- profile-photo-placeholder.svg -->
+<!--
+  ⚠️ OPERATOR_REQUIRED
+  Replace this placeholder with your professional profile photo.
+  Recommended: 400x400px or larger, professional headshot, neutral background.
+  Save as: photo.jpg or photo.png and update the <img src> reference in about.html
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <rect width="200" height="200" fill="#1e293b"/>
+  <circle cx="100" cy="80" r="35" fill="none" stroke="#06b6d4" stroke-width="2"/>
+  <path d="M50 170 Q100 120 150 170" stroke="#06b6d4" stroke-width="2" fill="none"/>
+  <text x="100" y="120" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Profile Photo</text>
+</svg>
