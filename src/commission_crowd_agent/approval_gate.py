@@ -17,10 +17,33 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .adapters import GoogleSheetsAdapter, NotifierAdapter
+
+
+class ApprovalAction(StrEnum):
+    """Canonical approval-action taxonomy for the rep-application workflow.
+
+    Stages:
+        research_scoring     — operator approves scoring of a newly sourced lead
+        deeper_research      — operator approves public read-only deeper research
+        outreach_draft       — operator approves creation of a buyer-outreach draft
+        outreach_send        — operator approves sending a buyer-outreach message
+        apply_to_principal   — operator approves *applying* to represent a vendor/principal
+        icp_campaign_draft   — operator approves drafting an ICP-targeted sales campaign
+        icp_campaign_send    — operator approves sending the ICP campaign
+    """
+
+    RESEARCH_SCORING = "research_scoring"
+    DEEPER_RESEARCH = "deeper_research"
+    OUTREACH_DRAFT = "outreach_draft"
+    OUTREACH_SEND = "outreach_send"
+    APPLY_TO_PRINCIPAL = "apply_to_principal"
+    ICP_CAMPAIGN_DRAFT = "icp_campaign_draft"
+    ICP_CAMPAIGN_SEND = "icp_campaign_send"
 
 
 @dataclass

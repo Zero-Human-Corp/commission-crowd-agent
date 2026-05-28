@@ -77,7 +77,7 @@ def test_supervisor_response_from_text_plain_json() -> None:
 
 
 def test_supervisor_response_from_text_with_fences() -> None:
-    text = "```json\n{\"approved\": false, \"reason\": \"nope\"}\n```"
+    text = '```json\n{"approved": false, "reason": "nope"}\n```'
     resp = SupervisorResponse.from_text(text)
     assert resp.approved is False
     assert resp.reason == "nope"
@@ -243,9 +243,7 @@ def _mock_response(content: str) -> httpx.Response:
 def test_primary_routes_to_glm51() -> None:
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
-    mock_client.post.return_value = _mock_response(
-        '{"approved": true, "reason": "looks good"}'
-    )
+    mock_client.post.return_value = _mock_response('{"approved": true, "reason": "looks good"}')
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
     resp = relay.primary_check("Ping.")
     assert resp.approved is True
@@ -259,9 +257,7 @@ def test_primary_routes_to_glm51() -> None:
 def test_code_review_routes_to_qwen3_coder_next() -> None:
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
-    mock_client.post.return_value = _mock_response(
-        '{"approved": true, "reason": "clean code"}'
-    )
+    mock_client.post.return_value = _mock_response('{"approved": true, "reason": "clean code"}')
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
     resp = relay.code_review("review this function")
     call_args = mock_client.post.call_args
@@ -272,9 +268,7 @@ def test_code_review_routes_to_qwen3_coder_next() -> None:
 def test_reasoning_fallback_routes_to_deepseek_v32() -> None:
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
-    mock_client.post.return_value = _mock_response(
-        '{"approved": true, "reason": "solid logic"}'
-    )
+    mock_client.post.return_value = _mock_response('{"approved": true, "reason": "solid logic"}')
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
     resp = relay.reasoning_fallback("is this sound?")
     call_args = mock_client.post.call_args
@@ -285,9 +279,7 @@ def test_reasoning_fallback_routes_to_deepseek_v32() -> None:
 def test_draft_review_routes_to_kimi_k2_thinking() -> None:
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
-    mock_client.post.return_value = _mock_response(
-        '{"approved": true, "reason": "well written"}'
-    )
+    mock_client.post.return_value = _mock_response('{"approved": true, "reason": "well written"}')
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
     resp = relay.draft_review("evaluate outreach draft")
     call_args = mock_client.post.call_args
@@ -386,9 +378,7 @@ def test_allowed_action_does_not_raise() -> None:
 def test_malformed_json_raises_validation_error() -> None:
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
-    mock_client.post.return_value = _mock_response(
-        "not json at all"
-    )
+    mock_client.post.return_value = _mock_response("not json at all")
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
     with pytest.raises(SupervisorResponseValidationError, match="valid JSON"):
         relay.primary_check("whatever")
@@ -397,9 +387,7 @@ def test_malformed_json_raises_validation_error() -> None:
 def test_invalid_schema_raises_validation_error() -> None:
     settings = _make_settings()
     mock_client = MagicMock(spec=httpx.Client)
-    mock_client.post.return_value = _mock_response(
-        '{"approved": "maybe", "reason": "not sure"}'
-    )
+    mock_client.post.return_value = _mock_response('{"approved": "maybe", "reason": "not sure"}')
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
     with pytest.raises(SupervisorResponseValidationError, match="schema validation"):
         relay.primary_check("whatever")

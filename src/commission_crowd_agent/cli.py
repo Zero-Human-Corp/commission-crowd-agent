@@ -23,10 +23,7 @@ from .secrets import (
     load_shared_env,
 )
 from .supervisor_relay import (
-    SupervisorBlockedActionError,
     SupervisorRelay,
-    SupervisorResponseValidationError,
-    SupervisorTaskType,
 )
 from .workflow_runner import WorkflowRunner
 
@@ -912,7 +909,7 @@ def research_approved_lead(
     else:
         console.print("   [dim](Notification skipped)[/dim]")
 
-    console.print(f"[green]✅ research-approved-lead complete[/green]")
+    console.print("[green]✅ research-approved-lead complete[/green]")
 
 
 @app.command(name="supervisor-status")
@@ -940,10 +937,7 @@ def supervisor_check(
     relay = SupervisorRelay(settings=settings, dry_run=True)
     result = relay.check_blocked(action)
     if result["blocked"]:
-        console.print(
-            f"[red]⛔ BLOCKED[/red]: {action}\n"
-            f"   [dim]{result['block_reason']}[/dim]"
-        )
+        console.print(f"[red]⛔ BLOCKED[/red]: {action}\n   [dim]{result['block_reason']}[/dim]")
     else:
         console.print(f"[green]✅ ALLOWED[/green]: {action}")
 
@@ -963,9 +957,7 @@ def supervisor_smoke(
             f"[red]❌ Supervisor Relay disabled (mode={settings.supervisor_mode!r})[/red]"
         )
         raise typer.Exit(1)
-    console.print(
-        f"[blue]Running supervisor smoke test — mode={settings.supervisor_mode!r}[/blue]"
-    )
+    console.print(f"[blue]Running supervisor smoke test — mode={settings.supervisor_mode!r}[/blue]")
     console.print(
         f"   Primary: {settings.supervisor_primary_model}\n"
         f"   Code review: {settings.supervisor_code_review_model}\n"

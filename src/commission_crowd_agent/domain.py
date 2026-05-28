@@ -31,6 +31,34 @@ class TaskType(StrEnum):
     SEND = "send"
 
 
+class OpportunityStage(StrEnum):
+    """Pipeline stage for a vendor/principal opportunity in the rep-application model.
+
+    Sequence:
+        sourced                — discovered on a listing (CommissionCrowd, etc.)
+        researched             — public read-only research completed; sourced findings only
+        rep_fit_scored         — scored for fit as a commission-only rep
+        application_draft_created — application-to-principal draft written; awaiting operator review
+        application_approved   — operator approved applying to the principal
+        application_submitted  — application sent to the vendor/principal
+        accepted               — vendor accepted; onboarding complete; ready for ICP outreach
+        rejected               — vendor declined; opportunity closed
+        icp_campaign_ready     — ICP sales campaign drafted; awaiting operator approval
+        selling_active         — operator approved; buyer outreach (ICP) in progress
+    """
+
+    SOURCED = "sourced"
+    RESEARCHED = "researched"
+    REP_FIT_SCORED = "rep_fit_scored"
+    APPLICATION_DRAFT_CREATED = "application_draft_created"
+    APPLICATION_APPROVED = "application_approved"
+    APPLICATION_SUBMITTED = "application_submitted"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    ICP_CAMPAIGN_READY = "icp_campaign_ready"
+    SELLING_ACTIVE = "selling_active"
+
+
 class Lead(BaseModel):
     """A single B2B lead with research and outreach state."""
 

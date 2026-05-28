@@ -112,6 +112,41 @@ pytest          # 29 passing
 
 ---
 
+## Workflow — Commission-Only Rep Application Model
+
+The primary business model is **independent commission-only sales representation**, not buyer outreach.
+
+### Stage order (principal first, ICP second)
+1. **Sourced** — opportunity discovered on CommissionCrowd or another public listing.
+2. **Researched** — public read-only deeper research completed; sourced findings only.
+3. **Rep-fit scored** — scored for fit as a commission-only rep.
+4. **Application draft created** — draft application-to-principal written; awaiting operator review.
+5. **Application approved** — operator approves applying to the vendor/principal.
+6. **Application submitted** — application sent to the vendor/principal.
+7. **Accepted** — vendor accepted; onboarding complete; ICP outreach is now viable.
+8. **Rejected** — vendor declined; opportunity closed.
+9. **ICP campaign ready** — buyer-outreach campaign drafted; awaiting operator approval.
+10. **Selling active** — operator approved; buyer outreach (ICP) in progress.
+
+### Buyer/ICP outreach is premature before vendor acceptance
+- **No buyer outreach** is sent before the vendor accepts Syntaxis Labs as a rep.
+- **No ICP campaigns** are drafted before the `accepted` stage.
+- Every stage transition above `application_approved` requires explicit operator approval.
+
+### Approval taxonomy
+| approval_action | What it gates |
+|---|---|
+| `research_scoring` | Operator approves scoring a newly sourced lead |
+| `deeper_research` | Operator approves public read-only deeper research |
+| `apply_to_principal` | Operator approves **applying** to represent a vendor/principal |
+| `application_submitted` | Operator approves submitting the application |
+| `icp_campaign_draft` | Operator approves drafting a buyer-outreach campaign |
+| `icp_campaign_send` | Operator approves sending buyer outreach |
+
+See `docs/workflow-rep-application-model.md` for the full runbook.
+
+---
+
 ## Legacy n8n
 
 - n8n still runs on OCI (`:5678`) for reference.

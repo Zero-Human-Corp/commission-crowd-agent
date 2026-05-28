@@ -52,7 +52,7 @@ class SupervisorResponse(BaseModel):
     notes: str = Field(default="", max_length=2000)
 
     @classmethod
-    def from_text(cls, text: str) -> "SupervisorResponse":
+    def from_text(cls, text: str) -> SupervisorResponse:
         """Parse model output, stripping markdown fences if present."""
         cleaned = text.strip()
         if cleaned.startswith("```json"):
@@ -255,8 +255,6 @@ class SupervisorRelay:
             "action": recommended_action,
             "blocked": blocked,
             "block_reason": (
-                "Blocked by human-only gate. Requires operator approval."
-                if blocked
-                else ""
+                "Blocked by human-only gate. Requires operator approval." if blocked else ""
             ),
         }
