@@ -522,6 +522,10 @@ class GoogleSheetsAdapter:
         live_header = rows[0]
         expected = self.SCHEMA.get(tab, [])
         if live_header != expected:
+            # Allow live header to have extra columns beyond expected, but require
+            # all expected columns in strict order at the start.
+            if expected and live_header[:len(expected)] == expected:
+                return {"ok": True, "error": None, "live_header": live_header}
             return {
                 "ok": False,
                 "error": (f"Header mismatch for '{tab}': live={live_header} expected={expected}"),
