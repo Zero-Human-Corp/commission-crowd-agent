@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Handshake partnership icon">
+  <defs>
+    <linearGradient id="hand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <circle cx="24" cy="24" r="22" fill="#0f172a" stroke="url(#hand)" stroke-width="2"/>
+  <!-- Two connecting nodes -->
+  <circle cx="16" cy="24" r="5" fill="url(#hand)"/>
+  <circle cx="32" cy="24" r="5" fill="url(#hand)" opacity="0.6"/>
+  <line x1="21" y1="24" x2="27" y2="24" stroke="url(#hand)" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

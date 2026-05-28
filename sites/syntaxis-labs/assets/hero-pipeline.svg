@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" width="720" height="240" role="img" aria-label="Abstract B2B sales pipeline diagram showing four connected stages">
+  <defs>
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563eb" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Connection lines -->
+  <line x1="110" y1="120" x2="230" y2="120" stroke="url(#lineGrad)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="290" y1="120" x2="410" y2="120" stroke="url(#lineGrad)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="470" y1="120" x2="590" y2="120" stroke="url(#lineGrad)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Node 1: Prospect -->
+  <circle cx="80" cy="120" r="36" fill="#0f172a" stroke="url(#nodeGrad)" stroke-width="3"/>
+  <circle cx="80" cy="120" r="14" fill="url(#nodeGrad)"/>
+  <text x="80" y="185" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">PROSPECT</text>
+
+  <!-- Node 2: Qualify -->
+  <circle cx="260" cy="120" r="36" fill="#0f172a" stroke="url(#nodeGrad)" stroke-width="3"/>
+  <path d="M248 120 L260 108 L272 120 L260 132 Z" fill="url(#nodeGrad)"/>
+  <text x="260" y="185" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">QUALIFY</text>
+
+  <!-- Node 3: Demo -->
+  <circle cx="440" cy="120" r="36" fill="#0f172a" stroke="url(#nodeGrad)" stroke-width="3"/>
+  <rect x="428" y="108" width="24" height="24" rx="4" fill="url(#nodeGrad)"/>
+  <text x="440" y="185" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">DEMO</text>
+
+  <!-- Node 4: Close -->
+  <circle cx="620" cy="120" r="36" fill="#0f172a" stroke="#10b981" stroke-width="3"/>
+  <path d="M610 120 L616 126 L628 114" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="620" y="185" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="13" font-weight="600">CLOSE</text>
+
+  <!-- Subtle background grid -->
+  <g stroke="#1e293b" stroke-width="1" opacity="0.15">
+    <line x1="0" y1="40" x2="720" y2="40"/>
+    <line x1="0" y1="200" x2="720" y2="200"/>
+  </g>
+</svg>
