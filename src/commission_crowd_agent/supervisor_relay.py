@@ -135,12 +135,19 @@ def _check_model_available(
     *,
     client: httpx.Client | None = None,
 ) -> bool:
-    """Query Ollama /api/tags to see if a model name is available."""
-    if not model_name:
-        return False
+    """Query Ollama /api/tags to see if a model name is available.
+
+    ``base_url`` may end with ``/v1`` (OpenAI-compatible path) but the
+    Ollama ``/api/tags`` endpoint lives at the root. We strip ``/v1``
+    before appending ``/api/tags`` so availability checks work whether
+    the configured base URL includes ``/v1`` or not.
+    """
+    _client = client or httpx.Client(timeout=10.0)
     try:
-        _client = client or httpx.Client(timeout=10.0)
-        resp = _client.get(f"{base_url}/api/tags")
+        base = base_url.rstrip("/")
+        if base.endswith("/v1"):
+            base = base[:-3]
+        resp = _client.get(f"{base}/api/tags")
         if resp.status_code != 200:
             return False
         data = resp.json()
@@ -148,6 +155,9 @@ def _check_model_available(
         return model_name in available
     except Exception:
         return False
+    finally:
+        if client is None:
+            _client.close()
 
 
 def _resolve_model(
