@@ -201,6 +201,7 @@ The card contains:
 We extract only the public fields visible on the listing page without logging in.
 """
 
+
 def _extract_commissioncrowd(
     html: str, source_url: str, source_name: str, source_type: str
 ) -> list[ExtractedCandidate]:
@@ -212,7 +213,10 @@ def _extract_commissioncrowd(
     cards = soup.find_all(class_="job-item-list-info")
     for card in cards:
         # Title link
-        a = card.find("a", href=re.compile(r"/listings/commission-only-sales-opportunities/[^/]+/", re.I))
+        a = card.find(
+            "a",
+            href=re.compile(r"/listings/commission-only-sales-opportunities/[^/]+/", re.I),
+        )
         if not a:
             continue
         href = str(a.get("href", "") or "").strip()
@@ -295,9 +299,7 @@ def extract_candidates(
         elif "affiverse" in domain:
             candidates = _extract_affiverse(html, source_url, source_name, source_type)
         elif "commissioncrowd.com" in domain:
-            candidates = _extract_commissioncrowd(
-                html, source_url, source_name, source_type
-            )
+            candidates = _extract_commissioncrowd(html, source_url, source_name, source_type)
         else:
             # Unknown or JS-app sources: explicit zero result
             return []

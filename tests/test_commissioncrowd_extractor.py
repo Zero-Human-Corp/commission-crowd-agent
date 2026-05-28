@@ -14,8 +14,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from commission_crowd_agent.directory_extractor import (
     _extract_commissioncrowd,
     extract_candidates,
