@@ -6,6 +6,9 @@ notification safety, and header validation.
 
 from unittest.mock import MagicMock
 
+import pytest
+from typing import Any
+
 from commission_crowd_agent.approval_gate import ApprovalGate, ApprovalRequest
 
 _APPROVALS_HEADER = [
@@ -267,3 +270,104 @@ def test_validate_header_mismatch():
     result = gate.validate_header()
     assert result["ok"] is False
     assert "mismatch" in result["error"].lower()
+
+# ---- Tests for create_and_write_approval (production path) ----
+
+def test_create_and_write_approval_raises_if_no_adapter():
+    """Without a sheets_adapter, create_and_write_approval must refuse."""
+    from commission_crowd_agent.approval_gate import ApprovalGate
+    gate = ApprovalGate(sheets_adapter=None)
+    with pytest.raises(RuntimeError, match="no sheets_adapter wired"):
+        gate.create_and_write_approval(
+            entity_type="lead",
+            entity_id="3bc7c6cc",
+            requested_action="Test",
+        )
+
+def test_create_and_write_approval_raises_on_header_mismatch():
+    """If validate_tab_header fails, create_and_write_approval must abort."""
+    from commission_crowd_agent.approval_gate import ApprovalGate
+    mock_adapter = MagicMock()
+    mock_adapter.validate_tab_header.return_value = {
+        "ok": False,
+        "error": "Header mismatch",
+    }
+    gate = ApprovalGate(sheets_adapter=mock_adapter)
+    with pytest.raises(RuntimeError, match="Approval write aborted"):
+        gate.create_and_write_approval(
+            entity_type="lead",
+            entity_id="3bc7c6cc",
+            requested_action="Test",
+        )
+
+def test_create_and_write_approval_raises_on_write_failure():
+    """If append_row fails, create_and_write_approval must raise."""
+    from commission_crowd_agent.approval_gate import ApprovalGate
+    mock_adapter = MagicMock()
+    mock_adapter.validate_tab_header.return_value = {"ok": True}
+    mock_adapter.append_row.return_value = {
+        "ok": False,
+        "error": "Quota exceeded",
+    }
+    gate = ApprovalGate(sheets_adapter=mock_adapter)
+    with pytest.raises(RuntimeError, match="Approval write to Sheet failed"):
+        gate.create_and_write_approval(
+            entity_type="lead",
+            entity_id="3bc7c6cc",
+            requested_action="Test",
+        )
+
+def test_create_and_write_approval_raises_on_readback_missing():
+    """If the written row is not found in readback, raise."""
+    from commission_crowd_agent.approval_gate import ApprovalGate
+    mock_adapter = MagicMock()
+    mock_adapter.validate_tab_header.return_value = {"ok": True}
+    mock_adapter.append_row.return_value = {"ok": True}
+    # Readback returns a different approval_id
+    mock_adapter.read_last_rows.return_value = {
+        "ok": True,
+        "rows": [
+            ["different-id", "2024-01-01", "lead", "other"],
+        ],
+    }
+    gate = ApprovalGate(sheets_adapter=mock_adapter)
+    with pytest.raises(RuntimeError, match="not found in readback"):
+        gate.create_and_write_approval(
+            entity_type="lead",
+            entity_id="3bc7c6cc",
+            requested_action="Test",
+        )
+
+def test_create_and_write_approval_succeeds_with_verification():
+    """Happy path: write succeeds and readback finds the row."""
+    from commission_crowd_agent.approval_gate import ApprovalGate
+    mock_adapter = MagicMock()
+    mock_adapter.validate_tab_header.return_value = {"ok": True}
+    # Capture the row so we can return it in readback
+    captured_rows: list[list[str]] = []
+
+    def capture_append(tab: str, row: list[str]) -> dict[str, Any]:
+        captured_rows.append(row)
+        return {"ok": True}
+
+    mock_adapter.append_row.side_effect = capture_append
+
+    def readback(tab: str, count: int = 10) -> dict[str, Any]:
+        # Return the captured row (simulating the Sheet now containing it)
+        return {"ok": True, "rows": captured_rows}
+
+    mock_adapter.read_last_rows.side_effect = readback
+
+    gate = ApprovalGate(sheets_adapter=mock_adapter)
+    req = gate.create_and_write_approval(
+        entity_type="lead",
+        entity_id="3bc7c6cc",
+        requested_action="Test",
+    )
+    assert req.status == "pending"
+    assert req.entity_id == "3bc7c6cc"
+    # Verify write was called
+    assert mock_adapter.append_row.call_count == 1
+    # Verify readback was called
+    assert mock_adapter.read_last_rows.call_count == 1
+

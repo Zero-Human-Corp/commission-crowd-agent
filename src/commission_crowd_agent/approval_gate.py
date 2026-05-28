@@ -109,6 +109,82 @@ class ApprovalGate:
         self.sheets_adapter = sheets_adapter
         self.notifier = notifier
 
+    def create_and_write_approval(
+        self,
+        entity_type: str,
+        entity_id: str,
+        requested_action: str,
+        *,
+        entity_name: str = "",
+        approval_action: str = "",
+        risk_level: str = "low",
+        source_url: str = "",
+        notes: str = "",
+    ) -> ApprovalRequest:
+        """Create a pending approval write it to the Google Sheet CRM, and verify.
+
+        This is the production path for operator-review approvals.
+        It always writes to Sheets and fails closed if the write/readback fails.
+        **Never** silently creates a local-only approval.
+        """
+        req = ApprovalRequest(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            entity_name=entity_name,
+            approval_action=approval_action,
+            requested_action=requested_action,
+            risk_level=risk_level,
+            source_url=source_url,
+            notes=notes,
+            status="pending",
+        )
+
+        # Sanity check: if Sheets is not wired, we must not pretend the approval
+        # is pending in a system the operator cannot see.
+        if self.sheets_adapter is None:
+            raise RuntimeError(
+                "Approval gate has no sheets_adapter wired. "
+                "Refusing to create an invisible approval. "
+                "Set up Google Sheets before creating operator approvals."
+            )
+
+        # Validate headers
+        header_result = self.sheets_adapter.validate_tab_header("approvals")
+        if not header_result["ok"]:
+            raise RuntimeError(
+                f"Approval write aborted: approvals tab header invalid. {header_result['error']}"
+            )
+
+        # Write to Sheet
+        write_result = self.sheets_adapter.append_row(
+            "approvals", req.to_sheets_row()
+        )
+        if not write_result.get("ok"):
+            raise RuntimeError(
+                f"Approval write to Sheet failed: {write_result.get('error')}"
+            )
+
+        # Post-write readback verification
+        readback = self.sheets_adapter.read_last_rows("approvals", count=200)
+        if not readback.get("ok"):
+            raise RuntimeError(
+                f"Approval readback from Sheet failed: {readback.get('error')}"
+            )
+
+        found = False
+        for row in readback.get("rows", []):
+            if row and row[0] == req.approval_id:
+                found = True
+                break
+
+        if not found:
+            raise RuntimeError(
+                f"Approval {req.approval_id} was written to Sheet but not found "
+                f"in readback. CRM may be inconsistent. Refusing to report success."
+            )
+
+        return req
+
     def create_approval(
         self,
         entity_type: str,
@@ -122,7 +198,11 @@ class ApprovalGate:
         notes: str = "",
         dry_run: bool = True,
     ) -> ApprovalRequest:
-        """Create a pending approval request and optionally write to Sheets."""
+        """Create a pending approval request and optionally (dry-run) write to Sheets.
+
+        This legacy method defaults to dry_run=True for backwards compatibility.
+        **For production operator-review approvals, use create_and_write_approval().**
+        """
         req = ApprovalRequest(
             entity_type=entity_type,
             entity_id=entity_id,
