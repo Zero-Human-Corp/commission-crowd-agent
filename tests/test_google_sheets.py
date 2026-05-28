@@ -99,11 +99,17 @@ class TestAppendRow:
 
     def test_success(self) -> None:
         adapter = GoogleSheetsAdapter(spreadsheet_id="test-id", access_token="token", dry_run=False)
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"updates": {"updatedRows": 1}}
-        with patch("commission_crowd_agent.adapters.httpx.post", return_value=mock_response):
-            result = adapter.append_row("leads", ["L001", "web", "Alice"])
+        # Mock the initial read (read_last_rows) to simulate an empty tab with just header
+        mock_get = MagicMock()
+        mock_get.status_code = 200
+        mock_get.json.return_value = {"values": [["lead_id", "source", "name"]]}
+        # Mock the append POST
+        mock_post = MagicMock()
+        mock_post.status_code = 200
+        mock_post.json.return_value = {"updatedRange": "leads!A2"}
+        with patch("commission_crowd_agent.adapters.httpx.get", return_value=mock_get):
+            with patch("commission_crowd_agent.adapters.httpx.post", return_value=mock_post):
+                result = adapter.append_row("leads", ["L001", "web", "Alice"])
         assert result["ok"] is True
         assert result["rows_changed"] == 1
 

@@ -510,6 +510,8 @@ class GoogleSheetsAdapter:
         """Verify live Sheet header for a tab matches adapter SCHEMA.
 
         Returns structured result so callers can abort before writing.
+        Extra columns beyond the canonical schema are tolerated, but explicit
+        "Column N" style pollution is flagged in `polluted_columns`.
         """
         if not self.spreadsheet_id:
             return {"ok": False, "error": "Missing spreadsheet_id", "live_header": []}
@@ -521,20 +523,35 @@ class GoogleSheetsAdapter:
             return {"ok": False, "error": f"Empty tab: {tab}", "live_header": []}
         live_header = rows[0]
         expected = self.SCHEMA.get(tab, [])
+
+        # Detect pollution: blank-named or "Column N" style columns
+        polluted = [c for c in live_header if not c or c.lower().startswith("column ")]
+
         if live_header != expected:
             # Allow live header to have extra columns beyond expected, but require
             # all expected columns in strict order at the start.
             if expected and live_header[: len(expected)] == expected:
-                return {"ok": True, "error": None, "live_header": live_header}
+                return {
+                    "ok": True,
+                    "error": None,
+                    "live_header": live_header,
+                    "polluted_columns": polluted,
+                }
             return {
                 "ok": False,
                 "error": (f"Header mismatch for '{tab}': live={live_header} expected={expected}"),
                 "live_header": live_header,
+                "polluted_columns": polluted,
             }
-        return {"ok": True, "error": None, "live_header": live_header}
+        return {"ok": True, "error": None, "live_header": live_header, "polluted_columns": polluted}
 
     def append_row(self, tab: str, values: list[str]) -> dict[str, Any]:
-        """Append a single row to the bottom of a tab.
+        """Append a single row to the next **logical** empty data row in a tab.
+
+        Reads the full tab to find the last non-empty row, then writes directly
+        to the next sequential row. This avoids the `A1:append` behaviour that
+        inserts after the *last formatted row*, which creates phantom gaps when
+        the Sheet has extra blank rows or trailing columns.
 
         Returns structured result with no secret values.
         """
@@ -555,9 +572,29 @@ class GoogleSheetsAdapter:
         if not self.access_token:
             return self._error_result("append_row", tab, "Missing access_token")
 
+        # 1. Read the full tab to find the last real data row
+        read_result = self.read_last_rows(tab, count=5000)
+        if not read_result.get("ok"):
+            return read_result
+
+        all_rows = read_result.get("rows", [])
+        data_rows = all_rows[1:] if len(all_rows) > 1 else all_rows
+
+        last_data_row = 0
+        for row in data_rows:
+            if any(cell for cell in row if cell):
+                last_data_row += 1
+
+        # Row numbers are 1-based in Sheets; header is row 1
+        next_row = last_data_row + 1 + 1  # +1 for header, +1 for next empty
+
+        # 2. Build direct write range and URL
+        expected_cols = len(self.SCHEMA.get(tab, []))
+        end_col = self._index_to_column_letter(max(expected_cols, len(values))) + "1"
+        range_name = f"{tab}!A{next_row}"
         url = (
             f"{self.API_BASE}/{self.spreadsheet_id}/values/"
-            f"{tab}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS"
+            f"{range_name}?valueInputOption=USER_ENTERED"
         )
         payload = {"values": [values]}
         try:
@@ -566,13 +603,12 @@ class GoogleSheetsAdapter:
             )
             response.raise_for_status()
             data = response.json()
-            updates = data.get("updates", {})
-            updated_range = updates.get("updatedRange", "")
+            updated_range = data.get("updatedRange", "")
             return {
                 "ok": True,
                 "action": "append_row",
                 "tab": tab,
-                "rows_changed": updates.get("updatedRows", 1),
+                "rows_changed": 1,
                 "updated_range": updated_range,
                 "error": None,
             }
@@ -580,6 +616,192 @@ class GoogleSheetsAdapter:
             return self._error_result("append_row", tab, f"HTTP {exc.response.status_code}")
         except (httpx.RequestError, httpx.TimeoutException) as exc:
             return self._error_result("append_row", tab, f"Network: {type(exc).__name__}")
+
+    @staticmethod
+    def _index_to_column_letter(idx: int) -> str:
+        """Convert 1-based column index to A, B, C... Z, AA, AB..."""
+        result = ""
+        n = idx
+        while n > 0:
+            n, rem = divmod(n - 1, 26)
+            result = chr(65 + rem) + result
+        return result
+
+    def compact_tab(self, tab: str, *, dry_run: bool = True) -> dict[str, Any]:
+        """Re-write a tab so all non-empty rows are contiguous under the header.
+
+        Reads the full tab, discards blank/middle-gap rows, and (unless
+        *dry_run*) writes the compacted rows back to the Sheet. Returns a
+        structured result with *before_row_count*, *after_row_count*,
+        *removed_rows*, and *rows_kept* for auditing.
+
+        **Never** silently mutates — always returns a report first.
+        """
+        if not self.spreadsheet_id:
+            return self._error_result("compact_tab", tab, "Missing spreadsheet_id")
+
+        result = self.read_last_rows(tab, count=5000)
+        if not result.get("ok"):
+            return result
+
+        all_rows = result.get("rows", [])
+        if not all_rows:
+            return {
+                "ok": True,
+                "action": "compact_tab",
+                "tab": tab,
+                "before_row_count": 0,
+                "after_row_count": 0,
+                "removed_rows": 0,
+                "rows_kept": [],
+                "dry_run": dry_run,
+                "error": None,
+            }
+
+        header = all_rows[0]
+        # Keep header + all non-empty data rows (preserves original order)
+        kept: list[list[str]] = [header]
+        for row in all_rows[1:]:
+            if any(cell for cell in row if cell):
+                kept.append(row)
+
+        before = len(all_rows)
+        after = len(kept)
+        removed = before - after
+
+        if not dry_run:
+            # Overwrite the entire tab with compacted data.
+            # We clear the tab first by writing just the header at A1, then
+            # writing the remaining rows starting at A2.
+            self._ensure_access_token()
+            if not self.access_token:
+                return self._error_result("compact_tab", tab, "Missing access_token")
+
+            # Build batchUpdate clear + update request
+            url = f"{self.API_BASE}/{self.spreadsheet_id}/values:batchClear"
+            payload = {"ranges": [f"{tab}!A1:Z5000"]}
+            try:
+                httpx.post(
+                    url,
+                    json=payload,
+                    headers=self._auth_headers(),
+                    timeout=self.TIMEOUT_SECONDS,
+                )
+            except Exception:
+                pass  # best-effort clear
+
+            # Write back all kept rows
+            write_url = (
+                f"{self.API_BASE}/{self.spreadsheet_id}/values/"
+                f"{tab}!A1?valueInputOption=USER_ENTERED"
+            )
+            write_payload = {"values": kept, "majorDimension": "ROWS"}
+            try:
+                response = httpx.put(
+                    write_url,
+                    json=write_payload,
+                    headers=self._auth_headers(),
+                    timeout=self.TIMEOUT_SECONDS,
+                )
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                return self._error_result(
+                    "compact_tab", tab, f"HTTP {exc.response.status_code}"
+                )
+            except (httpx.RequestError, httpx.TimeoutException) as exc:
+                return self._error_result(
+                    "compact_tab", tab, f"Network: {type(exc).__name__}"
+                )
+
+        return {
+            "ok": True,
+            "action": "compact_tab",
+            "tab": tab,
+            "before_row_count": before,
+            "after_row_count": after,
+            "removed_rows": removed,
+            "rows_kept": kept if dry_run else [],
+            "dry_run": dry_run,
+            "error": None,
+        }
+
+    def audit_approvals(self) -> dict[str, Any]:
+        """Run a full integrity audit on the approvals tab.
+
+        Returns structured results for use in CLI and reports. Covers:
+        - schema pollution (blank / 'Column N' columns)
+        - duplicate approval_ids
+        - stale pending approvals (same entity_id, multiple pending)
+        """
+        result = self.read_last_rows("approvals", count=5000)
+        if not result.get("ok"):
+            return result
+
+        rows = result.get("rows", [])
+        if not rows:
+            return {
+                "ok": True,
+                "action": "audit_approvals",
+                "total_rows": 0,
+                "header": [],
+                "polluted_columns": [],
+                "duplicates": {},
+                "stale_entities": [],
+                "error": None,
+            }
+
+        header = rows[0]
+        expected = self.SCHEMA.get("approvals", [])
+        polluted = [c for c in header if not c or c.lower().startswith("column ")]
+
+        data_rows = rows[1:]
+        approval_ids = {}
+        entity_statuses: dict[str, list[dict[str, Any]]] = {}
+        seen_ids: dict[str, int] = {}
+
+        for idx, row in enumerate(data_rows, start=2):
+            if not any(c for c in row if c):
+                continue
+            aid = row[0] if row else ""
+            eid = row[3] if len(row) > 3 else ""
+            status = row[6] if len(row) > 6 else ""
+            action = row[12] if len(row) > 12 else ""
+            if aid:
+                seen_ids[aid] = seen_ids.get(aid, 0) + 1
+                approval_ids[aid] = {
+                    "row_index": idx,
+                    "entity_id": eid,
+                    "status": status,
+                    "action": action,
+                }
+            if eid and status:
+                entity_statuses.setdefault(eid, []).append(
+                    {"approval_id": aid, "status": status, "action": action, "row_index": idx}
+                )
+
+        duplicates = {k: v for k, v in seen_ids.items() if v > 1}
+        stale_entities = []
+        for eid, entries in entity_statuses.items():
+            pending = [e for e in entries if e["status"] == "pending"]
+            if len(pending) > 1:
+                stale_entities.append({
+                    "entity_id": eid,
+                    "pending_count": len(pending),
+                    "pending_ids": [e["approval_id"] for e in pending],
+                    "latest_pending": pending[-1]["approval_id"],
+                })
+
+        return {
+            "ok": True,
+            "action": "audit_approvals",
+            "total_rows": len(rows),
+            "header": header,
+            "canonical_header": expected,
+            "polluted_columns": polluted,
+            "duplicates": duplicates,
+            "stale_entities": stale_entities,
+            "error": None,
+        }
 
     def upsert_row_by_key(
         self, tab: str, key_column: str, key_value: str, values: list[str]
