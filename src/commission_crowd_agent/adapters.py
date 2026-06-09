@@ -284,25 +284,185 @@ class NotifierAdapter:
 
 
 class OutreachAdapter:
-    """Stub: dispatch personalised emails via Gmail / SMTP."""
+    """Real SMTP email dispatcher with Hostinger support."""
 
     def __init__(
         self,
         smtp_host: str = "",
-        smtp_port: int = 587,
+        smtp_port: int = 465,
         smtp_user: str = "",
         smtp_pass: str = "",
         from_address: str = "",
+        *,
+        dry_run: bool = True,
     ) -> None:
         self.smtp_host = smtp_host
         self.smtp_port = smtp_port
         self.smtp_user = smtp_user
         self.smtp_pass = smtp_pass
-        self.from_address = from_address
+        self.from_address = from_address or smtp_user
+        self.dry_run = dry_run
 
-    def send_email(self, lead: Lead) -> bool:
-        """Send a personalised email to a lead."""
-        return True
+    def _build_message(
+        self,
+        to_address: str,
+        subject: str,
+        body: str,
+        html: str = "",
+    ) -> tuple[
+        str,  # from
+        str,  # to
+        str,  # raw MIME
+    ]:
+        import email.message
+
+        msg = email.message.EmailMessage()
+        msg["From"] = self.from_address
+        msg["To"] = to_address
+        msg["Subject"] = subject
+        msg["Message-ID"] = (
+            f"<mail-{__import__('time').time():.0f}@{'-'.join(self.smtp_host.split('.'))}>"
+        )
+        msg["Date"] = __import__("email.utils").utils.formatdate(localtime=True)
+
+        if html:
+            msg.set_content(body, subtype="plain")
+            msg.add_alternative(html, subtype="html")
+        else:
+            msg.set_content(body, subtype="plain")
+
+        return self.from_address, to_address, msg.as_string()
+
+    def health_check(self) -> dict[str, Any]:
+        """Return SMTP connectivity status without sending."""
+        if not self.smtp_host or not self.smtp_user or not self.smtp_pass:
+            return {
+                "ok": False,
+                "action": "smtp_health_check",
+                "error": "Missing SMTP credentials",
+            }
+        return {
+            "ok": True,
+            "action": "smtp_health_check",
+            "host": self.smtp_host,
+            "port": self.smtp_port,
+            "user": self.smtp_user,
+            "error": None,
+        }
+
+    def send_email(
+        self,
+        *,
+        to_address: str = "",
+        subject: str = "",
+        body: str = "",
+        html: str = "",
+        lead: Lead | None = None,
+    ) -> dict[str, Any]:
+        """Send an email via SMTP with TLS/SSL.
+
+        If *dry_run* is True, returns ok without connecting.
+        Accepts either explicit fields or a Lead object.
+        """
+        if self.dry_run:
+            return {
+                "ok": True,
+                "action": "send_email",
+                "dry_run": True,
+                "to": to_address or (lead.email if lead else ""),
+                "subject": subject,
+                "error": None,
+            }
+
+        to = to_address or (lead.email if lead else "")
+        subj = subject
+        bdy = body
+
+        if not to or not subj or not bdy:
+            return {
+                "ok": False,
+                "action": "send_email",
+                "error": "Missing to_address, subject or body",
+            }
+
+        if not self.smtp_host or not self.smtp_user or not self.smtp_pass:
+            return {
+                "ok": False,
+                "action": "send_email",
+                "error": "SMTP not configured",
+            }
+
+        _from, _to, raw = self._build_message(to, subj, bdy, html)
+
+        try:
+            import smtplib
+
+            if self.smtp_port in {
+                465,
+            }:
+                # SSL connection (Hostinger default)
+                with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=15) as server:
+                    server.login(self.smtp_user, self.smtp_pass)
+                    server.sendmail(_from, [_to], raw)
+            elif self.smtp_port in {587, 2525, 25}:
+                with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=15) as server:
+                    server.starttls()
+                    server.login(self.smtp_user, self.smtp_pass)
+                    server.sendmail(_from, [_to], raw)
+            else:
+                with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, timeout=15) as server:
+                    server.login(self.smtp_user, self.smtp_pass)
+                    server.sendmail(_from, [_to], raw)
+        except smtplib.SMTPAuthenticationError as exc:
+            return {
+                "ok": False,
+                "action": "send_email",
+                "error": f"SMTP auth failed: {exc}",
+            }
+        except smtplib.SMTPException as exc:
+            return {
+                "ok": False,
+                "action": "send_email",
+                "error": f"SMTP error: {exc}",
+            }
+        except OSError as exc:
+            return {
+                "ok": False,
+                "action": "send_email",
+                "error": f"Network error: {exc}",
+            }
+
+        return {
+            "ok": True,
+            "action": "send_email",
+            "to": to,
+            "subject": subj,
+            "error": None,
+        }
+
+    def send_from_template(
+        self,
+        template_name: str,
+        context: dict[str, Any],
+        to_address: str,
+        *,
+        html: str = "",
+    ) -> dict[str, Any]:
+        """Render an email template and send it.
+
+        Returns structured result dict with ok, to, subject, and error.
+        """
+        from .email_templates import render_template
+
+        try:
+            subject, body = render_template(template_name, context)
+        except (ValueError, KeyError) as exc:
+            return {
+                "ok": False,
+                "action": "send_from_template",
+                "error": f"Template render failed: {exc}",
+            }
+        return self.send_email(to_address=to_address, subject=subject, body=body, html=html)
 
 
 class GoogleSheetsAdapter:

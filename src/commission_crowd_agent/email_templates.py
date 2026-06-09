@@ -83,6 +83,89 @@ TEMPLATES: dict[str, dict[str, str]] = {
             "{sender_name}"
         ),
     },
+    "outreach": {
+        "subject": "{sender_name} — Commission-only representation for {company_name}",
+        "body": (
+            "Hi {contact_name},\n\n"
+            "I hope this message finds you well. My name is {sender_name} and I'm "
+            "reaching out because I believe {company_name} could benefit from "
+            "experienced commission-only sales representation.\n\n"
+            "{context}\n\n"
+            "I specialise in helping companies like yours expand their reach without "
+            "the overhead of a full-time sales team. I'd love to discuss how we "
+            "might work together.\n\n"
+            "Are you open to a brief 10-minute conversation this week?\n\n"
+            "Best regards,\n"
+            "{sender_name}"
+        ),
+    },
+    "follow_up_gentle": {
+        "subject": "Checking in — {company_name} commission-only sales",
+        "body": (
+            "Hi {contact_name},\n\n"
+            "I hope you're doing well. I wanted to gently follow up on my previous "
+            "message about commission-only sales representation for {company_name}.\n\n"
+            "{context}\n\n"
+            "I know inboxes are busy, so I'll keep this short. If the timing isn't "
+            "right, just say the word and I'll circle back in a few weeks.\n\n"
+            "Kind regards,\n"
+            "{sender_name}"
+        ),
+    },
+    "follow_up_urgent": {
+        "subject": "Last follow-up — {company_name} commission-only sales",
+        "body": (
+            "Hi {contact_name},\n\n"
+            "I wanted to reach out one last time regarding commission-only sales "
+            "representation for {company_name}.\n\n"
+            "{context}\n\n"
+            "If there's no interest at this time, I completely understand and will "
+            "close the loop on my end. If circumstances change in the future, feel "
+            "free to reach out.\n\n"
+            "All the best,\n"
+            "{sender_name}"
+        ),
+    },
+    "application_submission": {
+        "subject": "Application for commission-only sales representation — {company_name}",
+        "body": (
+            "Dear {contact_name},\n\n"
+            "I am writing to formally submit my application for a commission-only "
+            "sales representation role with {company_name}. Having reviewed your "
+            "offering and market position, I am confident I can drive meaningful "
+            "revenue growth in {territory}.\n\n"
+            "{context}\n\n"
+            "About my approach:\n"
+            "- Specialised focus on {industry_focus}\n"
+            "- Proven track record with {years_experience} years in commission-only sales\n"
+            "- Target ICP: {icp_summary}\n"
+            "- Commission structure: {commission_structure}\n\n"
+            "I have attached my profile and any relevant references. I would welcome "
+            "the opportunity to discuss how we can build a successful partnership.\n\n"
+            "Please let me know if you require any additional information.\n\n"
+            "Yours sincerely,\n"
+            "{sender_name}\n"
+            "{sender_email}\n"
+            "{sender_phone}"
+        ),
+    },
+    "application_follow_up": {
+        "subject": "Follow-up: Application for commission-only sales rep — {company_name}",
+        "body": (
+            "Dear {contact_name},\n\n"
+            "I hope this message finds you well. I am following up on my application "
+            "for a commission-only sales representation role with {company_name}, "
+            "submitted on {submitted_date}.\n\n"
+            "{context}\n\n"
+            "I remain very interested in exploring this opportunity and would be "
+            "grateful for any update you might be able to share. If there is any "
+            "additional information you need from me, please don't hesitate to ask.\n\n"
+            "Thank you for your time and consideration.\n\n"
+            "Best regards,\n"
+            "{sender_name}\n"
+            "{sender_email}"
+        ),
+    },
 }
 
 

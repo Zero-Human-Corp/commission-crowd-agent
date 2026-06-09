@@ -47,11 +47,11 @@ class CcaSettings(BaseSettings):
     )
 
     # --- Email / SMTP ---
-    smtp_host: str = Field(default="")
-    smtp_port: int = Field(default=587)
-    smtp_user: str = Field(default="")
+    smtp_host: str = Field(default="smtp.hostinger.com")
+    smtp_port: int = Field(default=465)
+    smtp_user: str = Field(default="publisher@syntaxis.online")
     smtp_pass: str = Field(default="")
-    smtp_from: str = Field(default="")
+    smtp_from: str = Field(default="publisher@syntaxis.online")
 
     # --- n8n ---
     n8n_base_url: str = Field(default="")

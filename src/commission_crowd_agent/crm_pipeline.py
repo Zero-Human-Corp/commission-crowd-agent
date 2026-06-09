@@ -11,14 +11,16 @@ Pipeline stages (stored in the ``status`` field of leads / opportunities):
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from .domain import OpportunityStage
 
 if TYPE_CHECKING:
     from .adapters import GoogleSheetsAdapter
+    from .calendar_adapter import CalendarAdapter
 
+# Opportunity stages in sales ops order (including closed_won / closed_lost)
 _PIPELINE_STAGES: list[str] = [
     OpportunityStage.SOURCED.value,
     OpportunityStage.RESEARCHED.value,
@@ -29,7 +31,50 @@ _PIPELINE_STAGES: list[str] = [
     OpportunityStage.ACCEPTED.value,
     OpportunityStage.ICP_CAMPAIGN_READY.value,
     OpportunityStage.SELLING_ACTIVE.value,
+    OpportunityStage.CLOSED_WON.value,
+    OpportunityStage.CLOSED_LOST.value,
 ]
+
+# Valid stage transitions (current → allowed next stages)
+_VALID_TRANSITIONS: dict[str, set[str]] = {
+    OpportunityStage.SOURCED.value: {
+        OpportunityStage.RESEARCHED.value,
+    },
+    OpportunityStage.RESEARCHED.value: {
+        OpportunityStage.REP_FIT_SCORED.value,
+    },
+    OpportunityStage.REP_FIT_SCORED.value: {
+        OpportunityStage.APPLICATION_DRAFT_CREATED.value,
+        OpportunityStage.CLOSED_LOST.value,
+    },
+    OpportunityStage.APPLICATION_DRAFT_CREATED.value: {
+        OpportunityStage.APPLICATION_APPROVED.value,
+        OpportunityStage.CLOSED_LOST.value,
+    },
+    OpportunityStage.APPLICATION_APPROVED.value: {
+        OpportunityStage.APPLICATION_SUBMITTED.value,
+        OpportunityStage.CLOSED_LOST.value,
+    },
+    OpportunityStage.APPLICATION_SUBMITTED.value: {
+        OpportunityStage.ACCEPTED.value,
+        OpportunityStage.CLOSED_WON.value,
+        OpportunityStage.CLOSED_LOST.value,
+    },
+    OpportunityStage.ACCEPTED.value: {
+        OpportunityStage.ICP_CAMPAIGN_READY.value,
+        OpportunityStage.CLOSED_LOST.value,
+    },
+    OpportunityStage.ICP_CAMPAIGN_READY.value: {
+        OpportunityStage.SELLING_ACTIVE.value,
+        OpportunityStage.CLOSED_LOST.value,
+    },
+    OpportunityStage.SELLING_ACTIVE.value: {
+        OpportunityStage.CLOSED_WON.value,
+        OpportunityStage.CLOSED_LOST.value,
+    },
+    OpportunityStage.CLOSED_WON.value: set(),
+    OpportunityStage.CLOSED_LOST.value: set(),
+}
 
 
 def _make_record(header: list[str], row: list[str]) -> dict[str, Any]:
@@ -78,7 +123,7 @@ class CRMPipeline:
             "",  # problem_signal
             "",  # commission_signal
             "",  # fit_score
-            OpportunityStage.SOURCED,
+            OpportunityStage.SOURCED.value,
             notes,
         ]
 
@@ -101,6 +146,149 @@ class CRMPipeline:
             "rows_changed": 1 if result.get("ok") else 0,
             "lead_id": lead_id,
             "dry_run": False,
+            "error": result.get("error"),
+        }
+
+    def advance_stage(
+        self,
+        lead_id: str,
+        new_stage: str,
+        *,
+        sheet_tab: str = "leads",
+        dry_run: bool = True,
+    ) -> dict[str, Any]:
+        """Advance a lead's stage through the pipeline, validating allowed transitions.
+
+        Raises ValueError for invalid transitions; otherwise delegates to update_stage.
+        """
+        if self.sheets_adapter is None:
+            return {
+                "ok": False,
+                "action": "advance_stage",
+                "error": "No sheets adapter",
+                "rows_changed": 0,
+            }
+
+        # Read current stage
+        read_result = self.sheets_adapter.read_last_rows(sheet_tab, count=5000)
+        if not read_result.get("ok"):
+            return {
+                "ok": False,
+                "action": "advance_stage",
+                "error": read_result.get("error") or f"Failed to read {sheet_tab}",
+                "rows_changed": 0,
+            }
+
+        rows = read_result.get("rows", [])
+        if not rows:
+            return {
+                "ok": False,
+                "action": "advance_stage",
+                "error": f"Empty tab: {sheet_tab}",
+                "rows_changed": 0,
+            }
+
+        header = rows[0]
+        try:
+            id_idx = header.index("lead_id")
+            status_idx = header.index("status")
+        except ValueError as exc:
+            return {
+                "ok": False,
+                "action": "advance_stage",
+                "error": f"Missing expected column: {exc}",
+                "rows_changed": 0,
+            }
+
+        current_stage: str | None = None
+        for row in rows[1:]:
+            if len(row) > id_idx and row[id_idx] == lead_id:
+                current_stage = row[status_idx] if len(row) > status_idx else ""
+                break
+
+        if current_stage is None:
+            return {
+                "ok": False,
+                "action": "advance_stage",
+                "error": f"{lead_id} not found in {sheet_tab}",
+                "rows_changed": 0,
+            }
+
+        allowed = _VALID_TRANSITIONS.get(current_stage, set())
+        if new_stage not in allowed:
+            return {
+                "ok": False,
+                "action": "advance_stage",
+                "error": (
+                    f"Invalid transition: {current_stage} → {new_stage}. "
+                    f"Allowed: {', '.join(sorted(allowed)) if allowed else 'none'}"
+                ),
+                "rows_changed": 0,
+            }
+
+        return self.update_stage(lead_id, new_stage, sheet_tab=sheet_tab, dry_run=dry_run)
+
+    def close_opportunity(
+        self,
+        lead_id: str,
+        outcome: str,  # "won" or "lost"
+        *,
+        sheet_tab: str = "leads",
+        dry_run: bool = True,
+    ) -> dict[str, Any]:
+        """Close an opportunity as won or lost."""
+        if outcome not in {"won", "lost"}:
+            return {
+                "ok": False,
+                "action": "close_opportunity",
+                "error": f"Invalid outcome: {outcome!r}. Use 'won' or 'lost'.",
+                "rows_changed": 0,
+            }
+        target = (
+            OpportunityStage.CLOSED_WON.value
+            if outcome == "won"
+            else OpportunityStage.CLOSED_LOST.value
+        )
+        return self.update_stage(lead_id, target, sheet_tab=sheet_tab, dry_run=dry_run)
+
+    def set_calendar_reminder(
+        self,
+        entity_id: str,
+        reminder_type: str,
+        days: int = 7,
+        *,
+        calendar_adapter: CalendarAdapter | None = None,
+        dry_run: bool = True,
+    ) -> dict[str, Any]:
+        """Schedule a calendar reminder for an entity.
+
+        reminder_type: follow_up | deadline | approval_reminder
+        """
+        if calendar_adapter is None:
+            return {
+                "ok": False,
+                "action": "set_calendar_reminder",
+                "error": "No calendar adapter",
+                "event_id": "",
+            }
+
+        follow_up = (datetime.utcnow() + timedelta(days=days)).isoformat()
+        event_summary = f"{reminder_type.replace('_', ' ').title()}: {entity_id}"
+
+        result = calendar_adapter.add_event(
+            entity_type="opportunity",
+            entity_id=entity_id,
+            event_type=reminder_type,
+            event_date_utc=follow_up,
+            event_summary=event_summary,
+            notes=f"Auto-scheduled {reminder_type} reminder {days} days from now",
+            sheets_adapter=self.sheets_adapter,
+        )
+        return {
+            "ok": result.get("ok", False),
+            "action": "set_calendar_reminder",
+            "event_id": result.get("event_id", ""),
+            "dry_run": dry_run,
             "error": result.get("error"),
         }
 

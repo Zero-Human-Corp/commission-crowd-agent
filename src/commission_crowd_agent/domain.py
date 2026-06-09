@@ -34,7 +34,11 @@ class TaskType(StrEnum):
 class OpportunityStage(StrEnum):
     """Pipeline stage for a vendor/principal opportunity in the rep-application model.
 
-    Sequence:
+    Sales ops sequence (with closed states):
+        sourced → researched → rep_fit_scored → application_draft_created
+            → application_submitted → closed_won / closed_lost
+
+    Extended sequence (with operator approvals):
         sourced                — discovered on a listing (CommissionCrowd, etc.)
         researched             — public read-only research completed; sourced findings only
         rep_fit_scored         — scored for fit as a commission-only rep
@@ -42,9 +46,11 @@ class OpportunityStage(StrEnum):
         application_approved   — operator approved applying to the principal
         application_submitted  — application sent to the vendor/principal
         accepted               — vendor accepted; onboarding complete; ready for ICP outreach
-        rejected               — vendor declined; opportunity closed
+        rejected               — vendor declined; opportunity closed (legacy)
         icp_campaign_ready     — ICP sales campaign drafted; awaiting operator approval
         selling_active         — operator approved; buyer outreach (ICP) in progress
+        closed_won             — won the opportunity; principal hired rep
+        closed_lost            — lost the opportunity; no longer pursuing
     """
 
     SOURCED = "sourced"
@@ -57,6 +63,8 @@ class OpportunityStage(StrEnum):
     REJECTED = "rejected"
     ICP_CAMPAIGN_READY = "icp_campaign_ready"
     SELLING_ACTIVE = "selling_active"
+    CLOSED_WON = "closed_won"
+    CLOSED_LOST = "closed_lost"
 
 
 class Lead(BaseModel):

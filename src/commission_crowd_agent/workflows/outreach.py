@@ -45,7 +45,7 @@ def send_approved_outreach(
         if not lead.approved or lead.status != LeadStatus.DRAFT_READY:
             continue
         if not dry_run:
-            outreach.send_email(lead)
+            outreach.send_email(lead=lead)
         lead.status = LeadStatus.SENT
         lead.sent_timestamp = datetime.utcnow()
         if not dry_run:
