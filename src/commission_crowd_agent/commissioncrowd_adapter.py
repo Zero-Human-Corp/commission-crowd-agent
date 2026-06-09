@@ -91,6 +91,7 @@ class CommissionCrowdApiAdapter:
         if key:
             headers["Authorization"] = f"Bearer {key}"
         return headers
+
     def _url(self, path: str) -> str:
         """Build a full API URL from a relative path."""
         clean_path = path.lstrip("/")

@@ -69,9 +69,10 @@ class TestRunCycle:
             def list_opportunities(self, *, page=1, limit=20):
                 return {
                     "ok": True,
-                    "opportunities": [fake_model],
+                    "data": {"items": [fake_model], "next": None, "count": 1},
                     "using_fallback": False,
                     "raw_listings": [],
+                    "dry_run": False,
                 }
 
         prospector.adapter = FakeAdapter()  # type: ignore[assignment]
@@ -88,11 +89,12 @@ class TestRunCycle:
             def list_opportunities(self, *, page=1, limit=20):
                 return {
                     "ok": False,
-                    "opportunities": [],
+                    "data": {"items": [], "next": None, "count": 0},
                     "using_fallback": True,
                     "raw_listings": [
                         {"title": "$5,000 Per Deal | Short Cycle | Phone Sales", "url": "x"}
                     ],
+                    "dry_run": False,
                 }
 
         prospector.adapter = FakeAdapterFallback()  # type: ignore[assignment]
@@ -121,9 +123,10 @@ class TestRunCycle:
             def list_opportunities(self, *, page=1, limit=20):
                 return {
                     "ok": True,
-                    "opportunities": [FakeModel()],
+                    "data": {"items": [FakeModel()], "next": None, "count": 1},
                     "using_fallback": False,
                     "raw_listings": [],
+                    "dry_run": False,
                 }
 
         prospector.adapter = FakeAdapter()  # type: ignore[assignment]

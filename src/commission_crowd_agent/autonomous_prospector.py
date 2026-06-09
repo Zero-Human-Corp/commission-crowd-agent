@@ -146,7 +146,9 @@ class CommissionCrowdProspector:
         # 1. Fetch public opportunities
         opp_result = self.adapter.list_opportunities()
         opps = []
-        if opp_result.get("ok"):
+        if opp_result.get("dry_run"):
+            pass  # dry-run stubs don't count as discovered
+        elif opp_result.get("ok"):
             raw_opps = opp_result.get("data", {}).get("items", []) or []
             # Convert Pydantic models to plain dicts for uniform handling
             opps = [o.model_dump() if hasattr(o, "model_dump") else o for o in raw_opps]
@@ -177,7 +179,10 @@ class CommissionCrowdProspector:
             # Commission signal from structured field (fallback to text search)
             comm_val = opp.get("commission_pc")
             try:
-                comm_pct = float(comm_val) if comm_val is not None else self._extract_commission_pct(full_text)
+                if comm_val is not None:
+                    comm_pct = float(comm_val)
+                else:
+                    comm_pct = self._extract_commission_pct(full_text)
             except (ValueError, TypeError):
                 comm_pct = self._extract_commission_pct(full_text)
             deal_val = self._extract_deal_value(full_text)
