@@ -1,0 +1,586 @@
+{
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/vite.config.ts": {
+    "mtime": 1780012022.706568,
+    "hash": "aaa99499f3db5f5e3bfc922e29f705f8"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/eslint.config.js": {
+    "mtime": 1780012022.7025678,
+    "hash": "b8893da386a89dfd3672dad848f4ec7e"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/main.tsx": {
+    "mtime": 1780012022.706568,
+    "hash": "c0b03d6a24469b0504079fe252beb6c0"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/types/section.ts": {
+    "mtime": 1780012022.706568,
+    "hash": "36a2cd1592a5a446591ecd48ab95c857"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/types/product.ts": {
+    "mtime": 1780012022.706568,
+    "hash": "f36449883e1eabfcc8cfe66d7ec221fb"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/lib/design-system-loader.ts": {
+    "mtime": 1780012022.7055678,
+    "hash": "a0565ee98b7d42bba8c11a7d824d9b0b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/lib/section-loader.ts": {
+    "mtime": 1780012022.706568,
+    "hash": "62605182b47fb74d2b9cc3faec66543c"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/lib/data-shape-loader.ts": {
+    "mtime": 1780012022.7055678,
+    "hash": "4600983cd1b78a1cdd68f97f3e89d531"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/lib/router.tsx": {
+    "mtime": 1780012022.706568,
+    "hash": "ab3179b1d63a9fe0e21099ce471a4bdf"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/lib/shell-loader.ts": {
+    "mtime": 1780012022.706568,
+    "hash": "ec76394f2a6012eb2481bd9f8de813c4"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/lib/product-loader.ts": {
+    "mtime": 1780012022.706568,
+    "hash": "4f12a101ecf443e6cc16db36314e2ec6"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/lib/utils.ts": {
+    "mtime": 1780012022.706568,
+    "hash": "5a6fd53fdcf2be529e9cc0b718fde352"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/DataShapePage.tsx": {
+    "mtime": 1780012022.703568,
+    "hash": "12efa6b74901a4a5e9daad7b74343a8d"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ExportPage.tsx": {
+    "mtime": 1780012022.703568,
+    "hash": "5e8e5b3140e48e2eebc778493db7ec1d"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/SectionsPage.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "b320c410963fde3cda3fdde87257aa1e"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/EmptyState.tsx": {
+    "mtime": 1780012022.703568,
+    "hash": "573f35f99723971d568650fd3ab64495"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/StepIndicator.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "1ddc2290f77dd12371b544ae624effd2"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/DesignPage.tsx": {
+    "mtime": 1780012022.703568,
+    "hash": "a71515e5a8f2f7851058b416d1968b8e"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/SectionsCard.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "01d1d433c8086fb94712890fc5d6c268"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ThemeToggle.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "36e757fec2b680dd79ef86746eea04cb"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ShellDesignPage.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "5c3154e48bd40295d28d6099ff1a10f2"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ShellCard.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "b2bfb69fc38d0e67762250b2f02519cb"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/AppLayout.tsx": {
+    "mtime": 1780012022.703568,
+    "hash": "d228b3f58d6195ae1979637ddb6c841b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/SectionPage.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "52e84a9d05517766b04c2d41d6544bc4"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ProductOverviewCard.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "3014df8fba16314a9c0e3ed3a5da5515"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ProductPage.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "011f25882f952396bafd7f308d75c8ef"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ScreenDesignPage.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "72435dbe5aec7a6dfbf0a03513530539"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/DataCard.tsx": {
+    "mtime": 1780012022.703568,
+    "hash": "d0c8d72bdb4b2184601d54cbf60747d0"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/PhaseWarningBanner.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "0b02ab6066de1c4486e1d89af782cdfa"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/SpecCard.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "ee4a2c118235136d9aafb33da8729c61"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/NextPhaseButton.tsx": {
+    "mtime": 1780012022.703568,
+    "hash": "203b3136964783256080a9fca6190885"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ScreenDesignsCard.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "0785c0f0b2c98b985c8bf7d6e1764900"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/PhaseNav.tsx": {
+    "mtime": 1780012022.704568,
+    "hash": "a3723562681bde90f4d04abe01398703"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/sheet.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "6945241f834cad4ca26b2b06a7c49a50"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/tabs.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "5411c951f095fdbc9c061509eddfd714"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/dropdown-menu.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "8a7f49b4f303577830fafaaaedb8c4f3"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/input.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "6666f8369b53c79d39be8060dc6c4ce5"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/dialog.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "48a74bc4e6b2a9609c91582cae95730f"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/collapsible.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "aba7f811cbbd9426403dfef39800d839"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/card.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "a6752f4d1da504c7f03196d90cde4b2c"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/skeleton.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "ee5017bac14efeda715feaceb488382a"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/label.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "710ce51843629f84766e78763b194c90"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/separator.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "07b35dc35f811b26a1ee3982582ba9fb"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/avatar.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "19bc4411b724fb504c65550b61a453b1"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/button.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "22b799b3a86a4257b34e0eb35156fffb"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/badge.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "7efa8abd36eee59f14998b447d169304"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/components/ui/table.tsx": {
+    "mtime": 1780012022.7055678,
+    "hash": "531bf830b5f3b399abe3fd453157cdb7"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/domain.py": {
+    "mtime": 1780012022.709568,
+    "hash": "c090d9b2790b97c63fc013e9014e2133"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/supervisor_relay.py": {
+    "mtime": 1780012022.709568,
+    "hash": "1f7bd754c0f9873856dd4b46d546a234"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/adapters.py": {
+    "mtime": 1780941250.0411487,
+    "hash": "dadcb9fec3eb158eae9fee97c5d2c43e"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/operator_source.py": {
+    "mtime": 1780012022.709568,
+    "hash": "e636d0f8f67af01116ccee546805eff2"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/lead_ingestion.py": {
+    "mtime": 1780012022.709568,
+    "hash": "75f6f56480d339fd8663c23566fe6061"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/workflow_runner.py": {
+    "mtime": 1780941276.0842342,
+    "hash": "3c2fa33a60f5de9ce3aa401c4aceea3e"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/deeper_research.py": {
+    "mtime": 1780012022.7085679,
+    "hash": "b986db1d2991555389b39d81e7206c1b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/directory_extractor.py": {
+    "mtime": 1780012022.7085679,
+    "hash": "318d7f4ec35c6369a24a7fa8ea1fc520"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/config.py": {
+    "mtime": 1780939791.3513882,
+    "hash": "8a3d35e8c54e46501befe77cdfa9c61f"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/__init__.py": {
+    "mtime": 1780012022.7085679,
+    "hash": "3f76e4aed437b29e6f207ed29d9a3700"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/approval_gate.py": {
+    "mtime": 1780012022.7085679,
+    "hash": "159b1dc59da2ba8f0b6a3e84550279e9"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/stub_detector.py": {
+    "mtime": 1780012022.709568,
+    "hash": "4407f35495aeb1ce2fe38e8ee21e341a"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/cli.py": {
+    "mtime": 1780941461.044841,
+    "hash": "2039fb4465152dc786884e1ec6eb5646"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/lead_scoring.py": {
+    "mtime": 1780012022.709568,
+    "hash": "616bab0a1d42f166efa91a0fd9c99938"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/workflows/research_cycle.py": {
+    "mtime": 1780012022.709568,
+    "hash": "e2f0af1e370f34e9c3ba1c18b2cf7158"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/workflows/outreach.py": {
+    "mtime": 1780012022.709568,
+    "hash": "9d15e3d8eba8945415ae3a4b14347108"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/workflows/__init__.py": {
+    "mtime": 1780012022.709568,
+    "hash": "78d2df36163394da825909ded3cd4734"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/workflows/scoring.py": {
+    "mtime": 1780012022.709568,
+    "hash": "8ef03e2747182a8eef9828d6503880a7"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/src/commission_crowd_agent/workflows/approvals.py": {
+    "mtime": 1780012022.709568,
+    "hash": "3a87f232220eb947899c4d80703fbd9f"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_commissioncrowd_extractor.py": {
+    "mtime": 1780012022.7115679,
+    "hash": "80b68f4db31c1ccc33bd0d8924343a76"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_deeper_research.py": {
+    "mtime": 1780012022.7115679,
+    "hash": "d2ce28f0358a364d3cf4388cee2f55d4"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_lead_scoring.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "83aa8afed6501de2836ec9026b4f258b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_directory_extractor.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "8a3943e131b421087105d9415655bf34"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_approval_gate.py": {
+    "mtime": 1780012022.7115679,
+    "hash": "fb2808089b09f2a3e949393ac07f6bd0"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_config.py": {
+    "mtime": 1780939810.9424524,
+    "hash": "23fa5cf19dbaf2e9fbf9b1b73c776378"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_google_sheets_adapter.py": {
+    "mtime": 1780940777.188599,
+    "hash": "6e9ba86994ccc37ae34f8b83e89bfec4"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_secrets.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "b61e7044ad23ced6717dc8f5f821f7f0"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_lead_ingestion.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "6714ed494af53c88d328628e1190967d"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_domain.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "dca3b96eee115a8332a32ffe8620bd6d"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_supervisor_relay.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "fd5917b9fff2ada50505f635428308b3"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_operator_source.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "14bc7f2e390a2685bc64a2c5349a7c32"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_adapters.py": {
+    "mtime": 1780012022.7115679,
+    "hash": "301a6be0a74c8df8dafe75616ea87b36"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_approval_decision_roundtrip.py": {
+    "mtime": 1780012022.7115679,
+    "hash": "9f39e0bdf0436e452a7623856a85ff20"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_google_sheets.py": {
+    "mtime": 1780940748.6395056,
+    "hash": "ced6a3a7e83caae9ea661bdbbb04870b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_stub_detector.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "219dd26d176d3301f4b252010fc70095"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_schema_guards.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "6c2625ddab57e6e6149712c1a1e9ecba"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_supervisor_smoke.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "b48094e7b0d13d9ff5e803d619d0943e"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_per_source_limits.py": {
+    "mtime": 1780012022.7125678,
+    "hash": "cf0fa95d30a844d8652fcd36420cb26f"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/test_workflow_runner.py": {
+    "mtime": 1780012022.713568,
+    "hash": "eaf076286956e892ca0ce68057340178"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/README.md": {
+    "mtime": 1780941300.5483143,
+    "hash": "44f8994b204baa5eb5ed82b9400c0d11"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/README.md": {
+    "mtime": 1780012022.700568,
+    "hash": "77604a5f3f099e6d92e2992c7873a73c"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/README.md": {
+    "mtime": 1780012022.701568,
+    "hash": "843f85909f660ea8472ea94d6f0a48ef"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/agents.md": {
+    "mtime": 1780012022.701568,
+    "hash": "30a8b0e9b853767dadb78a31d10f6a47"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/CHANGELOG.md": {
+    "mtime": 1780012022.701568,
+    "hash": "557687f9a9ea04637da0dc5cc91989db"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/claude.md": {
+    "mtime": 1780012022.701568,
+    "hash": "e1e46f295b62b89a2a4dedb04f205c11"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/index.html": {
+    "mtime": 1780012022.7025678,
+    "hash": "d84f6abe01adf7061f3f0c45d89c2896"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/docs/codebase-implementation.md": {
+    "mtime": 1780012022.701568,
+    "hash": "9dd12efb01d7906e61058eda414a070f"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/docs/product-planning.md": {
+    "mtime": 1780012022.7025678,
+    "hash": "d7e38d24b72c0fdb47c01e34057989cf"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/docs/getting-started.md": {
+    "mtime": 1780012022.7025678,
+    "hash": "5c783db55dbe5d30c5cb10580ec8b3c3"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/docs/design-section.md": {
+    "mtime": 1780012022.701568,
+    "hash": "5cb0877974ca808dd82b45f302859b86"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/docs/usage.md": {
+    "mtime": 1780012022.7025678,
+    "hash": "8340bdae058cf18791c5c4627cf4c9e7"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/docs/index.md": {
+    "mtime": 1780012022.7025678,
+    "hash": "d5a238c309cf5bd6b7349803d6af126a"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/docs/export.md": {
+    "mtime": 1780012022.7025678,
+    "hash": "3a8802548e8e38b50ee4f7052dda8337"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/docs/requirements.md": {
+    "mtime": 1780012022.7025678,
+    "hash": "96c79c43dd1fa8ffd021fcda2de16c35"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/supervisor-overall-goal.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "8fbcb9dbeb78bcb0a209f88e5e6714af"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/backend-structure.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "6601f0d3db4524f020fc3725ee757746"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/srs.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "902ff2fc62752022751f1567a4032cc1"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/workflow-rep-application-model.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "7e2a3b382683918353e634cf65ee9a6b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/implementation-plan.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "fd39ad3e3a3328fd8f25cb2226d56fc4"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/shared-tools.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "1a44551e30326218e9fa1b8219618f73"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/prd.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "4de94a09e3638781e1cd7e28b54dd85b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/holdco-website-copy-plan.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "093a662f8e65204e8dee1cb3af777dbb"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/job-description.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "089e2f8d48e519d92c0d7be38ff81ebf"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/product-description.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "1565be57247204dec356ab085331381c"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/holdco-repo-mapping.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "4f83dec44868bb67a16829f9d47d900a"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/architecture.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "90f30188c53872a511a275b2a0780d9d"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/target-audience.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "63d1cf4c710ca5ab896b72a34e33ea24"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/app-flow.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "54fb5cf069e770c2cbcc01182d2bcae3"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/frontend-guidelines.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "7ad4b2bcd9ddc14568f7d9e36f2836c7"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/local_supervisor_model_routing.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "0a357d1d7f9fc9567bf05fff6992b51a"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/holdco-architecture.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "64c5cacc3b4de21a845bae787ab1bbeb"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/tech-stack.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "2f3e662a1927d69dd34c7393d035a588"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/task-list.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "17208df4e4a7c29c707cab77248617ec"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/security-guidelines.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "fbc082ad224af56080611f540b9a51df"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/operations/google-sheets.md": {
+    "mtime": 1780012022.6995678,
+    "hash": "22bfece9035eb1459b3cf75bd5af0e9e"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/decisions/ADR-001-replace-n8n-primary-workflows-with-hermes-hooks.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "089445049e3bf5a0882ecb5df5b7a581"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/docs/legacy/n8n/README.md": {
+    "mtime": 1780012022.6985679,
+    "hash": "138409ea1c3c2bfd0e83589754da35f2"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/fixtures/commissioncrowd/translation-localization.html": {
+    "mtime": 1780012022.7115679,
+    "hash": "839c37d5091fbc1b78199b02e8c9e14c"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/fixtures/commissioncrowd/banking.html": {
+    "mtime": 1780012022.710568,
+    "hash": "e1a3f86ea8f84e906e7384592ac8ef72"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/tests/fixtures/commissioncrowd/security-investigations.html": {
+    "mtime": 1780012022.710568,
+    "hash": "73c1098a608c492ffc9362ad6e6259d7"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/README.md": {
+    "mtime": 1780012022.706568,
+    "hash": "fb5ba2b95bc94b29b47085179c423867"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/commission-only-sales.html": {
+    "mtime": 1780012022.707568,
+    "hash": "e3571ec87c83acebc5b91138c2e06b3b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/contact.html": {
+    "mtime": 1780012022.707568,
+    "hash": "92bdc23196959b94a63dbad06a74394c"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/opportunity-preferences.html": {
+    "mtime": 1780012022.707568,
+    "hash": "520be1b50a339549990a4140b76badbd"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/commissioncrowd-profile.html": {
+    "mtime": 1780012022.707568,
+    "hash": "66530b89ab5091f83759583d04fdb634"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/vendor-partnership.html": {
+    "mtime": 1780012022.7085679,
+    "hash": "bcc3fd8d1c9865947db08ffc56b578e2"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/about.html": {
+    "mtime": 1780012022.707568,
+    "hash": "e46f697053040f6cafa8b9bb16574922"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/index.html": {
+    "mtime": 1780012022.707568,
+    "hash": "0cce18756153ed4ea303b20c047b3814"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/public/vite.svg": {
+    "mtime": 1780012022.703568,
+    "hash": "8e3a10e157f75ada21ab742c022d5430"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/shared-tools/design-os/src/assets/react.svg": {
+    "mtime": 1780012022.703568,
+    "hash": "f0402b67b6ce880f65666bb49e841696"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/icon-outreach.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "73562adc254b5eb3684f7ff241623a97"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/logo-placeholder.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "4a42611b77710d61b22d43aea2187754"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/agency-badge.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "29633d7d90669edde654e476b9ba95b3"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/photo-placeholder.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "813b2a4198c066225afea52b2cd59db9"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/icon-strategy.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "cded2172e24f2b4bc4718dfbce9d9937"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/partnership.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "df52eec9d8d7cda873fccf1eb1aaccd0"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/hero-pipeline.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "6eefc6025d3b9c5056f2e6161723a06b"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/icon-partner.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "fb613817bdc008a8bfd5c7c25c9f2761"
+  },
+  "/home/ubuntu/projects/commission-crowd-agent/sites/syntaxis-labs/assets/icon-demo.svg": {
+    "mtime": 1780012022.707568,
+    "hash": "0d604a708f8c7946dd15727811469109"
+  }
+}

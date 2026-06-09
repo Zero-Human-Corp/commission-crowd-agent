@@ -191,8 +191,7 @@ def _resolve_model(
     if allow_fallback and fallback:
         if _check_model_available(base_url, fallback):
             return fallback, (
-                f"Requested model '{requested}' unavailable. "
-                f"Fallback to '{fallback}' enabled."
+                f"Requested model '{requested}' unavailable. Fallback to '{fallback}' enabled."
             )
         # 4. Cloud-tagged equivalent of fallback
         fallback_cloud = f"{fallback}:cloud"
@@ -249,17 +248,13 @@ class SupervisorRelay:
         self._base_url = self.settings.supervisor_base_url.rstrip("/")
         self._api_key = self.settings.supervisor_api_key
         self._model_map: dict[SupervisorTaskType, str] = {
-            SupervisorTaskType.PRIMARY_SUPERVISOR: (
-                self.settings.supervisor_primary_model
-            ),
+            SupervisorTaskType.PRIMARY_SUPERVISOR: (self.settings.supervisor_primary_model),
             SupervisorTaskType.CODE_REVIEW: self.settings.supervisor_code_review_model,
             SupervisorTaskType.REASONING_FALLBACK: (
                 self.settings.supervisor_reasoning_fallback_model
             ),
             SupervisorTaskType.DRAFT_REVIEW: self.settings.supervisor_draft_review_model,
-            SupervisorTaskType.LONG_CONTEXT_REVIEW: (
-                self.settings.supervisor_long_context_model
-            ),
+            SupervisorTaskType.LONG_CONTEXT_REVIEW: (self.settings.supervisor_long_context_model),
         }
 
     @property

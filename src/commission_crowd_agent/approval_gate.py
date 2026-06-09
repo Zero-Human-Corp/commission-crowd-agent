@@ -156,20 +156,14 @@ class ApprovalGate:
             )
 
         # Write to Sheet
-        write_result = self.sheets_adapter.append_row(
-            "approvals", req.to_sheets_row()
-        )
+        write_result = self.sheets_adapter.append_row("approvals", req.to_sheets_row())
         if not write_result.get("ok"):
-            raise RuntimeError(
-                f"Approval write to Sheet failed: {write_result.get('error')}"
-            )
+            raise RuntimeError(f"Approval write to Sheet failed: {write_result.get('error')}")
 
         # Post-write readback verification
         readback = self.sheets_adapter.read_last_rows("approvals", count=200)
         if not readback.get("ok"):
-            raise RuntimeError(
-                f"Approval readback from Sheet failed: {readback.get('error')}"
-            )
+            raise RuntimeError(f"Approval readback from Sheet failed: {readback.get('error')}")
 
         found = False
         for row in readback.get("rows", []):

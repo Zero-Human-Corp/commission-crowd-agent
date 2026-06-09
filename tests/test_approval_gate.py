@@ -4,10 +4,10 @@ Covers creation, Sheet writes, read-backs, guard logic, Telegram
 notification safety, and header validation.
 """
 
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from typing import Any
 
 from commission_crowd_agent.approval_gate import ApprovalGate, ApprovalRequest
 
@@ -271,11 +271,14 @@ def test_validate_header_mismatch():
     assert result["ok"] is False
     assert "mismatch" in result["error"].lower()
 
+
 # ---- Tests for create_and_write_approval (production path) ----
+
 
 def test_create_and_write_approval_raises_if_no_adapter():
     """Without a sheets_adapter, create_and_write_approval must refuse."""
     from commission_crowd_agent.approval_gate import ApprovalGate
+
     gate = ApprovalGate(sheets_adapter=None)
     with pytest.raises(RuntimeError, match="no sheets_adapter wired"):
         gate.create_and_write_approval(
@@ -284,9 +287,11 @@ def test_create_and_write_approval_raises_if_no_adapter():
             requested_action="Test",
         )
 
+
 def test_create_and_write_approval_raises_on_header_mismatch():
     """If validate_tab_header fails, create_and_write_approval must abort."""
     from commission_crowd_agent.approval_gate import ApprovalGate
+
     mock_adapter = MagicMock()
     mock_adapter.validate_tab_header.return_value = {
         "ok": False,
@@ -300,9 +305,11 @@ def test_create_and_write_approval_raises_on_header_mismatch():
             requested_action="Test",
         )
 
+
 def test_create_and_write_approval_raises_on_write_failure():
     """If append_row fails, create_and_write_approval must raise."""
     from commission_crowd_agent.approval_gate import ApprovalGate
+
     mock_adapter = MagicMock()
     mock_adapter.validate_tab_header.return_value = {"ok": True}
     mock_adapter.append_row.return_value = {
@@ -317,9 +324,11 @@ def test_create_and_write_approval_raises_on_write_failure():
             requested_action="Test",
         )
 
+
 def test_create_and_write_approval_raises_on_readback_missing():
     """If the written row is not found in readback, raise."""
     from commission_crowd_agent.approval_gate import ApprovalGate
+
     mock_adapter = MagicMock()
     mock_adapter.validate_tab_header.return_value = {"ok": True}
     mock_adapter.append_row.return_value = {"ok": True}
@@ -338,9 +347,11 @@ def test_create_and_write_approval_raises_on_readback_missing():
             requested_action="Test",
         )
 
+
 def test_create_and_write_approval_succeeds_with_verification():
     """Happy path: write succeeds and readback finds the row."""
     from commission_crowd_agent.approval_gate import ApprovalGate
+
     mock_adapter = MagicMock()
     mock_adapter.validate_tab_header.return_value = {"ok": True}
     # Capture the row so we can return it in readback
@@ -370,4 +381,3 @@ def test_create_and_write_approval_succeeds_with_verification():
     assert mock_adapter.append_row.call_count == 1
     # Verify readback was called
     assert mock_adapter.read_last_rows.call_count == 1
-

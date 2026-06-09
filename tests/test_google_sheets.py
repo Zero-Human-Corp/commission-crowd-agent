@@ -107,9 +107,11 @@ class TestAppendRow:
         mock_post = MagicMock()
         mock_post.status_code = 200
         mock_post.json.return_value = {"updatedRange": "leads!A2"}
-        with patch("commission_crowd_agent.adapters.httpx.get", return_value=mock_get):
-            with patch("commission_crowd_agent.adapters.httpx.put", return_value=mock_post):
-                result = adapter.append_row("leads", ["L001", "web", "Alice"])
+        with (
+            patch("commission_crowd_agent.adapters.httpx.get", return_value=mock_get),
+            patch("commission_crowd_agent.adapters.httpx.put", return_value=mock_post),
+        ):
+            result = adapter.append_row("leads", ["L001", "web", "Alice"])
         assert result["ok"] is True
         assert result["rows_changed"] == 1
 
@@ -216,6 +218,8 @@ class TestSchemaDefinition:
             "approvals",
             "runs",
             "outcomes",
+            "calendar_events",
+            "outreach_log",
         }
 
     def test_leads_tab_has_expected_columns(self) -> None:

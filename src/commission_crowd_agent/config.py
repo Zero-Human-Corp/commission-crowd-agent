@@ -59,7 +59,12 @@ class CcaSettings(BaseSettings):
     n8n_basic_auth_user: str = Field(default="")
     n8n_basic_auth_pass: str = Field(default="")
 
-    # --- Agent ---
+    # --- CommissionCrowd ---
+    commissioncrowd_api_key: str = Field(default="", description="CommissionCrowd REST API key")
+    commissioncrowd_base_url: str = Field(
+        default="https://www.commissioncrowd.com/api",
+        description="CommissionCrowd API base URL",
+    )
     cca_client_name: str = Field(default="", description="Default client name for runs")
     cca_daily_volume_limit: int = Field(default=50, ge=1)
     cca_log_level: str = Field(default="INFO")
@@ -113,6 +118,10 @@ class CcaSettings(BaseSettings):
     def smtp_ready(self) -> bool:
         return bool(self.smtp_host and self.smtp_user and self.smtp_pass)
 
+    @property
+    def commissioncrowd_ready(self) -> bool:
+        return bool(self.commissioncrowd_api_key)
+
     def safe_repr(self) -> str:
         """Return a settings summary with no secret values exposed."""
         return (
@@ -146,6 +155,8 @@ _SHARED_KEY_MAP: dict[str, str] = {
     "n8n_api_key": "N8N_API_KEY",
     "n8n_basic_auth_user": "N8N_BASIC_AUTH_USER",
     "n8n_basic_auth_pass": "N8N_BASIC_AUTH_PASS",
+    "commissioncrowd_api_key": "COMMISSIONCROWD_API_KEY",
+    "commissioncrowd_base_url": "COMMISSIONCROWD_BASE_URL",
     "cca_client_name": "CCA_CLIENT_NAME",
     "cca_daily_volume_limit": "CCA_DAILY_VOLUME_LIMIT",
     "cca_log_level": "CCA_LOG_LEVEL",

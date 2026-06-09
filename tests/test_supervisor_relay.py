@@ -21,14 +21,13 @@ from commission_crowd_agent.supervisor_relay import (
     SupervisorResponse,
     SupervisorResponseValidationError,
     SupervisorTaskType,
-    _check_model_available,
     _is_blocked_action,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _patch_available(monkeypatch) -> None:
     """Patch _check_model_available so every model appears available."""
@@ -287,7 +286,7 @@ def test_code_review_routes_to_qwen3_coder_next(monkeypatch) -> None:
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response('{"approved": true, "reason": "clean code"}')
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
-    resp = relay.code_review("review this function")
+    relay.code_review("review this function")
     call_args = mock_client.post.call_args
     payload = call_args.kwargs["json"]
     assert payload["model"] == "qwen3-coder-next"
@@ -302,7 +301,7 @@ def test_reasoning_fallback_routes_to_deepseek_v32(monkeypatch) -> None:
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response('{"approved": true, "reason": "solid logic"}')
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
-    resp = relay.reasoning_fallback("is this sound?")
+    relay.reasoning_fallback("is this sound?")
     call_args = mock_client.post.call_args
     payload = call_args.kwargs["json"]
     assert payload["model"] == "deepseek-v3.2"
@@ -317,7 +316,7 @@ def test_draft_review_routes_to_kimi_k2_thinking(monkeypatch) -> None:
     mock_client = MagicMock(spec=httpx.Client)
     mock_client.post.return_value = _mock_response('{"approved": true, "reason": "well written"}')
     relay = SupervisorRelay(settings=settings, dry_run=False, client=mock_client)
-    resp = relay.draft_review("evaluate outreach draft")
+    relay.draft_review("evaluate outreach draft")
     call_args = mock_client.post.call_args
     payload = call_args.kwargs["json"]
     assert payload["model"] == "gemma3:27b-cloud"
@@ -475,7 +474,6 @@ def test_schema_description_has_required_fields() -> None:
     assert "risk_level" in SUPERVISOR_SCHEMA_DESCRIPTION["properties"]
     assert "notes" in SUPERVISOR_SCHEMA_DESCRIPTION["properties"]
     assert SUPERVISOR_SCHEMA_DESCRIPTION["required"] == ["approved", "reason"]
-
 
 
 # ---------------------------------------------------------------------------

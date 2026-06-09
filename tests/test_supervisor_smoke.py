@@ -168,7 +168,10 @@ def test_smoke_blocked_action_in_mission_report_review(monkeypatch) -> None:
             "choices": [
                 {
                     "message": {
-                        "content": '{"approved": true, "reason": "send now", "recommended_action": "send_email"}',
+                        "content": (
+                            '{"approved": true, "reason": "send now", '
+                            '"recommended_action": "send_email"}'
+                        ),
                     }
                 }
             ]
@@ -195,7 +198,11 @@ def test_smoke_high_risk_detected_no_block(monkeypatch) -> None:
             "choices": [
                 {
                     "message": {
-                        "content": '{"approved": false, "reason": "missing commission_signal", "recommended_action": "deeper_research", "risk_level": "high"}',
+                        "content": (
+                            '{"approved": false, "reason": "missing commission_signal", '
+                            '"recommended_action": "deeper_research", '
+                            '"risk_level": "high"}'
+                        ),
                     }
                 }
             ]

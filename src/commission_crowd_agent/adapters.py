@@ -10,13 +10,14 @@ NotifierAdapter is now real; others remain stubs awaiting future milestones.
 
 from __future__ import annotations
 
+import contextlib
 import time
 from typing import Any
 
 import httpx
 
-from .domain import Lead
 from .deeper_research import DeeperResearchService
+from .domain import Lead
 from .lead_scoring import LeadScorer
 
 
@@ -76,12 +77,12 @@ class ScoringAdapter:
         if not lead.company:
             subject = "Exploring a commission-only sales partnership"
             body = (
-                f"Hello,\n\n"
-                f"I came across your profile and wanted to reach out regarding a "
-                f"commission-only sales representation opportunity.\n\n"
-                f"I'd love to learn more about what you're building and explore "
-                f"whether there might be a fit.\n\n"
-                f"Best regards"
+                "Hello,\n\n"
+                "I came across your profile and wanted to reach out regarding a "
+                "commission-only sales representation opportunity.\n\n"
+                "I'd love to learn more about what you're building and explore "
+                "whether there might be a fit.\n\n"
+                "Best regards"
             )
             return subject, body
         subject = f"Exploring a commission-only sales partnership with {lead.company}"
@@ -391,6 +392,30 @@ class GoogleSheetsAdapter:
             "payment_ref",
             "notes",
         ],
+        "calendar_events": [
+            "event_id",
+            "created_at_utc",
+            "entity_type",
+            "entity_id",
+            "event_type",
+            "event_date_utc",
+            "event_summary",
+            "status",
+            "notes",
+        ],
+        "outreach_log": [
+            "outreach_id",
+            "created_at_utc",
+            "opportunity_id",
+            "lead_id",
+            "template_id",
+            "subject_line",
+            "body_preview",
+            "status",
+            "sent_at_utc",
+            "operator_approved",
+            "notes",
+        ],
     }
 
     def __init__(
@@ -678,7 +703,8 @@ class GoogleSheetsAdapter:
 
         # 2. Build direct write range and URL
         expected_cols = len(self.SCHEMA.get(tab, []))
-        end_col = self._index_to_column_letter(max(expected_cols, len(values))) + "1"
+        # end_col reserved for future header validation
+        self._index_to_column_letter(max(expected_cols, len(values))) + "1"
         range_name = f"{tab}!A{next_row}"
         url = (
             f"{self.API_BASE}/{self.spreadsheet_id}/values/"
@@ -768,15 +794,13 @@ class GoogleSheetsAdapter:
             # Build batchUpdate clear + update request
             url = f"{self.API_BASE}/{self.spreadsheet_id}/values:batchClear"
             payload = {"ranges": [f"{tab}!A1:Z5000"]}
-            try:
+            with contextlib.suppress(Exception):
                 httpx.post(
                     url,
                     json=payload,
                     headers=self._auth_headers(),
                     timeout=self.TIMEOUT_SECONDS,
                 )
-            except Exception:
-                pass  # best-effort clear
 
             # Write back all kept rows
             write_url = (
@@ -793,13 +817,9 @@ class GoogleSheetsAdapter:
                 )
                 response.raise_for_status()
             except httpx.HTTPStatusError as exc:
-                return self._error_result(
-                    "compact_tab", tab, f"HTTP {exc.response.status_code}"
-                )
+                return self._error_result("compact_tab", tab, f"HTTP {exc.response.status_code}")
             except (httpx.RequestError, httpx.TimeoutException) as exc:
-                return self._error_result(
-                    "compact_tab", tab, f"Network: {type(exc).__name__}"
-                )
+                return self._error_result("compact_tab", tab, f"Network: {type(exc).__name__}")
 
         return {
             "ok": True,
@@ -872,12 +892,14 @@ class GoogleSheetsAdapter:
         for eid, entries in entity_statuses.items():
             pending = [e for e in entries if e["status"] == "pending"]
             if len(pending) > 1:
-                stale_entities.append({
-                    "entity_id": eid,
-                    "pending_count": len(pending),
-                    "pending_ids": [e["approval_id"] for e in pending],
-                    "latest_pending": pending[-1]["approval_id"],
-                })
+                stale_entities.append(
+                    {
+                        "entity_id": eid,
+                        "pending_count": len(pending),
+                        "pending_ids": [e["approval_id"] for e in pending],
+                        "latest_pending": pending[-1]["approval_id"],
+                    }
+                )
 
         return {
             "ok": True,
