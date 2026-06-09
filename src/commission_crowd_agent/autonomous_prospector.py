@@ -74,14 +74,14 @@ class CommissionCrowdProspector:
         if not text:
             return 0
         text = text.lower().replace(",", "")
-        # "$2,500" or "$2500" (commas already removed above)
-        match = re.search(r"\$(\d{3,})", text)
-        if match:
-            return int(match.group(1))
-        # "$7,500–$15,000" -> take upper bound
+        # Range: "$7,500–$15,000" -> take upper bound (must come before simple match)
         match = re.search(r"\$(\d+)\s*[-–]\s*\$?(\d+)", text)
         if match:
             return int(match.group(2))
+        # "$2,500" or "$2500"
+        match = re.search(r"\$(\d{3,})", text)
+        if match:
+            return int(match.group(1))
         return 0
 
     @staticmethod
@@ -106,8 +106,17 @@ class CommissionCrowdProspector:
         if not text:
             return False
         text = text.lower()
-        indicators = ["short", "fast", "quick", "warm", "warm leads", "immediate",
-                      "rapid", "express", "accelerated"]
+        indicators = [
+            "short",
+            "fast",
+            "quick",
+            "warm",
+            "warm leads",
+            "immediate",
+            "rapid",
+            "express",
+            "accelerated",
+        ]
         return any(i in text for i in indicators)
 
     @staticmethod
@@ -138,7 +147,7 @@ class CommissionCrowdProspector:
         opp_result = self.adapter.list_opportunities()
         opps = []
         if opp_result.get("ok"):
-            raw_opps = opp_result.get("opportunities", []) or []
+            raw_opps = opp_result.get("data", {}).get("items", []) or []
             # Convert Pydantic models to plain dicts for uniform handling
             opps = [o.model_dump() if hasattr(o, "model_dump") else o for o in raw_opps]
         elif opp_result.get("using_fallback"):
@@ -160,20 +169,33 @@ class CommissionCrowdProspector:
         # 2. Filter and score
         scored: list[dict[str, Any]] = []
         for opp in opps[:50]:  # bounded read
-            title = opp.get("title", "") or ""
+            title = opp.get("name", "") or opp.get("title", "") or ""
             desc = opp.get("description", "") or ""
-            full_text = f"{title} {desc}"
+            short_summary = opp.get("short_summary", "") or ""
+            full_text = f"{title} {desc} {short_summary}"
 
-            # Commission signal
-            comm_pct = self._extract_commission_pct(full_text)
+            # Commission signal from structured field (fallback to text search)
+            comm_val = opp.get("commission_pc")
+            try:
+                comm_pct = float(comm_val) if comm_val is not None else self._extract_commission_pct(full_text)
+            except (ValueError, TypeError):
+                comm_pct = self._extract_commission_pct(full_text)
             deal_val = self._extract_deal_value(full_text)
-            commission_signal = max(comm_pct, int(deal_val / 1000))  # rough proxy
 
-            # Short cycle?
-            short_cycle = self._has_short_cycle(full_text)
+            # Short cycle from structured field + text
+            avg_sales_cycle = opp.get("average_sales_cycle")
+            sales_cycle_short = False
+            if avg_sales_cycle is not None:
+                try:
+                    sales_cycle_short = int(avg_sales_cycle) <= 2
+                except (ValueError, TypeError):
+                    sales_cycle_short = False
+            short_cycle = sales_cycle_short or self._has_short_cycle(full_text)
 
-            # Preferred methods
-            preferred_methods = self._has_email_phone(full_text)
+            # Preferred methods from structured fields + text
+            has_phone = bool(opp.get("phone"))
+            has_email = bool(opp.get("email"))
+            preferred_methods = has_phone or has_email or self._has_email_phone(full_text)
 
             # Simple fit score (0-100)
             fit = 0
@@ -187,14 +209,16 @@ class CommissionCrowdProspector:
                 fit += 20
 
             if fit >= 50:
-                scored.append({
-                    "opportunity": opp,
-                    "fit": fit,
-                    "comm_pct": comm_pct,
-                    "deal_val": deal_val,
-                    "short_cycle": short_cycle,
-                    "preferred_methods": preferred_methods,
-                })
+                scored.append(
+                    {
+                        "opportunity": opp,
+                        "fit": fit,
+                        "comm_pct": comm_pct,
+                        "deal_val": deal_val,
+                        "short_cycle": short_cycle,
+                        "preferred_methods": preferred_methods,
+                    }
+                )
 
         # Sort by fit descending; cap
         scored.sort(key=lambda x: x["fit"], reverse=True)
@@ -204,11 +228,12 @@ class CommissionCrowdProspector:
         added: list[dict[str, Any]] = []
         for s in top:
             opp = s["opportunity"]
-            slug = opp.get("slug", "") or opp.get("title", "").lower().replace(" ", "-")[:30]
-            lead_id = f"CC-{slug}-{s['fit']}"
+            name = opp.get("name") or opp.get("title", "")
+            slug = opp.get("latest_slug", "")
+            lead_id = f"CC-{slug}" if slug else f"CC-{name[:20].replace(' ', '-')}-{s['fit']}"
             record = {
                 "lead_id": lead_id,
-                "title": opp.get("title", ""),
+                "title": name,
                 "fit": s["fit"],
                 "comm_pct": s["comm_pct"],
                 "deal_val": s["deal_val"],
@@ -221,7 +246,11 @@ class CommissionCrowdProspector:
                     company_name=opp.get("title", ""),
                     source="commissioncrowd",
                     source_url=opp.get("url", ""),
-                    notes=f"fit={s['fit']}, comm={s['comm_pct']}%, deal=${s['deal_val']}, short={s['short_cycle']}, methods={s['preferred_methods']}",
+                    notes=(
+                        f"fit={s['fit']}, comm={s['comm_pct']}pct, "
+                        f"deal=${s['deal_val']}, short={s['short_cycle']}, "
+                        f"methods={s['preferred_methods']}"
+                    ),
                     dry_run=not live,
                 )
             added.append(record)

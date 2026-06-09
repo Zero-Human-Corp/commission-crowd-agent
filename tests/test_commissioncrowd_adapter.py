@@ -117,9 +117,9 @@ class TestHealthCheck:
         assert result["ok"] is True
         assert result["status"] == 200
         assert "resources" in result["data"]
-        # Make sure the request was made with Bearer auth
+        # CommissionCrowd legacy API uses Token scheme (not Bearer)
         call = mock_client.request.call_args
-        assert call[1]["headers"]["Authorization"].startswith("Bearer")
+        assert call[1]["headers"]["Authorization"].startswith("Token")
 
     @patch("httpx.Client")
     def test_health_check_401(self, mock_client_cls: MagicMock) -> None:

@@ -1015,6 +1015,53 @@ def supervisor_smoke(
     console.print(f"[green]✅ Supervisor dry-run response: {result.model_dump_json()}[/green]")
 
 
+@app.command(name="prospect")
+def prospect_cmd(
+    dry_run: bool = typer.Option(default=True, help="Dry-run mode (default: True, no real writes)"),
+    limit: int = typer.Option(default=5, help="Max opportunities to process per cycle"),
+    min_commission: int = typer.Option(default=20, help="Minimum commission %"),
+    write: bool = typer.Option(default=False, help="Write leads to CRM (requires --dry-run False)"),
+    api_key: str = typer.Option(default="", help="CommissionCrowd API key (or load from config)"),
+) -> None:
+    """Run autonomous prospector: find high-commission opportunities, score, and optionally log."""
+    from .autonomous_prospector import CommissionCrowdProspector
+    from .crm_pipeline import CRMPipeline
+
+    settings = load_settings()
+    key = api_key or settings.commissioncrowd_api_key
+
+    if not dry_run:
+        console.print("[yellow]⚠️  LIVE MODE — real API calls and CRM writes will occur[/yellow]")
+        if not key:
+            console.print("[red]❌ No CommissionCrowd API key[/red]")
+            raise typer.Exit(1)
+    else:
+        console.print("[green]🔒 DRY RUN — no real writes[/green]")
+
+    prospector = CommissionCrowdProspector(
+        api_key=key,
+        dry_run=dry_run,
+        per_cycle_limit=limit,
+        min_commission_pct=min_commission,
+    )
+
+    crm = CRMPipeline(sheets_adapter=None) if write else None
+    result = prospector.run_cycle(crm_pipeline=crm, write=write)
+
+    table = Table(title="Autonomous Prospector Results")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="green")
+    for k, v in result.items():
+        table.add_row(str(k), str(v))
+    console.print(table)
+
+    if result.get("errors"):
+        for err in result["errors"]:
+            console.print(f"[red]Error: {err}[/red]")
+        raise typer.Exit(1)
+    console.print("[green]✅ Prospector cycle complete[/green]")
+
+
 def main() -> None:
     app()
 

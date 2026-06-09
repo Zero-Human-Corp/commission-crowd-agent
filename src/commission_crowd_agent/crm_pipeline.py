@@ -40,7 +40,7 @@ def _make_record(header: list[str], row: list[str]) -> dict[str, Any]:
 class CRMPipeline:
     """CRM pipeline backed by Google Sheets."""
 
-    def __init__(self, sheets_adapter: GoogleSheetsAdapter) -> None:
+    def __init__(self, sheets_adapter: GoogleSheetsAdapter | None = None) -> None:
         self.sheets_adapter = sheets_adapter
 
     def add_lead(

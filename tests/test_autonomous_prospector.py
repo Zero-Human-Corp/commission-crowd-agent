@@ -10,7 +10,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from commission_crowd_agent.autonomous_prospector import CommissionCrowdProspector
-from commission_crowd_agent.domain import OpportunityStage
 
 
 @pytest.fixture
@@ -88,7 +87,7 @@ class TestRunCycle:
         class FakeAdapterFallback:
             def list_opportunities(self, *, page=1, limit=20):
                 return {
-                    "ok": True,
+                    "ok": False,
                     "opportunities": [],
                     "using_fallback": True,
                     "raw_listings": [
