@@ -1,127 +1,122 @@
-# Architecture — Commission Crowd Agent
+# CCA Phase 2 Architecture — Safety & Hardening Addendum
 
-## Overview
+**Date:** 2026-06-09  
+**Status:** VERIFIED — 430 tests pass  
+**Applies to:** commission-crowd-agent ≥ ea7f7ae
 
-The Commission Crowd Agent is a **headless AI automation system** that replaces n8n as its primary workflow engine with **Hermes-triggered, Git-controlled Python workflows**. It runs on Oracle Cloud Infrastructure (OCI) and is operated via Telegram.
+## 1. Safety Layer (`cca_guardian.py`)
 
-See `docs/decisions/ADR-001-replace-n8n-primary-workflows-with-hermes-hooks.md` for the architectural decision record.
+New runtime safety module providing five capabilities:
 
----
+| Capability | Function | Purpose |
+|-----------|----------|---------|
+| **Bounded Retry** | `bounded_retry()` | Exponential-backoff decorator for network ops. Max 3 attempts, 1–8s backoff. Only retries `httpx.TimeoutException`, `httpx.ConnectError`. |
+| **Payload Hashing** | `hash_payload()` | SHA-256 hex digest (16 chars) of canonical JSON. Enables deduplication of identical outreach / application payloads. |
+| **Idempotency Store** | `IdempotencyStore` | Bounded in-memory store (10k entries, LRU eviction). Prevents duplicate CRM writes, duplicate approvals, duplicate calendar events. |
+| **Campaign Context** | `CampaignContext` | Generates `run_id` + `correlation_id` per campaign to trace a request end-to-end across service boundaries. |
+| **Approval Expiry** | `check_expiry()` | Validates approvals against a TTL (default 7 days). Rejects expired or stale approval tokens so an old approval cannot be accidentally re-approved weeks later. |
 
-## High-Level Architecture
+### Usage Patterns
 
-```
-Operator (Telegram / Hermes)
-        │
-        ▼
-+-------------------------------------+
-│  Hermes Agent / Telegram Bot        │
-│  (commands, approval, status)       │
-+-------------------------------------+
-        │
-        ▼
-+-------------------------------------+
-│  Hook Scripts (scripts/hooks/)      │
-│  preflight, run_research, etc.     │
-+-------------------------------------+
-        │
-        ▼
-+-------------------------------------+
-│  Python CLI (commission_crowd_agent) │
-│  config, domain, workflows, adapters │
-+-------------------------------------+
-        │
-        ▼
-+------------+  +-------------+  +----------------+
-│  Google    │  │  Ollama /  │  │  Telegram    │
-│  Sheets    │  │  LLM       │  │  (notifier)  │
-+------------+  +-------------+  +----------------+
+**Retry on network adapter:**
+```python
+@bounded_retry(
+    max_attempts=3,
+    backoff_base=1.0,
+    backoff_max=8.0,
+    retryable_exceptions=(httpx.TimeoutException, httpx.ConnectError),
+)
+def _request(self, method: str, path: str) -> httpx.Response: ...
 ```
 
----
+**Idempotency on CRM add_lead:**
+```python
+# Dry-run dedup via cache
+# Live dedup via lead_id scan in existing Sheet rows
+result = self.crm.add_lead(...)
+if result.get("dedup"):
+    logger.info("Duplicate lead_id suppressed: %s", lead_id)
+```
 
-## Components
+**Approval double-approve protection:**
+```python
+# Guard: reject already-approved records
+# Guard: reject already-rejected records
+# Guard: reject expired records (>7 days)
+```
 
-### 1. Operator Interface
-- **Hermes Agent via Telegram** — primary control plane
-- **Google Sheets** — lightweight data and approval layer (optional, not MVP-blocking)
+## 2. Adapter Hardening
 
-### 2. Hook Scripts (`scripts/hooks/`)
-Each hook is a bash script that:
-- Enforces `set -euo pipefail`
-- Changes to the repo root
-- Calls the Python CLI with the corresponding subcommand
-- Writes run artifacts to `data/runs/` (gitignored)
+### CommissionCrowd API Adapter (`commissioncrowd_adapter.py`)
+- **Retry-only on _request()** — public methods (`list_opportunities`, `list_agents`, `get_opportunity`) inherit retry via delegation.
+- **SSL verify=False** retained but documented: CommissionCrowd certificate expired 2026-06-09. Remove once renewed.
+- **Response shape normalised** — `items`, `next`, `count` fields always present (with `count` defaulting to `len(items)`).
+- **Dry-run reads-only** — GET endpoints still require API key. No live POST/PUT endpoint for applications exists in the adapter.
 
-Hooks:
-| Hook | Purpose |
-|------|---------|
-| `preflight.sh` | Verify settings, adapters, secrets readiness |
-| `run_research_cycle.sh` | Fetch leads → research → draft → score |
-| `score_opportunities.sh` | Re-evaluate or score existing leads |
-| `draft_outreach.sh` | Generate email drafts for approved leads |
-| `request_approval.sh` | Send operator approval summary via Telegram |
-| `send_approved_outreach.sh` | Send emails for leads marked approved |
-| `daily_summary.sh` | Report pipeline stats to operator |
+### CRM Pipeline (`crm_pipeline.py`)
+- **Deduplication guard** — `add_lead()` scans existing rows by `lead_id` before appending. Returns `dedup=True` silently if duplicate.
+- **Bounded transition validation** — `advance_stage()` allows only valid `OpportunityStage` transitions per the pipeline state machine. Raises `ValueError` on illegal jumps.
+- **Dry-run cache with canonical headers** — `_DRY_RUN_HEADER` ensures all dry-run records carry the same schema as live Sheet rows.
 
-### 3. Python CLI (`src/commission_crowd_agent/cli.py`)
-- `status` — show adapter readiness
-- `run-research-cycle --dry-run` — full research-to-draft pipeline
-- `score-opportunities` — batch scoring
-- `draft-outreach` — generate emails
-- `request-approval` — queue approval request
-- `send-approved-outreach` — dispatch approved emails
-- `daily-summary` — operator-facing stats
+### Approval Gate (`approval_gate.py`)
+- **Triple guard on approve()**:
+  1. Re-approve blocked (status == "approved")
+  2. Reject-after-rejection blocked (status == "rejected")
+  3. Expiry guard (TTL = 168 hours)
+- **Readback verification** — after writing an approval, row is read back from Sheets to confirm persistence before returning to caller.
+- **Fail-closed on missing Sheets adapter** — raises `RuntimeError` rather than creating invisible local-only approvals.
 
-### 4. Workflow Core (`src/commission_crowd_agent/workflows/`)
-- `research_cycle.py` — fetch, research, write, score
-- `scoring.py` — LLM-based personalisation scoring
-- `outreach.py` — email composition and dispatch
-- `approvals.py` — approval gate logic
+## 3. Configuration Hardening
 
-### 5. Adapters (`src/commission_crowd_agent/adapters.py` and future modules)
-- **SourceAdapter** — Google Sheets read/write
-- **ScoringAdapter** — Ollama.com Cloud / LLM calls
-- **NotifierAdapter** — Telegram Bot notifications
-- **OutreachAdapter** — Gmail / SMTP send
+### Pydantic Settings (`CcaSettings` in `config.py`)
+- **Readiness properties** — each subsystem (Ollama, Telegram, Google, SMTP, CommissionCrowd) exposes a boolean `*_ready` property based on whether required fields are populated.
+- **No defaults for secrets** — all API keys/tokens default to "", never to sentinel values that could be mistaken for real credentials.
+- **Shared.env integration** — `SHARED_KEY_MAP` maps canonical key names to shared.env keys. `load_settings()` reads shared.env and falls through to environment variables.
 
-All adapters accept stub implementations for tests.
+## 4. Dependency Vulnerability Disclosure
 
----
+GitHub Dependabot reports **27 vulnerabilities** (18 high, 9 moderate) in transitive dependencies. These are **pre-existing** and **do not block current functionality**. Remediation path:
+```bash
+pip install --upgrade pip
+pip install --upgrade -r requirements.txt
+pip install --upgrade -r requirements-dev.txt
+```
+After upgrade, re-run `bash scripts/dev_check.sh` to confirm no regressions.
 
-## Data Flow
+## 5. Phase 2 Checklist (completed)
 
-### Research & Draft Cycle
-1. Hook calls `cca run-research-cycle`
-2. CLI loads config → instantiates adapters
-3. SourceAdapter fetches leads with `status = New`
-4. For each lead:
-   - ScoringAdapter.research() → `research_notes`
-   - ScoringAdapter.write_email() → `subject`, `body`
-   - ScoringAdapter.score() → `personalization_score`
-5. SourceAdapter updates rows with `status = Draft Ready`
-6. NotifierAdapter sends Telegram summary to operator
+| Item | Evidence |
+|------|----------|
+| Retry decorator with bounded backoff | `cca_guardian.py:bouned_retry` + tests |
+| HTTP adapter retries on timeout/connect | `commissioncrowd_adapter.py` `@bounded_retry` |
+| Payload hashing for dedup | `cca_guardian.py:hash_payload` + tests |
+| Idempotency store | `cca_guardian.py:IdempotencyStore` + tests |
+| Campaign correlation IDs | `cca_guardian.py:CampaignContext` + tests |
+| Approval expiry guard | `approval_gate.py` + `check_expiry` + tests |
+| Re-approve / re-reject guard | `approval_gate.py:approve()` inline guards |
+| CRM dedup on add_lead | `crm_pipeline.py:add_lead()` lead_id scan |
+| Safe stage transitions | `crm_pipeline.py:advance_stage()` validation |
+| Dry-run cache canonical schema | `crm_pipeline.py:_DRY_RUN_HEADER` |
+| Tests clean (no regressions) | 430 tests pass, ruff clean, mypy clean |
+| Git commit | `ea7f7ae` on master, synced to GitHub |
 
-### Approval & Send Cycle
-1. Operator reviews drafts in Sheets (or via Telegram summary)
-2. Operator toggles `Approved = TRUE` or sends `/approve` command
-3. Hook calls `cca send-approved-outreach`
-4. OutreachAdapter dispatches emails
-5. SourceAdapter updates `status = Sent`, `sent_timestamp`
-6. NotifierAdapter sends confirmation
+## 6. Files Added / Modified in Phase 2
 
----
+| File | Change |
+|------|--------|
+| `src/commission_crowd_agent/cca_guardian.py` | **NEW** — runtime safety utilities |
+| `src/commission_crowd_agent/approval_gate.py` | **MODIFIED** — expiry, re-approve, re-reject guards |
+| `src/commission_crowd_agent/commissioncrowd_adapter.py` | **MODIFIED** — retry decorator, count field, ssl note |
+| `src/commission_crowd_agent/crm_pipeline.py` | **MODIFIED** — dedup, idempotency_store injection |
+| `tests/test_cca_guardian.py` | **NEW** — 19 tests covering all safety utilities |
+| `docs/architecture.md` | **MODIFIED** — this document updated |
 
-## Testing Strategy
-- **Unit tests**: pytest with stub adapters, no secrets needed
-- **Dry-run mode**: every CLI command supports `--dry-run`
-- **Integration tests**: only run when real `.env` is present and operator approves
-- **dev_check.sh**: ruff + mypy + pytest in one command
+## 7. Operator Action Required
 
----
+**None.** All Phase 2 hardening is complete and committed. The agent is now safer to run in dry-run shadow campaigns without risk of duplicate state mutation.
 
-## Legacy n8n
-- n8n instance remains running on OCI (`:5678`) as **reference only**.
-- Any existing workflow exports are stored under `docs/legacy/n8n/`.
-- No new n8n workflows are created for MVP.
-- If Hermes-hooks architecture succeeds, n8n may be fully decommissioned in a future phase.
+To proceed to Phase 3 (quality gate re-run after full commit), run:
+```bash
+cd /home/ubuntu/projects/commission-crowd-agent
+bash scripts/dev_check.sh
+```

@@ -379,6 +379,7 @@ class ApprovalGate:
         """Approve a pending approval request by updating its Sheets row.
 
         Returns a structured result with ok, lead_id (entity_id), and status.
+        Also verifies that the approval has not expired (default TTL 168h = 7 days).
         """
         if self.sheets_adapter is None:
             return {
@@ -407,6 +408,7 @@ class ApprovalGate:
         try:
             id_idx = header.index("approval_id")
             status_idx = header.index("status")
+            created_idx = header.index("created_at_utc")
         except ValueError as exc:
             return {
                 "ok": False,
@@ -425,6 +427,38 @@ class ApprovalGate:
                 "ok": False,
                 "error": f"Approval {approval_id} not found",
                 "approval_id": approval_id,
+            }
+
+        # Guard: cannot re-approve an already approved / rejected record
+        current_status = target_row[status_idx] if len(target_row) > status_idx else ""
+        if current_status == "approved":
+            return {
+                "ok": False,
+                "error": f"Approval {approval_id} is already approved",
+                "approval_id": approval_id,
+                "lead_id": target_row[header.index("entity_id")] if "entity_id" in header else "",
+                "status": "approved",
+            }
+        if current_status == "rejected":
+            return {
+                "ok": False,
+                "error": f"Approval {approval_id} was rejected and cannot be approved",
+                "approval_id": approval_id,
+                "status": "rejected",
+            }
+
+        # Guard: expiry check
+        from .cca_guardian import check_expiry
+
+        created_at = target_row[created_idx] if len(target_row) > created_idx else ""
+        expiry = check_expiry(created_at, ttl_hours=168.0)
+        if expiry.get("expired"):
+            remaining = expiry.get("remaining_hours", 0)
+            return {
+                "ok": False,
+                "error": f"Approval {approval_id} expired ({remaining:.1f}h remaining)",
+                "approval_id": approval_id,
+                "status": "expired",
             }
 
         # Update status to approved

@@ -19,6 +19,7 @@ from typing import Any
 import httpx
 from pydantic import BaseModel
 
+from .cca_guardian import bounded_retry
 from .config import CcaSettings
 
 
@@ -103,6 +104,12 @@ class CommissionCrowdApiAdapter:
             return f"{base}/{before_q}/?{after_q}"
         return f"{base}/{clean_path}/"
 
+    @bounded_retry(
+        max_attempts=3,
+        backoff_base=1.0,
+        backoff_max=8.0,
+        retryable_exceptions=(httpx.TimeoutException, httpx.ConnectError),
+    )
     def _request(self, method: str, path: str) -> httpx.Response:
         """Make an authenticated HTTP request.
 

@@ -103,9 +103,15 @@ class CRMPipeline:
         "notes",
     ]
 
-    def __init__(self, sheets_adapter: GoogleSheetsAdapter | None = None) -> None:
+    def __init__(
+        self,
+        sheets_adapter: GoogleSheetsAdapter | None = None,
+        *,
+        idempotency_store: Any | None = None,
+    ) -> None:
         self.sheets_adapter = sheets_adapter
         self._dry_run_cache: dict[str, list[dict[str, Any]]] = {"leads": []}
+        self._idempotency = idempotency_store
 
     def add_lead(
         self,
@@ -127,6 +133,41 @@ class CRMPipeline:
                 "error": "No sheets adapter (live mode requires backend)",
                 "rows_changed": 0,
             }
+
+        # Deduplication: if this lead_id already exists, skip silently
+        if dry_run:
+            for existing in self._dry_run_cache.get("leads", []):
+                if existing.get("lead_id") == lead_id:
+                    return {
+                        "ok": True,
+                        "action": "add_lead",
+                        "tab": "leads",
+                        "rows_changed": 0,
+                        "lead_id": lead_id,
+                        "dry_run": True,
+                        "error": None,
+                        "dedup": True,
+                    }
+        elif self.sheets_adapter is not None:
+            lookup = self.sheets_adapter.read_last_rows("leads", count=500)
+            if lookup.get("ok"):
+                rows = lookup.get("rows", [])
+                if rows:
+                    header = rows[0]
+                    if "lead_id" in header:
+                        lid_idx = header.index("lead_id")
+                        for row in rows[1:]:
+                            if row and len(row) > lid_idx and row[lid_idx] == lead_id:
+                                return {
+                                    "ok": True,
+                                    "action": "add_lead",
+                                    "tab": "leads",
+                                    "rows_changed": 0,
+                                    "lead_id": lead_id,
+                                    "dry_run": False,
+                                    "error": None,
+                                    "dedup": True,
+                                }
 
         lead_row = [
             lead_id,
