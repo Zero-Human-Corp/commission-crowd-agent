@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .adapters import GoogleSheetsAdapter, NotifierAdapter
+    from .adapters import GoogleSheetsAdapter, NotifierAdapter, ScoringAdapter
 
 from .domain import Lead, LeadStatus, Task, TaskType, WorkflowRun
 
@@ -23,10 +23,12 @@ class WorkflowRunner:
         dry_run: bool = True,
         sheets_adapter: GoogleSheetsAdapter | None = None,
         notifier: NotifierAdapter | None = None,
+        scoring_adapter: ScoringAdapter | None = None,
     ) -> None:
         self.dry_run = dry_run
         self.sheets_adapter = sheets_adapter
         self.notifier = notifier
+        self.scoring_adapter = scoring_adapter
 
     def _notify_start(self, run: WorkflowRun, client_name: str) -> dict[str, Any]:
         """Send workflow start notification if notifier is wired.
@@ -104,9 +106,10 @@ class WorkflowRunner:
             research_task.mark_started()
             if self.dry_run:
                 research_task.mark_done(output=f"[DRY] Research notes for {lead.company}")
+            elif self.scoring_adapter is not None:
+                research_task.mark_done(output=self.scoring_adapter.research(lead))
             else:
-                # TODO: wire to real Researcher Adapter
-                research_task.mark_done(output="")
+                research_task.mark_done(output="[NO-ADAPTER] No research adapter configured.")
             lead.research_notes = research_task.output
             run.tasks.append(research_task)
 
@@ -119,10 +122,14 @@ class WorkflowRunner:
             writer_task.mark_started()
             if self.dry_run:
                 writer_task.mark_done(output=f"[DRY] Subject: Hello {lead.full_name}")
+                lead.email_subject = f"Hello {lead.full_name}"
+            elif self.scoring_adapter is not None:
+                subject, body = self.scoring_adapter.write_email(lead)
+                writer_task.mark_done(output=body)
+                lead.email_subject = subject
             else:
-                # TODO: wire to real Writer Adapter
-                writer_task.mark_done(output="")
-            lead.email_subject = f"Hello {lead.full_name}" if self.dry_run else ""
+                writer_task.mark_done(output="[NO-ADAPTER] No writer adapter configured.")
+                lead.email_subject = ""
             lead.email_body = writer_task.output
             run.tasks.append(writer_task)
 
@@ -135,10 +142,13 @@ class WorkflowRunner:
             scorer_task.mark_started()
             if self.dry_run:
                 scorer_task.mark_done(output="7")
+                lead.personalization_score = int(scorer_task.output)
+            elif self.scoring_adapter is not None:
+                scorer_task.mark_done(output=str(self.scoring_adapter.score(lead)))
+                lead.personalization_score = int(scorer_task.output)
             else:
-                # TODO: wire to real Scorer Adapter
-                scorer_task.mark_done(output="")
-            lead.personalization_score = int(scorer_task.output) if scorer_task.output else None
+                scorer_task.mark_done(output="0")
+                lead.personalization_score = None
             run.tasks.append(scorer_task)
 
             lead.status = LeadStatus.DRAFT_READY

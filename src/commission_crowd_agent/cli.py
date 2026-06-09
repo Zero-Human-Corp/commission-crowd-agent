@@ -11,7 +11,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from .adapters import GoogleSheetsAdapter, NotifierAdapter
+from .adapters import GoogleSheetsAdapter, NotifierAdapter, ScoringAdapter
 from .approval_gate import ApprovalGate
 from .config import CcaSettings, load_settings
 from .domain import Lead
@@ -278,13 +278,29 @@ def run_research_cycle(
     write: bool = typer.Option(
         default=False, help="Write run/leads/opportunities rows to Google Sheets"
     ),
+    notify: bool = typer.Option(
+        default=False, help="Send Telegram summary to operator after run"
+    ),
 ) -> None:
-    """Fetch new leads, research, draft, and score."""
+    """Fetch new leads, research, draft, score, and queue operator approvals.
+
+    In live mode (dry_run=False) the scoring adapter runs real research and
+    deterministic scoring.  Each lead then gets an approval record written to
+    the approvals tab.  Writing to approvals requires --write.
+    """
     settings = load_settings()
     adapter = _build_sheets_adapter(settings, dry_run=not write) if write else None
+    notifier = _build_notifier(settings, dry_run=not notify)
+    scoring = ScoringAdapter(
+        base_url=settings.ollama_base_url,
+        api_key=settings.ollama_api_key,
+        model=settings.ollama_model,
+    ) if not dry_run else None
     runner = WorkflowRunner(
         dry_run=dry_run,
         sheets_adapter=adapter,
+        notifier=notifier,
+        scoring_adapter=scoring if scoring else None,
     )
     leads = [
         Lead(
@@ -307,8 +323,31 @@ def run_research_cycle(
     console.print(result.summary())
     for lead in leads:
         console.print(f"{lead.lead_id}: {lead.status.value} | Score: {lead.personalization_score}")
+
+    # Operator approval gate: create approval requests for each lead
     if adapter is not None and not adapter.dry_run:
+        gate = ApprovalGate(sheets_adapter=adapter, notifier=notifier)
+        for lead in leads:
+            try:
+                req = gate.create_and_write_approval(
+                    entity_type="lead",
+                    entity_id=lead.lead_id,
+                    entity_name=lead.company or lead.full_name,
+                    requested_action=f"Draft outreach ready for {lead.company or lead.full_name} (score={lead.personalization_score})",
+                    approval_action="outreach_draft",
+                    risk_level="low" if (lead.personalization_score or 0) >= 6 else "medium",
+                    notes=f"Research notes: {lead.research_notes[:200]}" if lead.research_notes else "",
+                )
+                console.print(
+                    f"[yellow]Approval queued: {lead.lead_id} → {req.approval_id}[/yellow]"
+                )
+            except RuntimeError as exc:
+                console.print(
+                    f"[red]Approval failed for {lead.lead_id}: {exc}[/red]"
+                )
         console.print("[green]Workflow ledgers written to Google Sheets[/green]")
+    else:
+        console.print("[dim]Skipping approval gate: --write not passed[/dim]")
 
 
 @app.command(name="score-opportunities")

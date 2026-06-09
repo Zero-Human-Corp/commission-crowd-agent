@@ -2,7 +2,7 @@
 
 Headless AI-powered automation system for B2B lead research, personalised outreach, and pipeline management.
 
-**Current Status**: Hermes hooks + Python CLI are the primary workflow engine. Tests passing (29/29). n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
+**Current Status**: Hermes hooks + Python CLI are the primary workflow engine. Tests passing (306). n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
 
 ---
 
@@ -32,7 +32,7 @@ pip install -e ".[dev]"
   - `adapters.py` — Source, Scoring, Notifier, Outreach stubs
   - `cli.py` — Operator CLI (`cca` commands)
   - `workflows/` — Research, Scoring, Outreach, Approvals modules
-- `tests/` — pytest suite (29 tests, all passing)
+- `tests/` — pytest suite (306 tests, all passing)
 - `scripts/dev_check.sh` — Runs ruff, mypy, pytest
 - `scripts/hooks/` — Hermes hook entrypoints (bash)
 - `data/runs/` — Transient workflow outputs (gitignored)

@@ -108,7 +108,7 @@ class TestAppendRow:
         mock_post.status_code = 200
         mock_post.json.return_value = {"updatedRange": "leads!A2"}
         with patch("commission_crowd_agent.adapters.httpx.get", return_value=mock_get):
-            with patch("commission_crowd_agent.adapters.httpx.post", return_value=mock_post):
+            with patch("commission_crowd_agent.adapters.httpx.put", return_value=mock_post):
                 result = adapter.append_row("leads", ["L001", "web", "Alice"])
         assert result["ok"] is True
         assert result["rows_changed"] == 1
@@ -166,7 +166,7 @@ class TestUpsertRowByKey:
 
         with (
             patch("commission_crowd_agent.adapters.httpx.get", return_value=read_response),
-            patch("commission_crowd_agent.adapters.httpx.post", return_value=post_response),
+            patch("commission_crowd_agent.adapters.httpx.put", return_value=post_response),
         ):
             result = adapter.upsert_row_by_key("leads", "lead_id", "L001", ["L001", "web", "Alice"])
         assert result["ok"] is True

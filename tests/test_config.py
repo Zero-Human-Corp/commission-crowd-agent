@@ -45,6 +45,14 @@ def test_readiness_properties_true_when_populated(monkeypatch: pytest.MonkeyPatc
     assert settings.telegram_ready is True
 
 
+def test_ollama_ready_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Local Ollama should report ready when only base_url is set."""
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    monkeypatch.delenv("OLLAMA_API_KEY", raising=False)
+    settings = CcaSettings()
+    assert settings.ollama_ready is True
+
+
 def test_env_var_precedence_over_shared_env(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

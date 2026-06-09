@@ -91,7 +91,8 @@ class CcaSettings(BaseSettings):
 
     @property
     def ollama_ready(self) -> bool:
-        return bool(self.ollama_base_url and self.ollama_api_key)
+        """Local Ollama does not require an API key."""
+        return bool(self.ollama_base_url)
 
     @property
     def telegram_ready(self) -> bool:

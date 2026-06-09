@@ -39,14 +39,14 @@ def test_append_row_writes_to_logical_next_row():
 
     captured = {}
 
-    def fake_post(url, json, headers, timeout):
+    def fake_put(url, json, headers, timeout):
         captured["url"] = url
         class FakeResponse:
             def raise_for_status(self): pass
             def json(self): return {"updatedRange": "approvals!A4"}
         return FakeResponse()
 
-    with patch("commission_crowd_agent.adapters.httpx.post", fake_post):
+    with patch("commission_crowd_agent.adapters.httpx.put", fake_put):
         adapter.append_row("approvals", ["ghi789", "2024-01-03", "lead", "L3"])
 
     assert captured["url"].endswith("approvals!A4?valueInputOption=USER_ENTERED")

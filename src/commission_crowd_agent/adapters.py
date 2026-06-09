@@ -16,6 +16,8 @@ from typing import Any
 import httpx
 
 from .domain import Lead
+from .deeper_research import DeeperResearchService
+from .lead_scoring import LeadScorer
 
 
 class SourceAdapter:
@@ -34,24 +36,110 @@ class SourceAdapter:
 
 
 class ScoringAdapter:
-    """Stub: call remote LLM for agent tasks."""
+    """Real adapter backed by DeeperResearchService and LeadScorer.
 
-    def __init__(self, base_url: str = "", api_key: str = "", model: str = "") -> None:
+    Uses local deterministic scoring and bounded public read-only research.
+    No LLM calls unless future configuration enables them.
+    """
+
+    def __init__(
+        self,
+        base_url: str = "",
+        api_key: str = "",
+        model: str = "",
+    ) -> None:
         self.base_url = base_url
         self.api_key = api_key
         self.model = model
+        self._research_service = DeeperResearchService()
+        self._lead_scorer = LeadScorer()
 
     def research(self, lead: Lead) -> str:
-        """Return structured research notes."""
-        return ""
+        """Run bounded public read-only research for a lead."""
+        result = self._research_service.research_one_lead(
+            lead_id=lead.lead_id,
+            company_name=lead.company or lead.full_name,
+            notes=lead.research_notes or "",
+        )
+        notes_parts: list[str] = []
+        for finding in result.findings:
+            label = f"[{finding.source_label}]" if finding.source_label else ""
+            verified = "✓" if finding.verified else "?"
+            notes_parts.append(f"{label} {verified} {finding.finding}")
+        if result.missing_data:
+            notes_parts.append(f"Missing: {', '.join(result.missing_data)}")
+        notes_parts.append(f"Next action: {result.recommended_next_action}")
+        return "\n".join(notes_parts)
 
     def write_email(self, lead: Lead) -> tuple[str, str]:
-        """Return (subject, body)."""
-        return ("", "")
+        """Generate a subject and body for outreach to this lead."""
+        if not lead.company:
+            subject = "Exploring a commission-only sales partnership"
+            body = (
+                f"Hello,\n\n"
+                f"I came across your profile and wanted to reach out regarding a "
+                f"commission-only sales representation opportunity.\n\n"
+                f"I'd love to learn more about what you're building and explore "
+                f"whether there might be a fit.\n\n"
+                f"Best regards"
+            )
+            return subject, body
+        subject = f"Exploring a commission-only sales partnership with {lead.company}"
+        body = (
+            f"Hello {lead.full_name or 'there'},\n\n"
+            f"I came across {lead.company} and wanted to reach out regarding a "
+            f"commission-only sales representation opportunity.\n\n"
+            f"I'd love to learn more about what you're building and explore "
+            f"whether there might be a fit.\n\n"
+            f"Best regards"
+        )
+        return subject, body
 
     def score(self, lead: Lead) -> int:
-        """Return personalisation score 1–10."""
-        return 0
+        """Score a lead using deterministic rules from LeadScorer.
+
+        Returns fit_score (0–100) mapped from lead fields.
+        """
+        # Build a canonical row from Lead fields for LeadScorer
+        lead_row = [
+            lead.lead_id,
+            "",  # created_at
+            "",  # source
+            "",  # source_url
+            lead.company,
+            lead.full_name,
+            lead.email,
+            "",  # role_title
+            "",  # market
+            "",  # country
+            "",  # problem_signal
+            "",  # commission_signal
+            "",  # fit_score (prior)
+            "",  # status
+            lead.research_notes or "",
+        ]
+        score_output = self._lead_scorer.from_lead_row(lead_row)
+        # Map fit_score (0–100) to personalization score (1–10) for domain model
+        fit = score_output.fit_score
+        if fit >= 80:
+            return 10
+        elif fit >= 70:
+            return 9
+        elif fit >= 60:
+            return 8
+        elif fit >= 50:
+            return 7
+        elif fit >= 40:
+            return 6
+        elif fit >= 30:
+            return 5
+        elif fit >= 20:
+            return 4
+        elif fit >= 10:
+            return 3
+        elif fit > 0:
+            return 2
+        return 1
 
 
 class NotifierAdapter:
@@ -598,7 +686,7 @@ class GoogleSheetsAdapter:
         )
         payload = {"values": [values]}
         try:
-            response = httpx.post(
+            response = httpx.put(
                 url, json=payload, headers=self._auth_headers(), timeout=self.TIMEOUT_SECONDS
             )
             response.raise_for_status()
