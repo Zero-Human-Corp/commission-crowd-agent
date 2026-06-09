@@ -33,6 +33,7 @@ runtime/
 .graphify/
 .code-review-graph/
 obsidian/
+graphify-out/
 
 # Secret-bearing files
 *secrets*.md
