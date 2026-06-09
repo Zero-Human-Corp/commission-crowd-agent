@@ -198,14 +198,26 @@ class CommissionCrowdApiAdapter:
             response = self._request("GET", f"opportunities?page={page}&limit={limit}")
             if response.status_code == 200:
                 body = response.json()
-                items = body.get("results", body.get("items", body.get("data", [])))
+                # CommissionCrowd may return a top-level list or a dict wrapper
+                if isinstance(body, list):
+                    items = body
+                    next_url = None
+                elif isinstance(body, dict):
+                    items = body.get("results", body.get("items", body.get("data", [])))
+                    next_url = body.get("next")
+                else:
+                    return self._safe_result(
+                        ok=False,
+                        status=response.status_code,
+                        error="Unexpected response type",
+                    )
                 return self._safe_result(
                     ok=True,
                     status=response.status_code,
                     data={
                         "items": items,
-                        "next": body.get("next"),
-                        "count": body.get("count", len(items)),
+                        "next": next_url,
+                        "count": len(items) if isinstance(items, list) else 0,
                     },
                 )
             return self._safe_result(
