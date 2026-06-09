@@ -308,3 +308,162 @@ class ApprovalGate:
             f"To approve, update the 'approvals' tab status to 'approved'."
         )
         return self.notifier.send_message(text=text)
+
+    # ────────── Thin wrappers for SalesOrchestrator ──────────
+    def submit(
+        self,
+        lead_id: str,
+        subject: str,
+        body: str,
+        to_email: str,
+    ) -> dict[str, Any]:
+        """Create an approval request for an outbound email draft.
+
+        Wraps create_and_write_approval with email-specific fields.
+        Fails closed if Sheets is unavailable.
+        """
+        try:
+            req = self.create_and_write_approval(
+                entity_type="outbound_email",
+                entity_id=lead_id,
+                requested_action=f"Send email to {to_email}",
+                entity_name=subject,
+                approval_action=body,
+                risk_level="medium",
+                notes=f"To: {to_email} | Subject: {subject}",
+            )
+            return {
+                "ok": True,
+                "approval_id": req.approval_id,
+                "lead_id": lead_id,
+                "status": req.status,
+            }
+        except RuntimeError as exc:
+            return {
+                "ok": False,
+                "error": str(exc),
+                "lead_id": lead_id,
+            }
+
+    def list_pending(self) -> list[dict[str, Any]]:
+        """Return all approvals with status == 'pending' from Sheets.
+
+        Returns a list of dicts with safe fields (no secrets).
+        """
+        if self.sheets_adapter is None:
+            return []
+        result = self.sheets_adapter.read_last_rows("approvals", count=5000)
+        if not result.get("ok"):
+            return []
+        rows = result.get("rows", [])
+        if not rows:
+            return []
+        header = rows[0]
+        try:
+            status_idx = header.index("status")
+        except ValueError:
+            return []
+
+        pending: list[dict[str, Any]] = []
+        for row in rows[1:]:
+            if len(row) > status_idx and row[status_idx] == "pending":
+                record: dict[str, Any] = {}
+                for i, h in enumerate(header):
+                    record[h] = row[i] if i < len(row) else ""
+                # Drop the raw body/approval_action from the summary to keep it compact
+                record.pop("approval_action", None)
+                pending.append(record)
+        return pending
+
+    def approve(self, approval_id: str) -> dict[str, Any]:
+        """Approve a pending approval request by updating its Sheets row.
+
+        Returns a structured result with ok, lead_id (entity_id), and status.
+        """
+        if self.sheets_adapter is None:
+            return {
+                "ok": False,
+                "error": "No sheets adapter",
+                "approval_id": approval_id,
+            }
+
+        result = self.sheets_adapter.read_last_rows("approvals", count=5000)
+        if not result.get("ok"):
+            return {
+                "ok": False,
+                "error": result.get("error", "Failed to read approvals"),
+                "approval_id": approval_id,
+            }
+
+        rows = result.get("rows", [])
+        if not rows:
+            return {
+                "ok": False,
+                "error": "Empty approvals tab",
+                "approval_id": approval_id,
+            }
+
+        header = rows[0]
+        try:
+            id_idx = header.index("approval_id")
+            status_idx = header.index("status")
+        except ValueError as exc:
+            return {
+                "ok": False,
+                "error": f"Missing column: {exc}",
+                "approval_id": approval_id,
+            }
+
+        target_row: list[str] | None = None
+        for row in rows[1:]:
+            if len(row) > id_idx and row[id_idx] == approval_id:
+                target_row = list(row)
+                break
+
+        if target_row is None:
+            return {
+                "ok": False,
+                "error": f"Approval {approval_id} not found",
+                "approval_id": approval_id,
+            }
+
+        # Update status to approved
+        updated = list(target_row)
+        while len(updated) <= status_idx:
+            updated.append("")
+        updated[status_idx] = "approved"
+
+        # Also update operator_decision and decided_at_utc if columns exist
+        now = datetime.utcnow().isoformat()
+        for col_name, value in [("operator_decision", "approved"), ("decided_at_utc", now)]:
+            if col_name in header:
+                idx = header.index(col_name)
+                while len(updated) <= idx:
+                    updated.append("")
+                updated[idx] = value
+
+        upsert = self.sheets_adapter.upsert_row_by_key(
+            "approvals",
+            key_column="approval_id",
+            key_value=approval_id,
+            values=updated,
+        )
+        if not upsert.get("ok"):
+            return {
+                "ok": False,
+                "error": upsert.get("error", "Upsert failed"),
+                "approval_id": approval_id,
+            }
+
+        # Return lead_id (entity_id) so orchestrator can advance CRM stage
+        entity_id = ""
+        if "entity_id" in header:
+            eidx = header.index("entity_id")
+            entity_id = updated[eidx] if eidx < len(updated) else ""
+
+        return {
+            "ok": True,
+            "approval_id": approval_id,
+            "lead_id": entity_id,
+            "status": "approved",
+        }

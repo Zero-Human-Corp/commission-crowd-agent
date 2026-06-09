@@ -181,18 +181,6 @@ class CommissionCrowdApiAdapter:
 
         Returns structured result; ``data`` contains ``items`` and ``next``.
         """
-        if self.dry_run:
-            stub = CommissionCrowdOpportunity(
-                id=1,
-                title="Stub Opportunity",
-                description="Dry-run placeholder",
-            )
-            return self._safe_result(
-                ok=True,
-                status=0,
-                data={"items": [stub.model_dump()], "next": None},
-            )
-
         if not self.api_key:
             return self._safe_result(
                 ok=False,
@@ -203,23 +191,20 @@ class CommissionCrowdApiAdapter:
             response = self._request("GET", f"opportunities?page={page}&limit={limit}")
             if response.status_code == 200:
                 body = response.json()
-                # CommissionCrowd returns a raw list, not a paginated object.
-                items = body if isinstance(body, list) else body.get("results", [])
-                next_url = body.get("next") if isinstance(body, dict) else None
-                count = body.get("count") if isinstance(body, dict) else len(items)
+                items = body.get("results", body.get("items", body.get("data", [])))
                 return self._safe_result(
                     ok=True,
                     status=response.status_code,
                     data={
                         "items": items,
-                        "next": next_url,
-                        "count": count,
+                        "next": body.get("next"),
+                        "count": body.get("count", len(items)),
                     },
                 )
             return self._safe_result(
                 ok=False,
                 status=response.status_code,
-                error=f"HTTP {response.status_code}: {response.reason_phrase}",
+                error=f"HTTP {response.status_code}: {response.text[:200]}",
             )
         except (httpx.RequestError, httpx.TimeoutException) as exc:
             return self._safe_result(

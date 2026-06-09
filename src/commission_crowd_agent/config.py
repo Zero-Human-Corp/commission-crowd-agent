@@ -46,6 +46,11 @@ class CcaSettings(BaseSettings):
         default="", description="Inline service account JSON (use path if possible)"
     )
 
+    # --- Operator identity ---
+    operator_name: str = Field(default="", description="Sales agent full name")
+    operator_email: str = Field(default="", description="Primary sales email")
+    operator_phone: str = Field(default="", description="Contact phone number")
+
     # --- Email / SMTP ---
     smtp_host: str = Field(default="smtp.hostinger.com")
     smtp_port: int = Field(default=465)
@@ -135,6 +140,9 @@ class CcaSettings(BaseSettings):
 
 # Mapping of config field names to shared-env key names
 _SHARED_KEY_MAP: dict[str, str] = {
+    "operator_name": "OPERATOR_NAME",
+    "operator_email": "OPERATOR_EMAIL",
+    "operator_phone": "OPERATOR_PHONE",
     "ollama_base_url": "OLLAMA_BASE_URL",
     "ollama_api_key": "OLLAMA_API_KEY",
     "ollama_model": "OLLAMA_MODEL",

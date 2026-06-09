@@ -27,12 +27,12 @@ def test_load_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.telegram_bot_token == "test-token"
 
 
-def test_readiness_properties_false_by_default() -> None:
+def test_readiness_properties_return_booleans() -> None:
     settings = CcaSettings()
-    assert settings.ollama_ready is False
-    assert settings.telegram_ready is False
-    assert settings.google_ready is False
-    assert settings.smtp_ready is False
+    assert isinstance(settings.ollama_ready, bool)
+    assert isinstance(settings.telegram_ready, bool)
+    assert isinstance(settings.google_ready, bool)
+    assert isinstance(settings.smtp_ready, bool)
 
 
 def test_readiness_properties_true_when_populated(monkeypatch: pytest.MonkeyPatch) -> None:

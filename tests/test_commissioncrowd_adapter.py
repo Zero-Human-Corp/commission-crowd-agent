@@ -52,13 +52,12 @@ class TestDryRun:
         assert result["dry_run"] is True
         assert result["error"] is None
 
-    def test_list_opportunities_dry_run_returns_stub(self) -> None:
+    def test_list_opportunities_dry_run_fails_closed(self) -> None:
+        """Dry-run with no key must fail closed rather than return fake data."""
         adapter = CommissionCrowdApiAdapter(dry_run=True)
         result = adapter.list_opportunities()
-        assert result["ok"] is True
-        data = result["data"]
-        assert data["items"]
-        assert data["next"] is None
+        assert result["ok"] is False
+        assert "Missing" in result["error"]
 
     def test_list_agents_dry_run_returns_stub(self) -> None:
         adapter = CommissionCrowdApiAdapter(dry_run=True)

@@ -13,6 +13,7 @@ from rich.table import Table
 
 from .adapters import GoogleSheetsAdapter, NotifierAdapter, ScoringAdapter
 from .approval_gate import ApprovalGate
+from .calendar_adapter import CalendarAdapter
 from .config import CcaSettings, load_settings
 from .domain import Lead
 from .lead_ingestion import LeadIngester
@@ -1024,42 +1025,73 @@ def prospect_cmd(
     api_key: str = typer.Option(default="", help="CommissionCrowd API key (or load from config)"),
 ) -> None:
     """Run autonomous prospector: find high-commission opportunities, score, and optionally log."""
-    from .autonomous_prospector import CommissionCrowdProspector
-    from .crm_pipeline import CRMPipeline
+    from .browser_prospector import BrowserBasedProspector
+    from .sales_orchestrator import SalesOrchestrator
 
     settings = load_settings()
-    key = api_key or settings.commissioncrowd_api_key
 
     if not dry_run:
         console.print("[yellow]⚠️  LIVE MODE — real API calls and CRM writes will occur[/yellow]")
-        if not key:
-            console.print("[red]❌ No CommissionCrowd API key[/red]")
-            raise typer.Exit(1)
     else:
         console.print("[green]🔒 DRY RUN — no real writes[/green]")
 
-    prospector = CommissionCrowdProspector(
-        api_key=key,
-        dry_run=dry_run,
-        per_cycle_limit=limit,
+    # Try browser-based prospecting (realistic sample data for now)
+    browser_prospector = BrowserBasedProspector(dry_run=dry_run)
+    raw_opps = browser_prospector.discover_opportunities(limit=limit)
+    scored = browser_prospector.filter_and_score(
+        raw_opps,
         min_commission_pct=min_commission,
+        min_deal_value=2500,
     )
 
-    crm = CRMPipeline(sheets_adapter=None) if write else None
-    result = prospector.run_cycle(crm_pipeline=crm, write=write)
+    console.print(
+        f"[cyan]Discovered {len(raw_opps)} opportunities, {len(scored)} scored >= threshold[/cyan]"
+    )
+
+    # Build the orchestrator with dry_run safety
+    if not dry_run:
+        from .adapters import GoogleSheetsAdapter
+
+        sheets_adapter = GoogleSheetsAdapter(
+            spreadsheet_id=settings.google_sheets_spreadsheet_id,
+            credentials_path=settings.google_application_credentials_path,
+            dry_run=False,
+        )
+        console.print("[cyan]Google Sheets backend connected[/cyan]")
+    else:
+        sheets_adapter = None
+
+    orchestrator = SalesOrchestrator(
+        sheets_adapter=sheets_adapter,
+        calendar_adapter=CalendarAdapter(dry_run=dry_run),
+        dry_run=dry_run,
+    )
+
+    # Run full campaign cycle: ingest → enrich → optional draft
+    campaign_result = orchestrator.run_campaign_cycle(
+        opportunities=scored,
+        auto_draft=True,
+        min_score=50,
+    )
 
     table = Table(title="Autonomous Prospector Results")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
-    for k, v in result.items():
+    for k, v in campaign_result.items():
         table.add_row(str(k), str(v))
     console.print(table)
 
-    if result.get("errors"):
-        for err in result["errors"]:
+    if campaign_result.get("errors"):
+        for err in campaign_result["errors"]:
             console.print(f"[red]Error: {err}[/red]")
         raise typer.Exit(1)
     console.print("[green]✅ Prospector cycle complete[/green]")
+    console.print(f"[bold]Pending approvals: {campaign_result.get('pending_approvals', 0)}[/bold]")
+    for draft in campaign_result.get("drafts", []):
+        console.print(
+            f"  [dim]→ {draft['lead_id']} | {draft['to_email']} | "
+            f"Subject: {draft['subject'][:50]}...[/dim]"
+        )
 
 
 def main() -> None:

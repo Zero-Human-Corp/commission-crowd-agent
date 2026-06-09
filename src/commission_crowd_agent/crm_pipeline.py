@@ -85,8 +85,27 @@ def _make_record(header: list[str], row: list[str]) -> dict[str, Any]:
 class CRMPipeline:
     """CRM pipeline backed by Google Sheets."""
 
+    _DRY_RUN_HEADER: list[str] = [
+        "lead_id",
+        "created_at_utc",
+        "source",
+        "source_url",
+        "company_name",
+        "contact_name",
+        "contact_email",
+        "role_title",
+        "market",
+        "country",
+        "problem_signal",
+        "commission_signal",
+        "fit_score",
+        "status",
+        "notes",
+    ]
+
     def __init__(self, sheets_adapter: GoogleSheetsAdapter | None = None) -> None:
         self.sheets_adapter = sheets_adapter
+        self._dry_run_cache: dict[str, list[dict[str, Any]]] = {"leads": []}
 
     def add_lead(
         self,
@@ -101,11 +120,11 @@ class CRMPipeline:
         dry_run: bool = True,
     ) -> dict[str, Any]:
         """Append a lead to the ``leads`` tab with stage ``sourced``."""
-        if self.sheets_adapter is None:
+        if self.sheets_adapter is None and not dry_run:
             return {
                 "ok": False,
                 "action": "add_lead",
-                "error": "No sheets adapter",
+                "error": "No sheets adapter (live mode requires backend)",
                 "rows_changed": 0,
             }
 
@@ -128,6 +147,11 @@ class CRMPipeline:
         ]
 
         if dry_run:
+            record = {
+                h: (lead_row[i] if i < len(lead_row) else "")
+                for i, h in enumerate(self._DRY_RUN_HEADER)
+            }
+            self._dry_run_cache["leads"].append(record)
             return {
                 "ok": True,
                 "action": "add_lead",
@@ -135,7 +159,16 @@ class CRMPipeline:
                 "rows_changed": 1,
                 "lead_id": lead_id,
                 "dry_run": True,
+                "lead_row": lead_row,
                 "error": None,
+            }
+
+        if self.sheets_adapter is None:
+            return {
+                "ok": False,
+                "action": "add_lead",
+                "error": "No sheets adapter (live mode requires backend)",
+                "rows_changed": 0,
             }
 
         result = self.sheets_adapter.append_row("leads", lead_row)
@@ -161,11 +194,31 @@ class CRMPipeline:
 
         Raises ValueError for invalid transitions; otherwise delegates to update_stage.
         """
+        if dry_run:
+            # In dry-run mode, update the local cache and allow the transition
+            for rec in self._dry_run_cache.get("leads", []):
+                if rec.get("lead_id") == lead_id:
+                    rec["status"] = new_stage
+                    break
+            else:
+                # Not found in cache — silently succeed anyway
+                pass
+            return {
+                "ok": True,
+                "action": "advance_stage",
+                "tab": sheet_tab,
+                "rows_changed": 1,
+                "lead_id": lead_id,
+                "new_stage": new_stage,
+                "dry_run": True,
+                "error": None,
+            }
+
         if self.sheets_adapter is None:
             return {
                 "ok": False,
                 "action": "advance_stage",
-                "error": "No sheets adapter",
+                "error": "No sheets adapter (live mode requires backend)",
                 "rows_changed": 0,
             }
 
@@ -301,11 +354,23 @@ class CRMPipeline:
         dry_run: bool = True,
     ) -> dict[str, Any]:
         """Update the stage/status of a lead or opportunity by row key."""
+        if dry_run:
+            return {
+                "ok": True,
+                "action": "update_stage",
+                "tab": sheet_tab,
+                "rows_changed": 1,
+                "lead_id": lead_id,
+                "new_stage": new_stage,
+                "dry_run": True,
+                "error": None,
+            }
+
         if self.sheets_adapter is None:
             return {
                 "ok": False,
                 "action": "update_stage",
-                "error": "No sheets adapter",
+                "error": "No sheets adapter (live mode requires backend)",
                 "rows_changed": 0,
             }
 
@@ -395,12 +460,28 @@ class CRMPipeline:
         count: int = 200,
     ) -> dict[str, Any]:
         """Return all leads/opportunities grouped by pipeline stage."""
+        # If sheets_adapter is None, fall back to dry-run cache
         if self.sheets_adapter is None:
+            cached = self._dry_run_cache.get("leads", [])
+            stages: dict[str, list[dict[str, Any]]] = {str(stage): [] for stage in OpportunityStage}
+            for rec in cached:
+                stage = rec.get("status", "")
+                if stage in stages:
+                    stages[stage].append(rec)
+                else:
+                    stages.setdefault("unknown", []).append(rec)
+            ordered: dict[str, list[dict[str, Any]]] = {}
+            for stage in _PIPELINE_STAGES:
+                if stage in stages:
+                    ordered[stage] = stages[stage]
+            if "unknown" in stages:
+                ordered["unknown"] = stages["unknown"]
             return {
-                "ok": False,
+                "ok": True,
                 "action": "get_pipeline",
-                "error": "No sheets adapter",
-                "stages": {},
+                "error": None,
+                "stages": ordered,
+                "dry_run_fallback": True,
             }
 
         result = self.sheets_adapter.read_last_rows(sheet_tab, count=count)
@@ -432,27 +513,29 @@ class CRMPipeline:
                 "stages": {},
             }
 
-        stages: dict[str, list[dict[str, Any]]] = {str(stage): [] for stage in OpportunityStage}
+        stages_live: dict[str, list[dict[str, Any]]] = {
+            str(stage): [] for stage in OpportunityStage
+        }
         for row in rows[1:]:
             record = _make_record(header, row)
             stage = record.get("status", "")
-            if stage in stages:
-                stages[stage].append(record)
+            if stage in stages_live:
+                stages_live[stage].append(record)
             else:
-                stages.setdefault("unknown", []).append(record)
+                stages_live.setdefault("unknown", []).append(record)
 
-        ordered: dict[str, list[dict[str, Any]]] = {}
+        ordered_live: dict[str, list[dict[str, Any]]] = {}
         for stage in _PIPELINE_STAGES:
-            if stage in stages:
-                ordered[stage] = stages[stage]
-        if "unknown" in stages:
-            ordered["unknown"] = stages["unknown"]
+            if stage in stages_live:
+                ordered_live[stage] = stages_live[stage]
+        if "unknown" in stages_live:
+            ordered_live["unknown"] = stages_live["unknown"]
 
         return {
             "ok": True,
             "action": "get_pipeline",
             "error": None,
-            "stages": ordered,
+            "stages": ordered_live,
         }
 
     def get_hot_leads(
