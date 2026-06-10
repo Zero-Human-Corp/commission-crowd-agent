@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Reconcile browser inventory with CRM and identify net-new candidates.
-"""
+"""Reconcile browser inventory with CRM and identify net-new candidates."""
+
 from __future__ import annotations
 
 import json
@@ -86,9 +86,11 @@ def main() -> int:
         if not inventory["retrieved_at"]:
             inventory["retrieved_at"] = summary_data.get("retrieved_at", "")
 
-    print(f"Loaded inventory: my_opp={len(inventory['my_opportunities'])}, "
-          f"apps={len(inventory['applications'])}, favs={len(inventory['favourites'])}, "
-          f"msgs={len(inventory['messages'])}, find={len(inventory['find_opportunities'])}")
+    print(
+        f"Loaded inventory: my_opp={len(inventory['my_opportunities'])}, "
+        f"apps={len(inventory['applications'])}, favs={len(inventory['favourites'])}, "
+        f"msgs={len(inventory['messages'])}, find={len(inventory['find_opportunities'])}"
+    )
 
     # 2. Build state registry
     registry = OpportunityStateRegistry()
@@ -131,12 +133,16 @@ def main() -> int:
     # Ingest CRM data into registry
     for row in crm_opps:
         if row.get("source") == "commissioncrowd" and row.get("opportunity_id"):
-            registry.ingest_api_data([{
-                "source": row["source"],
-                "source_opportunity_id": row["opportunity_id"],
-                "status": row.get("status", ""),
-                "title": row.get("offer_summary", ""),
-            }])
+            registry.ingest_api_data(
+                [
+                    {
+                        "source": row["source"],
+                        "source_opportunity_id": row["opportunity_id"],
+                        "status": row.get("status", ""),
+                        "title": row.get("offer_summary", ""),
+                    }
+                ]
+            )
 
     # 4. Reconcile
     registry.reconcile()
@@ -192,14 +198,18 @@ def main() -> int:
 
     candidates_path = REPORTS_DIR / "cca_net_new_candidates.json"
     with open(candidates_path, "w") as fh:
-        json.dump({
-            "retrieved_at": inventory["retrieved_at"],
-            "find_opportunities_total": len(find_items),
-            "protected_count": len(protected_ids),
-            "net_new_count": len(net_new),
-            "net_new": net_new,
-            "protected_ids": sorted(protected_ids),
-        }, fh, indent=2)
+        json.dump(
+            {
+                "retrieved_at": inventory["retrieved_at"],
+                "find_opportunities_total": len(find_items),
+                "protected_count": len(protected_ids),
+                "net_new_count": len(net_new),
+                "net_new": net_new,
+                "protected_ids": sorted(protected_ids),
+            },
+            fh,
+            indent=2,
+        )
     print(f"Saved candidates: {candidates_path}")
 
     # 7. Generate summary report

@@ -62,8 +62,12 @@ class TestScoreThreshold:
         # Score should still compute, not crash
         assert isinstance(scored[0]["score"], int)
 
-    def test_score_reduces_confidence_for_vague_income(self, _base_opp: CanonicalOpportunity) -> None:
-        vague = _base_opp.model_copy(update={"commission_text": "unlimited potential", "commission_percent": None})
+    def test_score_reduces_confidence_for_vague_income(
+        self, _base_opp: CanonicalOpportunity
+    ) -> None:
+        vague = _base_opp.model_copy(
+            update={"commission_text": "unlimited potential", "commission_percent": None}
+        )
         scored = score_opportunities([vague])
         # unclear commission means lower points in commission category
         reasons = scored[0]["reasons"]
@@ -83,7 +87,9 @@ class TestFilterQualified:
 
 
 class TestGenerateDraft:
-    def test_generate_draft_no_fabricated_achievements(self, _base_opp: CanonicalOpportunity) -> None:
+    def test_generate_draft_no_fabricated_achievements(
+        self, _base_opp: CanonicalOpportunity
+    ) -> None:
         class FakeSettings:
             operator_name = "Operator Name"
             operator_email = "op@example.com"
@@ -100,7 +106,9 @@ class TestGenerateDraft:
         assert _base_opp.title in draft["subject"]
         assert "20%" in body or "recurring" in body
 
-    def test_generate_draft_asks_questions_for_unknowns(self, _base_opp: CanonicalOpportunity) -> None:
+    def test_generate_draft_asks_questions_for_unknowns(
+        self, _base_opp: CanonicalOpportunity
+    ) -> None:
         incomplete = _base_opp.model_copy(
             update={
                 "commission_percent": None,

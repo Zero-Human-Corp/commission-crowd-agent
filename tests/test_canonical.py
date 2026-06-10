@@ -21,6 +21,7 @@ from commission_crowd_agent.canonical import CanonicalOpportunity
 # Fixtures
 # ------------------------------------------------------------------
 
+
 @pytest.fixture
 def sample_api_raw() -> dict[str, Any]:
     """A realistic CommissionCrowd API dict."""
@@ -57,6 +58,7 @@ def sample_api_raw() -> dict[str, Any]:
 # ------------------------------------------------------------------
 # from_commissioncrowd_api
 # ------------------------------------------------------------------
+
 
 class TestFromCommissionCrowdApi:
     def test_from_commissioncrowd_api_maps_fields(self, sample_api_raw: dict[str, Any]) -> None:
@@ -107,6 +109,7 @@ class TestFromCommissionCrowdApi:
 # payload_hash
 # ------------------------------------------------------------------
 
+
 class TestPayloadHash:
     def test_payload_hash_deterministic(self, sample_api_raw: dict[str, Any]) -> None:
         opp = CanonicalOpportunity.from_commissioncrowd_api(sample_api_raw)
@@ -136,6 +139,7 @@ class TestPayloadHash:
 # sample_opportunities
 # ------------------------------------------------------------------
 
+
 class TestSampleOpportunities:
     def test_sample_mode_explicit_only(self) -> None:
         with pytest.raises(ValueError, match="sample"):
@@ -152,6 +156,7 @@ class TestSampleOpportunities:
 # Commission percent parsing via helper
 # ------------------------------------------------------------------
 
+
 class TestCommissionPercentParsing:
     def test_commission_percent_parsing_decimal(self) -> None:
         raw: dict[str, Any] = {"commission_pc": "22.5", "commission": "", "name": ""}
@@ -159,7 +164,11 @@ class TestCommissionPercentParsing:
         assert opp.commission_percent == 22.5
 
     def test_commission_percent_parsing_textual(self) -> None:
-        raw: dict[str, Any] = {"commission_pc": "", "commission": "20 percent recurring", "name": ""}
+        raw: dict[str, Any] = {
+            "commission_pc": "",
+            "commission": "20 percent recurring",
+            "name": "",
+        }
         opp = CanonicalOpportunity.from_commissioncrowd_api(raw)
         assert opp.commission_percent == 20.0
 

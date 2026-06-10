@@ -1013,6 +1013,8 @@ def supervisor_smoke(
     relay = SupervisorRelay(settings=settings, dry_run=True)
     result = relay.primary_check("Ping test.")
     console.print(f"[green]✅ Supervisor dry-run response: {result.model_dump_json()}[/green]")
+
+
 @app.command(name="prospect")
 def prospect_cmd(
     source: str = typer.Option(
@@ -1056,10 +1058,7 @@ def prospect_cmd(
         source = "sample"
 
     if create_approvals and not write_crm:
-        console.print(
-            "[yellow]⚠ create-approvals requires --write-crm. "
-            "Exiting safely.[/yellow]"
-        )
+        console.print("[yellow]⚠ create-approvals requires --write-crm. Exiting safely.[/yellow]")
         raise typer.Exit(1)
 
     # Execution mode summary
@@ -1094,8 +1093,7 @@ def prospect_cmd(
         scored = score_opportunities(opps, min_commission_pct=min_commission)
         qualified = filter_qualified(scored)
         console.print(
-            f"[cyan]Sample opportunities: {len(opps)} | "
-            f"Qualified: {len(qualified)}[/cyan]"
+            f"[cyan]Sample opportunities: {len(opps)} | Qualified: {len(qualified)}[/cyan]"
         )
         for s in scored:
             icon = "✅" if s["passes_threshold"] else "❌"

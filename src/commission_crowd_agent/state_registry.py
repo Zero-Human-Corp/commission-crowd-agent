@@ -122,9 +122,7 @@ class OpportunityStateRecord:
             "source_flags": sorted(self.source_flags),
             "score": self.score,
         }
-        return hashlib.sha256(
-            json.dumps(payload, sort_keys=True).encode()
-        ).hexdigest()[:16]
+        return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:16]
 
     def to_canonical_opportunity(self) -> CanonicalOpportunity | None:
         """Convert to CanonicalOpportunity for downstream pipeline use."""
@@ -192,9 +190,7 @@ class OpportunityStateRegistry:
             rec = self._get_or_create(opp_id)
             rec.title = item.get("title", rec.title)
             rec.principal_name = item.get("principal_name", rec.principal_name)
-            rec.lifecycle_state = item.get(
-                "status", item.get("lifecycle_state", LIFECYCLE_ACTIVE)
-            )
+            rec.lifecycle_state = item.get("status", item.get("lifecycle_state", LIFECYCLE_ACTIVE))
             rec.commission_percent = item.get("commission_percent", rec.commission_percent)
             rec.commission_text = item.get("commission_text", rec.commission_text)
             rec.source_url = item.get("source_url", rec.source_url)
@@ -245,10 +241,10 @@ class OpportunityStateRegistry:
             rec.commission_text = item.get("commission_text", rec.commission_text)
             rec.source_flags.add(SOURCE_FAVOURITES)
             # Only override lifecycle if not already set by My Opportunities
-            if (
-                SOURCE_MY_OPPORTUNITIES not in rec.source_flags
-                and rec.lifecycle_state in {LIFECYCLE_UNKNOWN, LIFECYCLE_DISCOVERED}
-            ):
+            if SOURCE_MY_OPPORTUNITIES not in rec.source_flags and rec.lifecycle_state in {
+                LIFECYCLE_UNKNOWN,
+                LIFECYCLE_DISCOVERED,
+            }:
                 rec.lifecycle_state = LIFECYCLE_FAVOURITED
             rec.add_provenance(
                 "favourites",
@@ -271,16 +267,13 @@ class OpportunityStateRegistry:
             if not has_account_data:
                 rec.title = item.get("title", rec.title) or rec.title
                 rec.principal_name = (
-                    item.get("principal_name", rec.principal_name)
-                    or rec.principal_name
+                    item.get("principal_name", rec.principal_name) or rec.principal_name
                 )
             rec.commission_percent = (
-                item.get("commission_percent", rec.commission_percent)
-                or rec.commission_percent
+                item.get("commission_percent", rec.commission_percent) or rec.commission_percent
             )
             rec.commission_text = (
-                item.get("commission_text", rec.commission_text)
-                or rec.commission_text
+                item.get("commission_text", rec.commission_text) or rec.commission_text
             )
             rec.territory = item.get("territory", rec.territory) or rec.territory
             rec.category = item.get("category", rec.category) or rec.category

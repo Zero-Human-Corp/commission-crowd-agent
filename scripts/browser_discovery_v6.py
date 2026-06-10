@@ -373,9 +373,7 @@ def _extract_find_opportunities(
         return []
 
     # If search shell is present but results not loaded, trigger Search button
-    results_present = page.evaluate(
-        "() => !!document.querySelector('.search-results .card')"
-    )
+    results_present = page.evaluate("() => !!document.querySelector('.search-results .card')")
     if not results_present:
         # Try to enter query in any visible search field
         if query:

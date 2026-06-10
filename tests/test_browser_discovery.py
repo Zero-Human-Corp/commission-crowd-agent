@@ -23,6 +23,7 @@ from commission_crowd_agent.state_registry import (
 
 # ── Browser Session ───────────────────────────────────────────────────
 
+
 class TestBrowserSession:
     def test_save_and_load_roundtrip(self, tmp_path: Path) -> None:
         path = tmp_path / "session.json"
@@ -54,6 +55,7 @@ class TestBrowserSession:
 
 
 # ── OpportunityStateRecord ────────────────────────────────────────────
+
 
 class TestOpportunityStateRecord:
     def test_eligibility_true_when_discovered(self) -> None:
@@ -94,6 +96,7 @@ class TestOpportunityStateRecord:
 
 
 # ── OpportunityStateRegistry ──────────────────────────────────────────
+
 
 class TestOpportunityStateRegistry:
     def test_my_opportunities_takes_precedence(self) -> None:
@@ -263,12 +266,14 @@ class TestOpportunityStateRegistry:
 
 # ── Pipeline defect regression tests ───────────────────────────────────
 
+
 class TestPipelineDefectFixes:
     """Regression tests for the defect that allowed find_opportunities to be silently overwritten."""
 
     @staticmethod
     def _load_browser_v6() -> Any:
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(
             "browser_discovery_v6",
             Path(__file__).parent.parent / "scripts" / "browser_discovery_v6.py",
@@ -292,12 +297,14 @@ class TestPipelineDefectFixes:
         assert len(backups) == 1
         # Content is preserved
         import json
+
         with open(backups[0]) as fh:
             assert json.load(fh)["v"] == 1
 
     def test_navigate_skips_when_already_on_page(self, tmp_path: Path) -> None:
         """_navigate_to_find_opportunities must not click when URL already contains the hash."""
         from unittest.mock import MagicMock
+
         mod = self._load_browser_v6()
         page = MagicMock()
         page.url = "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities"
@@ -307,6 +314,7 @@ class TestPipelineDefectFixes:
 
     def test_navigate_falls_back_on_wrong_page(self, tmp_path: Path) -> None:
         from unittest.mock import MagicMock
+
         mod = self._load_browser_v6()
         page = MagicMock()
         page.url = "https://www.commissioncrowd.com/app/#/agent/dashboard"
@@ -335,23 +343,27 @@ class TestPipelineDefectFixes:
     def test_protected_ids_cannot_be_find_candidates(self) -> None:
         """My Opportunities IDs must be excluded from find_candidates even if find returns them."""
         reg = OpportunityStateRegistry()
-        reg.ingest_my_opportunities([
-            {
-                "opportunity_id": "30130",
-                "title": "Protected",
-                "lifecycle_state": "active",
-                "retrieved_at": datetime.now(UTC).isoformat(),
-            }
-        ])
-        reg.ingest_find_opportunities([
-            {
-                "opportunity_id": "30130",
-                "title": "Protected",
-                "lifecycle_state": "discovered",
-                "route": "find_opportunities",
-                "retrieved_at": datetime.now(UTC).isoformat(),
-            }
-        ])
+        reg.ingest_my_opportunities(
+            [
+                {
+                    "opportunity_id": "30130",
+                    "title": "Protected",
+                    "lifecycle_state": "active",
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                }
+            ]
+        )
+        reg.ingest_find_opportunities(
+            [
+                {
+                    "opportunity_id": "30130",
+                    "title": "Protected",
+                    "lifecycle_state": "discovered",
+                    "route": "find_opportunities",
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                }
+            ]
+        )
         reg.reconcile()
         rec = reg.get_by_id("30130")
         assert rec is not None

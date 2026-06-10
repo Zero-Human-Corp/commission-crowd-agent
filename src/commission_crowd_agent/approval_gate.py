@@ -179,9 +179,7 @@ class ApprovalGate:
         # Integrity check before writing
         integrity_errors = req.validate_integrity()
         if integrity_errors:
-            raise RuntimeError(
-                f"Approval integrity violations: {'; '.join(integrity_errors)}"
-            )
+            raise RuntimeError(f"Approval integrity violations: {'; '.join(integrity_errors)}")
 
         # Sanity check: if Sheets is not wired, we must not pretend the approval
         # is pending in a system the operator cannot see.

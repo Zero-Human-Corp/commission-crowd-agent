@@ -65,9 +65,7 @@ class BrowserSession:
                 try:
                     last = datetime.fromisoformat(session.last_activity)
                     if (datetime.now(UTC) - last).total_seconds() > 4 * 3600:
-                        console.print(
-                            "[yellow]Browser session stale (>4h), will re-auth.[/yellow]"
-                        )
+                        console.print("[yellow]Browser session stale (>4h), will re-auth.[/yellow]")
                         return None
                 except ValueError:
                     return None
@@ -91,9 +89,7 @@ class CommissionCrowdBrowserAdapter:
 
     base_url: str = "https://www.commissioncrowd.com"
     session_runtime_dir: Path = field(
-        default_factory=lambda: (
-            Path.home() / ".local" / "share" / "cca" / "browser_sessions"
-        )
+        default_factory=lambda: Path.home() / ".local" / "share" / "cca" / "browser_sessions"
     )
     _browser: Any = None
     _page: Any = None
@@ -156,9 +152,7 @@ class CommissionCrowdBrowserAdapter:
             restored = BrowserSession.load(path)
             if restored and restored.logged_in and restored.cookies:
                 self._page.context.add_cookies(restored.cookies)
-                self._page.goto(
-                    f"{self.base_url}/app", wait_until="networkidle", timeout=30000
-                )
+                self._page.goto(f"{self.base_url}/app", wait_until="networkidle", timeout=30000)
                 if self._detect_dashboard():
                     self._session = restored
                     restored.last_activity = datetime.now(UTC).isoformat()
@@ -167,9 +161,7 @@ class CommissionCrowdBrowserAdapter:
                 # Cookies didn't stick – fall through to fresh login
 
         # Fresh login via login form
-        self._page.goto(
-            f"{self.base_url}/login", wait_until="domcontentloaded", timeout=30000
-        )
+        self._page.goto(f"{self.base_url}/login", wait_until="domcontentloaded", timeout=30000)
         html = self._page.content().lower()
         if "captcha" in html or "recaptcha" in html:
             raise RuntimeError("CAPTCHA detected – operator intervention required.")
@@ -203,13 +195,10 @@ class CommissionCrowdBrowserAdapter:
         if code_input_present and twofa_text_present:
             raise RuntimeError("MFA/2FA detected – operator intervention required.")
 
-        if "invalid" in html and self._page.locator('text=Invalid').count() > 0:
+        if "invalid" in html and self._page.locator("text=Invalid").count() > 0:
             raise RuntimeError("Login failed – invalid credentials.")
         if not self._detect_dashboard():
-            raise RuntimeError(
-                "Login succeeded but dashboard not detected. "
-                f"Current URL: {url}"
-            )
+            raise RuntimeError(f"Login succeeded but dashboard not detected. Current URL: {url}")
 
         self._session = BrowserSession(
             cookies=self._page.context.cookies(),
@@ -235,9 +224,7 @@ class CommissionCrowdBrowserAdapter:
 
     def _require_auth(self) -> None:
         if self._session is None or not self._session.logged_in:
-            raise RuntimeError(
-                "No active browser session. Call login_or_restore_session first."
-            )
+            raise RuntimeError("No active browser session. Call login_or_restore_session first.")
 
     # ── Navigation helpers (SPA-aware) ───────────────────────────────────
 
@@ -269,7 +256,7 @@ class CommissionCrowdBrowserAdapter:
 
         # Fallback: click sidebar
         selectors = [
-            f'text={tool_name}',
+            f"text={tool_name}",
             f'[title="{tool_name}"]',
         ]
         for sel in selectors:
@@ -292,7 +279,7 @@ class CommissionCrowdBrowserAdapter:
             self._goto_tool("My Opportunities")
         except RuntimeError:
             # Fallback – click Opportunities in sidebar
-            self._page.click('text=Opportunities')
+            self._page.click("text=Opportunities")
             self._page.wait_for_timeout(3000)
 
         items: list[dict[str, Any]] = []
@@ -307,17 +294,19 @@ class CommissionCrowdBrowserAdapter:
         rows = self._extract_opportunity_cards()
         for row in rows:
             opp_id = self._infer_opportunity_id(row.get("source_url", ""))
-            items.append({
-                "opportunity_id": opp_id,
-                "title": row.get("title", ""),
-                "principal_name": row.get("principal_name", ""),
-                "status": row.get("status", "active"),
-                "commission_summary": row.get("commission_text", ""),
-                "relationship_stage": "active",
-                "source_url": row.get("source_url", ""),
-                "retrieved_at": datetime.now(UTC).isoformat(),
-                "route": "my_opportunities",
-            })
+            items.append(
+                {
+                    "opportunity_id": opp_id,
+                    "title": row.get("title", ""),
+                    "principal_name": row.get("principal_name", ""),
+                    "status": row.get("status", "active"),
+                    "commission_summary": row.get("commission_text", ""),
+                    "relationship_stage": "active",
+                    "source_url": row.get("source_url", ""),
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                    "route": "my_opportunities",
+                }
+            )
         return items
 
     def list_messages(self) -> list[dict[str, Any]]:
@@ -337,15 +326,17 @@ class CommissionCrowdBrowserAdapter:
         for row in table_rows[:50]:  # bounded
             cells = row.locator("td").all_inner_texts()
             if len(cells) >= 3:
-                messages.append({
-                    "message_id": f"msg-{hash(cells[0] + cells[1]) % 100000}",
-                    "sender": cells[1][:100],
-                    "timestamp": cells[0][:50],
-                    "subject": cells[2][:200],
-                    "classification": "uncertain",
-                    "retrieved_at": datetime.now(UTC).isoformat(),
-                    "route": "conversations",
-                })
+                messages.append(
+                    {
+                        "message_id": f"msg-{hash(cells[0] + cells[1]) % 100000}",
+                        "sender": cells[1][:100],
+                        "timestamp": cells[0][:50],
+                        "subject": cells[2][:200],
+                        "classification": "uncertain",
+                        "retrieved_at": datetime.now(UTC).isoformat(),
+                        "route": "conversations",
+                    }
+                )
         return messages
 
     def extract_invitation_messages(
@@ -357,11 +348,19 @@ class CommissionCrowdBrowserAdapter:
         invitations: list[dict[str, Any]] = []
         invite_keywords = {
             "explicit_invitation": [
-                "invite", "invitation", "apply now", "represent",
-                "would love you to", "accept", "join us",
+                "invite",
+                "invitation",
+                "apply now",
+                "represent",
+                "would love you to",
+                "accept",
+                "join us",
             ],
             "likely_invitation": [
-                "opportunity", "interested", "connect", "discuss",
+                "opportunity",
+                "interested",
+                "connect",
+                "discuss",
             ],
         }
         for msg in messages:
@@ -472,21 +471,23 @@ class CommissionCrowdBrowserAdapter:
                 opp_id = self._extract_opp_id_from_text(
                     title + " " + (cells[1] if len(cells) > 1 else "")
                 )
-                items.append({
-                    "opportunity_id": opp_id,
-                    "title": title,
-                    "commission_text": cells[1][:300] if len(cells) > 1 else "",
-                    "status": cells[2] if len(cells) > 2 else "",
-                    "source_url": "",
-                    "retrieved_at": datetime.now(UTC).isoformat(),
-                    "route": route,
-                })
+                items.append(
+                    {
+                        "opportunity_id": opp_id,
+                        "title": title,
+                        "commission_text": cells[1][:300] if len(cells) > 1 else "",
+                        "status": cells[2] if len(cells) > 2 else "",
+                        "source_url": "",
+                        "retrieved_at": datetime.now(UTC).isoformat(),
+                        "route": route,
+                    }
+                )
 
         # Strategy 2: card-style divs with opportunity text
         if not items:
             # Try to find divs with dollar signs / percentages (commission clues)
             card_texts = self._page.locator(
-                ".opportunity-card, .opportunity-item, [class*=\"opportunity\"]"
+                '.opportunity-card, .opportunity-item, [class*="opportunity"]'
             ).all_inner_texts()
             for txt in card_texts[:100]:
                 lines = [line.strip() for line in txt.split("\n") if line.strip()]
@@ -494,15 +495,17 @@ class CommissionCrowdBrowserAdapter:
                     title = lines[0][:200]
                     commission = lines[1][:300]
                     opp_id = self._extract_opp_id_from_text(txt)
-                    items.append({
-                        "opportunity_id": opp_id,
-                        "title": title,
-                        "commission_text": commission,
-                        "status": "",
-                        "source_url": "",
-                        "retrieved_at": datetime.now(UTC).isoformat(),
-                        "route": route,
-                    })
+                    items.append(
+                        {
+                            "opportunity_id": opp_id,
+                            "title": title,
+                            "commission_text": commission,
+                            "status": "",
+                            "source_url": "",
+                            "retrieved_at": datetime.now(UTC).isoformat(),
+                            "route": route,
+                        }
+                    )
 
         # Strategy 3: any links containing /opportunity/
         if not items:
@@ -512,15 +515,17 @@ class CommissionCrowdBrowserAdapter:
                 text = link.inner_text()[:200]
                 opp_id = self._infer_opportunity_id(href)
                 if opp_id and text:
-                    items.append({
-                        "opportunity_id": opp_id,
-                        "title": text,
-                        "commission_text": "",
-                        "status": "",
-                        "source_url": f"{self.base_url}{href}",
-                        "retrieved_at": datetime.now(UTC).isoformat(),
-                        "route": route,
-                    })
+                    items.append(
+                        {
+                            "opportunity_id": opp_id,
+                            "title": text,
+                            "commission_text": "",
+                            "status": "",
+                            "source_url": f"{self.base_url}{href}",
+                            "retrieved_at": datetime.now(UTC).isoformat(),
+                            "route": route,
+                        }
+                    )
 
         return items
 

@@ -151,17 +151,14 @@ def build_telegram_digest(
         lines.append("*Pending Approvals:*")
         for pa in pending_approvals[:2]:
             lines.append(
-                f"• `{pa.get('approval_id', '')}` | "
-                f"{pa.get('entity_name', 'Unknown')[:40]}"
+                f"• `{pa.get('approval_id', '')}` | {pa.get('entity_name', 'Unknown')[:40]}"
             )
             lines.append(
                 f"  Commission: {pa.get('commission', 'N/A')} | "
                 f"Score: {pa.get('score', 'N/A')} | "
                 f"Risk: {pa.get('risk_level', 'unknown')}"
             )
-            lines.append(
-                f"  Action: {pa.get('requested_action', 'review')}"
-            )
+            lines.append(f"  Action: {pa.get('requested_action', 'review')}")
 
     return "\n".join([ln for ln in lines if ln])
 

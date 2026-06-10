@@ -100,7 +100,9 @@ def mock_api_response() -> dict[str, Any]:
 
 class TestLiveShadowZeroWrites:
     @patch("commission_crowd_agent.mvp_pipeline.CommissionCrowdApiAdapter")
-    def test_live_shadow_zero_writes(self, mock_adapter_cls: MagicMock, mock_api_response: dict[str, Any]) -> None:
+    def test_live_shadow_zero_writes(
+        self, mock_adapter_cls: MagicMock, mock_api_response: dict[str, Any]
+    ) -> None:
         mock_adapter = MagicMock()
         mock_adapter.list_opportunities.return_value = mock_api_response
         mock_adapter_cls.return_value = mock_adapter
@@ -115,7 +117,9 @@ class TestLiveShadowZeroWrites:
         assert result["calendars_created"] == 0
 
     @patch("commission_crowd_agent.mvp_pipeline.CommissionCrowdApiAdapter")
-    def test_live_shadow_total_counts(self, mock_adapter_cls: MagicMock, mock_api_response: dict[str, Any]) -> None:
+    def test_live_shadow_total_counts(
+        self, mock_adapter_cls: MagicMock, mock_api_response: dict[str, Any]
+    ) -> None:
         mock_adapter = MagicMock()
         mock_adapter.list_opportunities.return_value = mock_api_response
         mock_adapter_cls.return_value = mock_adapter
@@ -147,7 +151,9 @@ class TestLiveShadowNoSyntheticContamination:
             assert "SAMPLE" not in draft["opportunity_id"]
 
     @patch("commission_crowd_agent.mvp_pipeline.CommissionCrowdApiAdapter")
-    def test_fixture_names_absent(self, mock_adapter_cls: MagicMock, mock_api_response: dict[str, Any]) -> None:
+    def test_fixture_names_absent(
+        self, mock_adapter_cls: MagicMock, mock_api_response: dict[str, Any]
+    ) -> None:
         mock_adapter = MagicMock()
         mock_adapter.list_opportunities.return_value = mock_api_response
         mock_adapter_cls.return_value = mock_adapter
@@ -180,7 +186,9 @@ class TestLiveShadowLineage:
             assert draft["opportunity_id"] in source_ids
 
     @patch("commission_crowd_agent.mvp_pipeline.CommissionCrowdApiAdapter")
-    def test_lineage_helper_matches(self, mock_adapter_cls: MagicMock, mock_api_response: dict[str, Any]) -> None:
+    def test_lineage_helper_matches(
+        self, mock_adapter_cls: MagicMock, mock_api_response: dict[str, Any]
+    ) -> None:
         mock_adapter = MagicMock()
         mock_adapter.list_opportunities.return_value = mock_api_response
         mock_adapter_cls.return_value = mock_adapter
