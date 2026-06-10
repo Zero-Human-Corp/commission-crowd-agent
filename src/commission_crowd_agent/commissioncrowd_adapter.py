@@ -17,28 +17,48 @@ from __future__ import annotations
 from typing import Any
 
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from .canonical import CanonicalOpportunity
 from .cca_guardian import bounded_retry
 from .config import CcaSettings
 
 
 class CommissionCrowdOpportunity(BaseModel):
-    """Minimal public-opportunity model from CommissionCrowd API.
+    """Public-opportunity model aligned with CommissionCrowd API fields.
 
-    Fields are optional because the API may return sparse records.
+    Aliases map CommissionCrowd keys to canonical Python attribute names.
     """
 
     id: int | None = None
-    title: str = ""
-    slug: str = ""
+    ref: str = ""
+    name: str = ""
+    latest_slug: str = ""
     description: str = ""
-    territory: str = ""
     commission: str = ""
-    url: str = ""
-    industry: str = ""
-    status: str = ""
-    created_at: str | None = None
+    commission_pc: str = ""
+    territory_details: str = ""
+    active: bool = True
+    date_created: str | None = None
+    view_count: int = 0
+    application_count: int = 0
+    agent_count: int = 0
+    email: str = ""
+    phone: str = ""
+    company: int | None = None
+    industries: list[int] = Field(default_factory=list)
+    target_industries: list[int] = Field(default_factory=list)
+    products: list[int] = Field(default_factory=list)
+    countries: list[int] = Field(default_factory=list)
+    world_regions: list[int] = Field(default_factory=list)
+    global_territory: bool = False
+    short_summary: str = ""
+    usp: str = ""
+    completeness: int = 0
+
+    def to_canonical(self) -> CanonicalOpportunity:
+        """Convert to the unified CanonicalOpportunity model."""
+        return CanonicalOpportunity.from_commissioncrowd_api(self.model_dump())
 
 
 class CommissionCrowdAgentProfile(BaseModel):
@@ -203,7 +223,8 @@ class CommissionCrowdApiAdapter:
                     items = body
                     next_url = None
                 elif isinstance(body, dict):
-                    items = body.get("results", body.get("items", body.get("data", [])))
+                    raw_items = body.get("results", body.get("items", body.get("data", [])))
+                    items = raw_items if isinstance(raw_items, list) else []
                     next_url = body.get("next")
                 else:
                     return self._safe_result(
@@ -211,13 +232,20 @@ class CommissionCrowdApiAdapter:
                         status=response.status_code,
                         error="Unexpected response type",
                     )
+                # Validate items into typed models
+                typed_items: list[dict[str, Any]] = []
+                for item in items:
+                    try:
+                        typed_items.append(CommissionCrowdOpportunity(**item).model_dump())
+                    except Exception:
+                        typed_items.append(item)
                 return self._safe_result(
                     ok=True,
                     status=response.status_code,
                     data={
-                        "items": items,
+                        "items": typed_items,
                         "next": next_url,
-                        "count": len(items) if isinstance(items, list) else 0,
+                        "count": len(typed_items),
                     },
                 )
             return self._safe_result(
@@ -278,7 +306,7 @@ class CommissionCrowdApiAdapter:
         if self.dry_run:
             stub = CommissionCrowdOpportunity(
                 id=opportunity_id,
-                title="Stub Opportunity",
+                name="Stub Opportunity",
                 description="Dry-run placeholder",
             )
             return self._safe_result(

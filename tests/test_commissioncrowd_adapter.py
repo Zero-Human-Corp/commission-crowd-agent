@@ -241,9 +241,25 @@ class TestNoSecretsInResults:
 
 class TestDomainModels:
     def test_opportunity_model(self) -> None:
-        opp = CommissionCrowdOpportunity(id=1, title="Test", territory="UK", commission="10%")
-        assert opp.territory == "UK"
+        opp = CommissionCrowdOpportunity(
+            id=1, name="Test", territory_details="UK", commission="10%"
+        )
+        assert opp.territory_details == "UK"
         assert opp.id == 1
+
+    def test_opportunity_to_canonical(self) -> None:
+        opp = CommissionCrowdOpportunity(
+            id=1,
+            name="Test",
+            latest_slug="test-opp",
+            commission="20% recurring",
+            commission_pc="20.00",
+            territory_details="North America",
+        )
+        canonical = opp.to_canonical()
+        assert canonical.source_opportunity_id == "1"
+        assert canonical.title == "Test"
+        assert canonical.commission_percent == 20.0
 
     def test_agent_profile_model(self) -> None:
         agent = CommissionCrowdAgentProfile(id=1, full_name="Alice", email="alice@example.com")

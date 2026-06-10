@@ -1098,5 +1098,75 @@ def main() -> None:
     app()
 
 
+@app.command(name="shadow-run")
+def shadow_run_cmd(
+    limit: int = typer.Option(default=5, help="Max opportunities to fetch"),
+    min_commission: float = typer.Option(default=20.0, help="Minimum commission %"),
+) -> None:
+    """Live-shadow test: real CommissionCrowd data, ZERO external writes."""
+    from .mvp_pipeline import run_live_shadow
+
+    result = run_live_shadow(limit=limit, min_commission=min_commission)
+
+    table = Table(title="Live Shadow Test Results")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="green")
+    table.add_row("Mode", result.get("mode", "unknown"))
+    table.add_row("Total fetched", str(result.get("total_fetched", 0)))
+    table.add_row("Scored", str(result.get("scored", 0)))
+    table.add_row("Qualified", str(result.get("qualified", 0)))
+    table.add_row("Rejected", str(result.get("rejected", 0)))
+    table.add_row("Drafts prepared", str(result.get("drafts_prepared", 0)))
+    table.add_row("Sheets written", str(result.get("sheets_written", 0)))
+    table.add_row("Approvals created", str(result.get("approvals_created", 0)))
+    table.add_row("Emails sent", str(result.get("emails_sent", 0)))
+    table.add_row("Calendars created", str(result.get("calendars_created", 0)))
+    console.print(table)
+
+    if not result.get("ok"):
+        console.print(f"[red]❌ Shadow test FAILED: {result.get('error')}[/red]")
+        raise typer.Exit(1)
+
+    console.print("[green]✅ Shadow test PASSED — zero writes confirmed[/green]")
+    for sid in result.get("source_ids", []):
+        console.print(f"  [dim]→ {sid}[/dim]")
+
+
+@app.command(name="controlled-write")
+def controlled_write_cmd(
+    limit: int = typer.Option(default=5, help="Max opportunities to fetch"),
+    min_commission: float = typer.Option(default=20.0, help="Minimum commission %"),
+) -> None:
+    """Controlled-write MVP cycle: real data, CRM + approvals only."""
+    from .mvp_pipeline import run_controlled_write
+
+    console.print("[yellow]⚠️  CONTROLLED-WRITE MODE — CRM + approval writes ENABLED[/yellow]")
+    console.print(
+        "[yellow]   No emails, no calendar invites, no CommissionCrowd submissions.[/yellow]"
+    )
+
+    result = run_controlled_write(limit=limit, min_commission=min_commission)
+
+    table = Table(title="Controlled-Write MVP Results")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="green")
+    table.add_row("Mode", result.get("mode", "unknown"))
+    table.add_row("Total fetched", str(result.get("total_fetched", 0)))
+    table.add_row("Qualified", str(result.get("qualified", 0)))
+    table.add_row("CRM created", str(result.get("crm_created", 0)))
+    table.add_row("CRM updated", str(result.get("crm_updated", 0)))
+    table.add_row("Duplicates skipped", str(result.get("duplicates", 0)))
+    table.add_row("Approvals created", str(result.get("approvals_created", 0)))
+    table.add_row("Emails sent", str(result.get("emails_sent", 0)))
+    table.add_row("Calendars created", str(result.get("calendars_created", 0)))
+    console.print(table)
+
+    if not result.get("ok"):
+        console.print(f"[red]❌ Controlled-write FAILED: {result.get('error')}[/red]")
+        raise typer.Exit(1)
+
+    console.print("[green]✅ Controlled-write cycle complete[/green]")
+
+
 if __name__ == "__main__":
     main()

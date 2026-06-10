@@ -8,6 +8,7 @@ No secrets are hardcoded; failures are loud.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 from pydantic import Field
@@ -183,24 +184,44 @@ _SHARED_KEY_MAP: dict[str, str] = {
 }
 
 
+def _parse_dotenv(path: str) -> dict[str, str]:
+    """Parse a dotenv-style file manually (no external deps needed)."""
+    result: dict[str, str] = {}
+    p = Path(path)
+    if not p.exists():
+        return result
+    with p.open(encoding="utf-8") as fh:
+        for line in fh:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if "=" not in stripped:
+                continue
+            key, _, value = stripped.partition("=")
+            result[key.strip()] = value.strip()
+    return result
+
+
 def _merge_sources() -> dict[str, Any]:
-    """Build a merged dict: env vars take precedence, then shared.env, then defaults.
+    """Build a merged dict: os.environ > .env > shared.env > defaults.
 
     Returns a plain dict suitable for CcaSettings(**merged).
     """
     merged: dict[str, Any] = {}
 
-    # 1. Load shared env file (gracefully skip if missing)
+    # 1. Load .env (project-local) and shared.env (system-wide)
+    dotenv = _parse_dotenv(".env")
     try:
         shared = load_shared_env()
     except MissingEnvFileError:
         shared = {}
 
-    # 2. For each known field, prefer os.environ, then shared env
+    # 2. For each known field, prefer os.environ, then .env, then shared.env
     for field, env_key in _SHARED_KEY_MAP.items():
         env_val = os.getenv(env_key, "")
+        dotenv_val = dotenv.get(env_key, "")
         shared_val = shared.get(env_key, "")
-        value = env_val or shared_val
+        value = env_val or dotenv_val or shared_val
         if value:
             # Pydantic will coerce numeric strings to int automatically
             merged[field] = value
