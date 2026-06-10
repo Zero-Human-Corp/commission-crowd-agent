@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 from commission_crowd_agent.browser_adapter import BrowserSession
 from commission_crowd_agent.state_registry import (
@@ -257,3 +259,102 @@ class TestOpportunityStateRegistry:
         assert len(data) == 1
         assert data[0]["opportunity_id"] == "30130"
         assert "record_hash" in data[0]
+
+
+# ── Pipeline defect regression tests ───────────────────────────────────
+
+class TestPipelineDefectFixes:
+    """Regression tests for the defect that allowed find_opportunities to be silently overwritten."""
+
+    @staticmethod
+    def _load_browser_v6() -> Any:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "browser_discovery_v6",
+            Path(__file__).parent.parent / "scripts" / "browser_discovery_v6.py",
+        )
+        assert spec is not None and spec.loader is not None
+        mod = importlib.util.module_from_spec(spec)
+        sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_atomic_write_json_creates_backup(self, tmp_path: Path) -> None:
+        mod = self._load_browser_v6()
+        _atomic_write_json = mod._atomic_write_json
+        target = tmp_path / "test.json"
+        # First write
+        _atomic_write_json(target, {"v": 1})
+        assert target.exists()
+        # Second write should create backup
+        _atomic_write_json(target, {"v": 2})
+        backups = list(tmp_path.glob("test.json.backup-*"))
+        assert len(backups) == 1
+        # Content is preserved
+        import json
+        with open(backups[0]) as fh:
+            assert json.load(fh)["v"] == 1
+
+    def test_navigate_skips_when_already_on_page(self, tmp_path: Path) -> None:
+        """_navigate_to_find_opportunities must not click when URL already contains the hash."""
+        from unittest.mock import MagicMock
+        mod = self._load_browser_v6()
+        page = MagicMock()
+        page.url = "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities"
+        mod._navigate_to_find_opportunities(page)
+        page.click.assert_not_called()
+        page.evaluate.assert_not_called()
+
+    def test_navigate_falls_back_on_wrong_page(self, tmp_path: Path) -> None:
+        from unittest.mock import MagicMock
+        mod = self._load_browser_v6()
+        page = MagicMock()
+        page.url = "https://www.commissioncrowd.com/app/#/agent/dashboard"
+        mod._navigate_to_find_opportunities(page)
+        page.click.assert_called_once_with("text=Find opportunities", timeout=10000)
+
+    def test_reconcile_preserves_find_opportunities(self) -> None:
+        """Reconciliation must not discard find_opportunities passed in inventory."""
+        reg = OpportunityStateRegistry()
+        find_items = [
+            {
+                "opportunity_id": "99901",
+                "title": "Test SaaS",
+                "lifecycle_state": "discovered",
+                "route": "find_opportunities",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        ]
+        reg.ingest_find_opportunities(find_items)
+        reg.reconcile()
+        rec = reg.get_by_id("99901")
+        assert rec is not None
+        assert rec.lifecycle_state == LIFECYCLE_DISCOVERED
+        assert SOURCE_FIND in rec.source_flags
+
+    def test_protected_ids_cannot_be_find_candidates(self) -> None:
+        """My Opportunities IDs must be excluded from find_candidates even if find returns them."""
+        reg = OpportunityStateRegistry()
+        reg.ingest_my_opportunities([
+            {
+                "opportunity_id": "30130",
+                "title": "Protected",
+                "lifecycle_state": "active",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        ])
+        reg.ingest_find_opportunities([
+            {
+                "opportunity_id": "30130",
+                "title": "Protected",
+                "lifecycle_state": "discovered",
+                "route": "find_opportunities",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        ])
+        reg.reconcile()
+        rec = reg.get_by_id("30130")
+        assert rec is not None
+        assert rec.lifecycle_state == "active"  # My Opportunities wins
+        assert SOURCE_MY_OPPORTUNITIES in rec.source_flags
+        assert rec.is_eligible_for_application() is False

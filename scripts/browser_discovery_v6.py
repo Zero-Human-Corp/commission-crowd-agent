@@ -4,24 +4,38 @@
 Uses JavaScript hash changes for in-app navigation (no page reloads),
 which preserves Ember.js authentication state.
 """
+
 from __future__ import annotations
 
 import json
 import re
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from playwright.sync_api import sync_playwright
 
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+import contextlib
+
 from commission_crowd_agent.config import load_settings
 
 SETTINGS = load_settings()
 BASE_URL = "https://www.commissioncrowd.com"
 REPORTS_DIR = Path("/home/ubuntu/hermes-control/reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
+    """Write JSON atomically with timestamped backup of any existing file."""
+    if path.exists():
+        backup = path.with_suffix(f".json.backup-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}")
+        backup.write_bytes(path.read_bytes())
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w") as fh:
+        json.dump(data, fh, indent=2)
+    tmp.replace(path)
 
 
 def _infer_opp_id(text: str) -> str:
@@ -71,9 +85,11 @@ def _spa_hash(page, hash_path: str) -> None:
     page.wait_for_timeout(5000)
 
 
-def _js_extract_table_rows(page, required_headers: set[str], title_min_len: int = 10) -> list[dict[str, Any]]:
+def _js_extract_table_rows(
+    page, required_headers: set[str], title_min_len: int = 10
+) -> list[dict[str, Any]]:
     """Generic JS table extractor."""
-    js = f"""
+    js = rf"""
     () => {{
         const rows = [];
         const tables = document.querySelectorAll('table');
@@ -114,16 +130,18 @@ def _extract_my_opportunities(page) -> list[dict[str, Any]]:
     for r in raw:
         cells = r["cells"]
         opp_id = r.get("opp_id", "")
-        items.append({
-            "opportunity_id": opp_id,
-            "title": cells[0][:200],
-            "completeness": cells[1] if len(cells) > 1 else "",
-            "status": cells[2] if len(cells) > 2 else "",
-            "lifecycle_state": _map_status(cells[2] if len(cells) > 2 else ""),
-            "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
-            "route": "my_opportunities",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        items.append(
+            {
+                "opportunity_id": opp_id,
+                "title": cells[0][:200],
+                "completeness": cells[1] if len(cells) > 1 else "",
+                "status": cells[2] if len(cells) > 2 else "",
+                "lifecycle_state": _map_status(cells[2] if len(cells) > 2 else ""),
+                "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
+                "route": "my_opportunities",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
     return items
 
 
@@ -134,16 +152,18 @@ def _extract_applications(page) -> list[dict[str, Any]]:
     for r in raw:
         cells = r["cells"]
         opp_id = r.get("opp_id", "")
-        items.append({
-            "opportunity_id": opp_id,
-            "title": cells[1][:200] if len(cells) > 1 else cells[0][:200],
-            "status": cells[0],
-            "application_date": cells[2] if len(cells) > 2 else "",
-            "lifecycle_state": _map_status(cells[0]),
-            "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
-            "route": "applications",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        items.append(
+            {
+                "opportunity_id": opp_id,
+                "title": cells[1][:200] if len(cells) > 1 else cells[0][:200],
+                "status": cells[0],
+                "application_date": cells[2] if len(cells) > 2 else "",
+                "lifecycle_state": _map_status(cells[0]),
+                "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
+                "route": "applications",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
     return items
 
 
@@ -158,16 +178,18 @@ def _extract_favourites(page) -> list[dict[str, Any]]:
         if title.lower().startswith("awaiting approval"):
             # This might be an applications row leaking in
             continue
-        items.append({
-            "opportunity_id": opp_id,
-            "title": title[:200],
-            "completeness": cells[1] if len(cells) > 1 else "",
-            "status": cells[2] if len(cells) > 2 else "",
-            "lifecycle_state": _map_status(cells[2] if len(cells) > 2 else ""),
-            "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
-            "route": "favourite_opportunities",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        items.append(
+            {
+                "opportunity_id": opp_id,
+                "title": title[:200],
+                "completeness": cells[1] if len(cells) > 1 else "",
+                "status": cells[2] if len(cells) > 2 else "",
+                "lifecycle_state": _map_status(cells[2] if len(cells) > 2 else ""),
+                "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
+                "route": "favourite_opportunities",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
 
     # If no table rows, fallback to card extraction
     if not items:
@@ -180,7 +202,7 @@ def _extract_favourites(page) -> list[dict[str, Any]]:
                 if (text.length > 20 && (text.includes('%') || text.includes('$') || text.includes('£') || text.includes('Commission'))) {
                     const link = card.querySelector('a[href*="/opportunities/"]');
                     const href = link ? link.href : '';
-                    const m = href.match(/\/opportunities\/(\d+)/);
+                    const m = href.match(/\\/opportunities\\/(\\d+)/);
                     const oppId = m ? m[1] : '';
                     items.push({title: text.split('\\n')[0].trim(), opp_id: oppId, href});
                 }
@@ -193,13 +215,16 @@ def _extract_favourites(page) -> list[dict[str, Any]]:
             title = rc.get("title", "")[:200]
             opp_id = rc.get("opp_id", "")
             if title:
-                items.append({
-                    "opportunity_id": opp_id,
-                    "title": title,
-                    "source_url": rc.get("href", "") or (f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else ""),
-                    "route": "favourite_opportunities",
-                    "retrieved_at": datetime.now(UTC).isoformat(),
-                })
+                items.append(
+                    {
+                        "opportunity_id": opp_id,
+                        "title": title,
+                        "source_url": rc.get("href", "")
+                        or (f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else ""),
+                        "route": "favourite_opportunities",
+                        "retrieved_at": datetime.now(UTC).isoformat(),
+                    }
+                )
     return items
 
 
@@ -208,7 +233,7 @@ def _extract_conversations(page) -> dict[str, Any]:
 
     # Badge count from top nav (eval on current page)
     badge_count = None
-    try:
+    with contextlib.suppress(Exception):
         badge_count = page.evaluate("""
             () => {
                 const bubbles = document.querySelectorAll('.count-bubble.conversations, .count-bubble');
@@ -219,8 +244,6 @@ def _extract_conversations(page) -> dict[str, Any]:
                 return null;
             }
         """)
-    except Exception:
-        pass
 
     # Extract conversation table
     js = """
@@ -259,23 +282,36 @@ def _extract_conversations(page) -> dict[str, Any]:
         msg_id = f"msg-{abs(hash(key)) % 100000}"
         opp_id = _infer_opp_id(r.get("subject", "") + " " + r.get("sender", ""))
         combined = (r.get("subject", "") + " " + r.get("sender", "")).lower()
-        if any(kw in combined for kw in ["invite", "invitation", "apply", "represent", "join", "connect", "review your application"]):
+        if any(
+            kw in combined
+            for kw in [
+                "invite",
+                "invitation",
+                "apply",
+                "represent",
+                "join",
+                "connect",
+                "review your application",
+            ]
+        ):
             classification = "explicit_invitation"
         elif any(kw in combined for kw in ["opportunity", "interested", "discuss"]):
             classification = "likely_net_new_invitation"
         else:
             classification = "uncertain"
-        messages.append({
-            "message_id": msg_id,
-            "timestamp": r["date"],
-            "sender": r["sender"][:80],
-            "subject": r["subject"][:200],
-            "linked_opportunity_id": opp_id,
-            "classification": classification,
-            "invitation_confidence": classification,
-            "route": "conversations",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        messages.append(
+            {
+                "message_id": msg_id,
+                "timestamp": r["date"],
+                "sender": r["sender"][:80],
+                "subject": r["subject"][:200],
+                "linked_opportunity_id": opp_id,
+                "classification": classification,
+                "invitation_confidence": classification,
+                "route": "conversations",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
 
     invitations = [m for m in messages if m["classification"] == "explicit_invitation"]
     likely = [m for m in messages if m["classification"] == "likely_net_new_invitation"]
@@ -289,34 +325,124 @@ def _extract_conversations(page) -> dict[str, Any]:
     }
 
 
-def _extract_find_opportunities(page, query: str = "", max_pages: int = 2) -> list[dict[str, Any]]:
-    _spa_hash(page, "#/opportunities/search")
-    page.wait_for_timeout(3000)
+def _navigate_to_find_opportunities(page) -> None:
+    """Navigate to Find Opportunities once. Preserves Ember.js auth state."""
+    current = page.url
+    if "#/agent/opportunities/search_opportunities" in current:
+        return  # Already on the page
+    try:
+        page.click("text=Find opportunities", timeout=10000)
+    except Exception:
+        page.evaluate("window.location.hash = 'agent/opportunities/search_opportunities'")
+    page.wait_for_timeout(4000)
 
-    if query:
+
+def _js_click(page, selector: str) -> bool:
+    """Fallback click via JavaScript when Playwright click times out on viewport issues."""
+    return page.evaluate(
+        f"""() => {{
+            const el = document.querySelector("{selector}");
+            if (el) {{ el.click(); return true; }}
+            return false;
+        }}"""
+    )
+
+
+def _extract_find_opportunities(
+    page, query: str = "", max_pages: int = 2, *, navigate: bool = False
+) -> list[dict[str, Any]]:
+    """Extract Find Opportunities. Set navigate=True for the first call only."""
+    if navigate:
+        _navigate_to_find_opportunities(page)
+
+    # Check if we got an actual search shell or error
+    body_preview = page.evaluate("() => document.body.innerText.slice(0, 300)")
+    has_error = (
+        "There were errors" in body_preview
+        or "404 NOT FOUND" in body_preview
+        or "server is not responding" in body_preview
+    )
+    has_shell = (
+        "Advanced search" in body_preview
+        or "Search by company name" in body_preview
+        or "Target industries" in body_preview
+    )
+
+    if has_error and not has_shell:
+        # Genuine platform error, not a loadable search page
+        return []
+
+    # If search shell is present but results not loaded, trigger Search button
+    results_present = page.evaluate(
+        "() => !!document.querySelector('.search-results .card')"
+    )
+    if not results_present:
+        # Try to enter query in any visible search field
+        if query:
+            try:
+                # Try global search input first
+                search_input = page.locator(
+                    'input[placeholder*="search" i], input[type="search"], #id-search-everything'
+                ).first
+                if search_input.count() > 0:
+                    search_input.fill(query)
+                    page.keyboard.press("Enter")
+                    page.wait_for_timeout(4000)
+            except Exception:
+                pass
+            # Also try the "Products / Keyword" or "Search by company name" field
+            try:
+                keyword_input = page.locator(
+                    'input[placeholder*="keyword" i], input[placeholder*="company" i], input#id-products-keyword'
+                ).first
+                if keyword_input.count() > 0:
+                    keyword_input.fill(query)
+                    page.wait_for_timeout(500)
+            except Exception:
+                pass
         try:
-            search_input = page.locator('input[placeholder*="search" i], input[type="search"]').first
-            if search_input.count() > 0:
-                search_input.fill(query)
-                page.keyboard.press("Enter")
-                page.wait_for_timeout(4000)
+            # Click the actual orange Search button — JS fallback for viewport issues
+            search_btn = page.locator('button.carrot.stretch, button:has-text("Search")').first
+            if search_btn.count() > 0:
+                try:
+                    search_btn.click()
+                except Exception:
+                    _js_click(page, "button.carrot.stretch")
+                page.wait_for_timeout(6000)
         except Exception:
             pass
 
-    all_results = []
+    # Wait for spinner to disappear if present
+    for _ in range(10):
+        spinner_visible = page.evaluate(
+            "() => !!document.querySelector('.loading-spinner, .spinner, .ember-loading')"
+        )
+        if not spinner_visible:
+            break
+        page.wait_for_timeout(1000)
+
+    all_results: list[dict[str, Any]] = []
     for _ in range(max_pages):
         js = """
         () => {
             const items = [];
-            const cards = document.querySelectorAll('.opportunity-card, .opportunity-item, [class*="opportunity"]');
+            const seenIds = new Set();
+            // CommissionCrowd search results use .search-results .card (parent card, avoid .card-body duplication)
+            const cards = document.querySelectorAll('.search-results .card');
             for (const card of cards) {
                 const text = card.innerText.trim();
-                if (text.length > 20 && (text.includes('%') || text.includes('$') || text.includes('£') || text.includes('Commission'))) {
+                // Heuristic: must contain commission symbol and a title-like line
+                if (text.length > 30 && (text.includes('%') || text.includes('Commission'))) {
                     const link = card.querySelector('a[href*="/opportunities/"]');
                     const href = link ? link.href : '';
-                    const m = href.match(/\/opportunities\/(\d+)/);
+                    const m = href.match(/\\/opportunities\\/(\\d+)/);
                     const oppId = m ? m[1] : '';
-                    items.push({title: text.split('\\n')[0].trim(), full_text: text, opp_id: oppId, href});
+                    if (oppId && seenIds.has(oppId)) continue;
+                    if (oppId) seenIds.add(oppId);
+                    // First meaningful line as title
+                    const lines = text.split('\\n').filter(l => l.trim().length > 5);
+                    const title = lines.length > 0 ? lines[0].trim() : '';
+                    items.push({title, full_text: text, opp_id: oppId, href});
                 }
             }
             return items;
@@ -330,15 +456,18 @@ def _extract_find_opportunities(page, query: str = "", max_pages: int = 2) -> li
                 continue
             seen.add(title)
             opp_id = r.get("opp_id", "")
-            all_results.append({
-                "opportunity_id": opp_id,
-                "title": title,
-                "full_text": r.get("full_text", "")[:500],
-                "search_query": query,
-                "source_url": r.get("href", "") or (f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else ""),
-                "route": "find_opportunities",
-                "retrieved_at": datetime.now(UTC).isoformat(),
-            })
+            all_results.append(
+                {
+                    "opportunity_id": opp_id,
+                    "title": title,
+                    "full_text": r.get("full_text", "")[:500],
+                    "search_query": query,
+                    "source_url": r.get("href", "")
+                    or (f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else ""),
+                    "route": "find_opportunities",
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                }
+            )
 
         # Next page
         next_btns = page.locator('button:has-text("Next"), [aria-label="Next"]').all()
@@ -466,14 +595,20 @@ def main() -> int:
         for m in conv.get("messages", [])[:5]:
             print(f"  -> {m['sender'][:30]}: {m['subject'][:50]} [{m['classification']}]")
 
-        # Find Opportunities — multiple searches
+        # Find Opportunities — multiple searches (single navigation)
         search_queries = [
-            "B2B SaaS", "AI", "automation", "cybersecurity",
-            "software", "recurring revenue", "data", "business services",
+            "B2B SaaS",
+            "AI",
+            "automation",
+            "cybersecurity",
+            "software",
+            "recurring revenue",
+            "data",
+            "business services",
         ]
         all_find: list[dict[str, Any]] = []
-        for q in search_queries:
-            results = _extract_find_opportunities(page, query=q, max_pages=2)
+        for i, q in enumerate(search_queries):
+            results = _extract_find_opportunities(page, query=q, max_pages=2, navigate=(i == 0))
             print(f"Find '{q}': {len(results)} results")
             all_find.extend(results)
 
@@ -490,31 +625,37 @@ def main() -> int:
 
         browser.close()
 
-    # Save reports
+    # Save reports (atomic with backup)
     fav_path = REPORTS_DIR / "cca_favourite_opportunities_inventory.json"
-    with open(fav_path, "w") as fh:
-        json.dump({"favourites": inventory["favourites"], "retrieved_at": inventory["retrieved_at"]}, fh, indent=2)
+    _atomic_write_json(
+        fav_path,
+        {"favourites": inventory["favourites"], "retrieved_at": inventory["retrieved_at"]},
+    )
     print(f"\nSaved: {fav_path}")
 
     conv_path = REPORTS_DIR / "cca_conversations_inventory.json"
-    with open(conv_path, "w") as fh:
-        json.dump(inventory["conversations"], fh, indent=2)
+    _atomic_write_json(
+        conv_path,
+        inventory["conversations"],
+    )
     print(f"Saved: {conv_path}")
 
     find_path = REPORTS_DIR / "cca_find_opportunities_search_log.json"
-    with open(find_path, "w") as fh:
-        json.dump({
+    _atomic_write_json(
+        find_path,
+        {
             "search_queries": search_queries,
             "results_count": len(deduped_find),
             "results": deduped_find,
             "retrieved_at": inventory["retrieved_at"],
-        }, fh, indent=2)
+        },
+    )
     print(f"Saved: {find_path}")
 
     # Reconcile
     reconciliation = _reconcile_inventory(inventory)
 
-    # Save state registry
+    # Save state registry (atomic)
     registry = {
         "my_opportunities": inventory["my_opportunities"],
         "applications": inventory["applications"],
@@ -525,8 +666,7 @@ def main() -> int:
         "retrieved_at": inventory["retrieved_at"],
     }
     reg_path = REPORTS_DIR / "cca_opportunity_state_registry.json"
-    with open(reg_path, "w") as fh:
-        json.dump(registry, fh, indent=2)
+    _atomic_write_json(reg_path, registry)
     print(f"Saved: {reg_path}")
 
     # Markdown report
@@ -539,58 +679,78 @@ def main() -> int:
         f"- Count: {len(inventory['my_opportunities'])}",
     ]
     for o in inventory["my_opportunities"]:
-        md_lines.append(f"  - `{o['opportunity_id']}` — {o['title'][:80]} — *{o['lifecycle_state']}*")
+        md_lines.append(
+            f"  - `{o['opportunity_id']}` — {o['title'][:80]} — *{o['lifecycle_state']}*"
+        )
 
     md_lines.extend(["", "## Applications", f"- Count: {len(inventory['applications'])}"])
     for a in inventory["applications"]:
-        md_lines.append(f"  - `{a['opportunity_id']}` — {a['title'][:80]} — *{a['lifecycle_state']}*")
+        md_lines.append(
+            f"  - `{a['opportunity_id']}` — {a['title'][:80]} — *{a['lifecycle_state']}*"
+        )
 
-    md_lines.extend([
-        "", "## Favourite Opportunities",
-        f"- Count: {len(inventory['favourites'])}",
-        f"- Net-new candidates: {len(reconciliation['favourite_candidates'])}",
-        f"- Excluded existing: {len(reconciliation['favourite_excluded'])}",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Favourite Opportunities",
+            f"- Count: {len(inventory['favourites'])}",
+            f"- Net-new candidates: {len(reconciliation['favourite_candidates'])}",
+            f"- Excluded existing: {len(reconciliation['favourite_excluded'])}",
+        ]
+    )
     for f in inventory["favourites"][:10]:
         md_lines.append(f"  - `{f.get('opportunity_id', '')}` — {f['title'][:80]}")
 
-    md_lines.extend([
-        "", "## Conversations / Messages",
-        f"- Badge count: {conv.get('badge_count')}",
-        f"- Messages inspected: {len(conv.get('messages', []))}",
-        f"- Explicit invitations: {len(conv.get('invitations', []))}",
-        f"- Likely invitations: {len(conv.get('likely_invitations', []))}",
-        f"- Net-new candidates: {len(reconciliation['conversation_candidates'])}",
-        f"- Excluded existing: {len(reconciliation['conversation_excluded'])}",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Conversations / Messages",
+            f"- Badge count: {conv.get('badge_count')}",
+            f"- Messages inspected: {len(conv.get('messages', []))}",
+            f"- Explicit invitations: {len(conv.get('invitations', []))}",
+            f"- Likely invitations: {len(conv.get('likely_invitations', []))}",
+            f"- Net-new candidates: {len(reconciliation['conversation_candidates'])}",
+            f"- Excluded existing: {len(reconciliation['conversation_excluded'])}",
+        ]
+    )
     for m in conv.get("messages", [])[:10]:
-        md_lines.append(f"  - `{m['message_id']}` — {m['sender'][:30]} — {m['subject'][:50]} — *{m['classification']}*")
+        md_lines.append(
+            f"  - `{m['message_id']}` — {m['sender'][:30]} — {m['subject'][:50]} — *{m['classification']}*"
+        )
 
-    md_lines.extend([
-        "", "## Find Opportunities",
-        f"- Search queries: {', '.join(search_queries)}",
-        f"- Total results (deduped): {len(deduped_find)}",
-        f"- Net-new candidates: {len(reconciliation['find_candidates'])}",
-        f"- Excluded existing: {len(reconciliation['find_excluded'])}",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Find Opportunities",
+            f"- Search queries: {', '.join(search_queries)}",
+            f"- Total results (deduped): {len(deduped_find)}",
+            f"- Net-new candidates: {len(reconciliation['find_candidates'])}",
+            f"- Excluded existing: {len(reconciliation['find_excluded'])}",
+        ]
+    )
     for f in deduped_find[:10]:
-        md_lines.append(f"  - `{f.get('opportunity_id', '')}` — {f['title'][:80]} (query: {f.get('search_query', '')})")
+        md_lines.append(
+            f"  - `{f.get('opportunity_id', '')}` — {f['title'][:80]} (query: {f.get('search_query', '')})"
+        )
 
-    md_lines.extend([
-        "", "## Reconciliation Summary",
-        f"- Existing opportunity IDs: {len(reconciliation['existing_ids'])}",
-        f"- Existing titles tracked: {reconciliation['existing_titles_count']}",
-        f"- Favourite candidates: {len(reconciliation['favourite_candidates'])}",
-        f"- Conversation candidates: {len(reconciliation['conversation_candidates'])}",
-        f"- Find candidates: {len(reconciliation['find_candidates'])}",
-        "",
-        "## Safety Checks",
-        "- No applications submitted.",
-        "- No invitations accepted.",
-        "- No messages sent.",
-        "- No emails sent.",
-        "- No external calendar invitations created.",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Reconciliation Summary",
+            f"- Existing opportunity IDs: {len(reconciliation['existing_ids'])}",
+            f"- Existing titles tracked: {reconciliation['existing_titles_count']}",
+            f"- Favourite candidates: {len(reconciliation['favourite_candidates'])}",
+            f"- Conversation candidates: {len(reconciliation['conversation_candidates'])}",
+            f"- Find candidates: {len(reconciliation['find_candidates'])}",
+            "",
+            "## Safety Checks",
+            "- No applications submitted.",
+            "- No invitations accepted.",
+            "- No messages sent.",
+            "- No emails sent.",
+            "- No external calendar invitations created.",
+        ]
+    )
 
     md_path = REPORTS_DIR / "cca_browser_discovery_reconciliation.md"
     with open(md_path, "w") as fh:
@@ -611,11 +771,12 @@ def main() -> int:
         "favourite_candidates": len(reconciliation["favourite_candidates"]),
         "conversation_candidates": len(reconciliation["conversation_candidates"]),
         "find_candidates": len(reconciliation["find_candidates"]),
-        "existed_activity_excluded": len(reconciliation["favourite_excluded"]) + len(reconciliation["conversation_excluded"]) + len(reconciliation["find_excluded"]),
+        "existed_activity_excluded": len(reconciliation["favourite_excluded"])
+        + len(reconciliation["conversation_excluded"])
+        + len(reconciliation["find_excluded"]),
     }
     summary_path = REPORTS_DIR / "cca_browser_discovery_summary.json"
-    with open(summary_path, "w") as fh:
-        json.dump(summary, fh, indent=2)
+    _atomic_write_json(summary_path, summary)
     print(f"Saved: {summary_path}")
 
     print("\nDone.")
@@ -624,4 +785,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())
