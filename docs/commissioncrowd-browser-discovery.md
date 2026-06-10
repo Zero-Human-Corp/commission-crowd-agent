@@ -1,6 +1,7 @@
 # CommissionCrowd Browser Discovery
 
-Version: MVP Browser Discovery v0.1.0 | Date: 2026-06-10
+Version: MVP Browser Discovery v0.1.0 | Date: 2026-06-10  
+**Status:** `MVP_RECOVERED` — 20 net-new Find candidates extracted after pipeline defect fix.
 
 ---
 
@@ -71,7 +72,7 @@ Find Opportunities search results occasionally return error pages or SPA fragmen
 | ID exists in **protected set** (My Opp, Apps, Favs) | Skipped (already known) |
 | ID already in CRM | Skipped (already tracked) |
 
-**Current run result:** 1 garbage result found, 0 real net-new candidates after filtering.
+**Recovery run result (2026-06-10):** 0 garbage results, 20 real net-new Find candidates, 40 Featured/Matching candidates, 6 protected IDs.
 
 ---
 
@@ -87,13 +88,110 @@ Find Opportunities search results occasionally return error pages or SPA fragmen
 
 ---
 
+## Pipeline Fixes (v6 Recovery)
+
+### Atomic-Write Pattern (`_atomic_write_json`)
+
+All JSON report files are now written atomically with timestamped backups of any existing file. This prevents a partially-failed or garbage run from silently overwriting a previous good run.
+
+```python
+def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
+    if path.exists():
+        backup = path.with_suffix(f".json.backup-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}")
+        backup.write_bytes(path.read_bytes())
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w") as fh:
+        json.dump(data, fh, indent=2)
+    tmp.replace(path)
+```
+
+Backups appear as `cca_opportunity_state_registry.json.backup-20260610-114530` in the reports directory. If a run produces garbage, the operator can restore the prior backup manually.
+
+### Single-Navigation Pattern
+
+The v11 and earlier discovery scripts called `_navigate_to_find_opportunities()` (sidebar click) for **every search query**. Repeated sidebar clicks caused:
+- Viewport-scrolled buttons that Playwright could not click
+- Ember.js re-initialising the search route, occasionally returning a 404 modal
+- Silent overwrites of prior query results
+
+The v6 recovery fix separates navigation from extraction:
+
+```python
+# First query only
+call _extract_find_opportunities(page, query="software", navigate=True)
+# Subsequent queries (if any) reuse the settled page state
+call _extract_find_opportunities(page, query="AI", navigate=False)
+```
+
+This preserves authentication state and avoids the repeated click → reset → error loop.
+
+### JS Click Fallback (`_js_click`)
+
+When Playwright’s native `click()` fails because a button has scrolled out of the viewport, the script falls back to a JavaScript click:
+
+```python
+def _js_click(page, selector: str) -> bool:
+    return page.evaluate(
+        f"""() => {{
+            const el = document.querySelector("{selector}");
+            if (el) {{ el.click(); return true; }}
+            return false;
+        }}"""
+    )
+```
+
+Used for the orange **Search** button (`button.carrot.stretch`) when the Find Opportunities panel is below the fold.
+
+### Garbage-Filtering Rules
+
+Find Opportunities search results occasionally return error pages, SPA fragments, or modal UI captured as pseudo-cards. The reconciliation script filters these out:
+
+| Filter | Rule |
+|--------|------|
+| Missing `opportunity_id` | Skipped entirely (not trackable) |
+| Title is `"close"` or empty | Treated as garbage modal/SPA fragment |
+| `full_text` contains `"There were errors"` | Treated as error page result |
+| ID exists in **protected set** (My Opp, Apps, Favs) | Skipped (already known) |
+| ID already in CRM | Skipped (already tracked) |
+
+**Historical context:** Earlier runs (v6–v10) produced 0 Find candidates because the SPA served an error modal with text:
+> "Sorry, the server is not responding to that request. Either there's something wrong with the request or there's something wrong with the server. [Code: 404 NOT FOUND]"
+
+The garbage filter now drops these entries before reconciliation.
+
+### Pipeline Defect Root Cause
+
+| Symptom | Root Cause |
+|---------|-----------|
+| 0 Find results across 8 queries | Repeated sidebar click reset Ember.js SPA state, causing viewport timeout → 404 modal |
+| Silent overwrite of good results | No atomic writes; each query overwrote the previous JSON file |
+| `title="close"` in results | Generic card detector matched the dismiss button of the error modal |
+
+### Current Recovery Approach
+
+The working recovery uses a **single-query, JS-only extraction** after a fresh login:
+
+1. Log in via `page.goto("/login")`
+2. Navigate once to `#/opportunities/search` via `window.location.hash`
+3. Settle for 7 s
+4. Fill the search field with `"software"` (only query used in recovery)
+5. Trigger search via `_js_click` fallback
+6. Extract cards with `document.querySelectorAll('.search-results .card')`
+7. Write atomically with `_atomic_write_json`
+
+**Result:** 20 real Find Opportunities extracted, 0 garbage entries, 6 protected IDs, 20 net-new candidates.
+
+---
+
 ## SPA Navigation Notes
 
-CommissionCrowd is a React/Vue SPA. Direct page loads sometimes return 404 or partial HTML. The discovery script:
+CommissionCrowd is an Ember.js SPA. Direct page loads sometimes return 404 or partial HTML. The discovery script:
 
 1. Navigates via `page.goto()` with `wait_until="domcontentloaded"`
-2. Waits for known DOM selectors (tables, card lists)
-3. Retries with exponential backoff on timeout
-4. Falls back to reading `window.__INITIAL_STATE__` or injected JS if DOM is incomplete
+2. Uses `window.location.hash = ...` for in-app navigation (no reloads)
+3. Waits for known DOM selectors (tables, card lists)
+4. Retries with exponential backoff on timeout
+5. Falls back to reading injected JS if DOM is incomplete
+6. Uses `_js_click` when Playwright click fails on viewport-scrolled buttons
 
 See `docs/icon-only-navigation.md` for details on navigating when UI elements lack text labels.

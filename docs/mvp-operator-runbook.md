@@ -14,6 +14,8 @@ source .venv/bin/activate
 Run the latest SPA-safe discovery script:
 
 ```bash
+cd /home/ubuntu/projects/commission-crowd-agent
+source .venv/bin/activate
 python3 scripts/browser_discovery_v6.py
 ```
 
@@ -29,6 +31,9 @@ python3 scripts/browser_discovery_v6.py
 - `cca_find_opportunities_search_log.json`
 - `cca_browser_discovery_reconciliation.md`
 - `cca_browser_discovery_summary.json`
+- `cca_state_registry.json` (reconciled registry)
+- `cca_net_new_candidates.json` (filtered net-new list)
+- `cca_reconciliation_report.md`
 
 ### 2. Reconcile inventory
 
@@ -48,20 +53,20 @@ python3 scripts/reconcile_inventory.py
 
 **Protected IDs (hardcoded by lifecycle state):**
 - My Opportunities: `30130`, `30754`, `33021`, `34234`
-- Applications: the two awaiting-approval records (lifecycle_state `application_submitted`)
+- Applications: `17763`, `20733` (lifecycle_state `application_submitted`)
 
 These IDs are **excluded** from net-new candidacy and cannot receive `apply_to_principal` approvals.
 
 ### 3. Qualify candidates
 
-*Not yet executable with real data because the last Find Opportunities run returned a 404 error page, yielding zero net-new candidates.*
-
-When real find results are available, run:
+When real find results are available (current recovery: 20 Find + 40 Featured candidates), run:
 
 ```bash
 python3 scripts/qualify_candidates.py   # if available
 # or via the mvp_pipeline module
 ```
+
+> **Honest limitation:** The most recent recovery run produced 20 Find candidates from a single `"software"` query. Multi-query runs (`B2B SaaS`, `AI`, etc.) still encounter server errors. The operator may need to run single-query extractions when the platform is stable.
 
 ### 4. CRM write (controlled)
 
@@ -127,4 +132,4 @@ Do **not** create `v0.1.0-mvp` until:
 3. All quality gates pass (tests, Ruff, MyPy, secret scan)
 4. The operator confirms the Telegram digest is accurate
 
-Current status: **MVP_CONDITIONALLY_READY**
+Current status: **MVP_RECOVERED** — 20 Find + 40 Featured candidates extracted and reconciled. Multi-query Find Opportunities remains unstable; operator may accept single-query coverage as sufficient.
