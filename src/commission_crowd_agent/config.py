@@ -67,6 +67,8 @@ class CcaSettings(BaseSettings):
 
     # --- CommissionCrowd ---
     commissioncrowd_api_key: str = Field(default="", description="CommissionCrowd REST API key")
+    commissioncrowd_username: str = Field(default="", description="CommissionCrowd login username")
+    commissioncrowd_password: str = Field(default="", description="CommissionCrowd login password")
     commissioncrowd_base_url: str = Field(
         default="https://www.commissioncrowd.com/api",
         description="CommissionCrowd API base URL",
@@ -165,6 +167,8 @@ _SHARED_KEY_MAP: dict[str, str] = {
     "n8n_basic_auth_user": "N8N_BASIC_AUTH_USER",
     "n8n_basic_auth_pass": "N8N_BASIC_AUTH_PASS",
     "commissioncrowd_api_key": "COMMISSIONCROWD_API_KEY",
+    "commissioncrowd_username": "COMMISSIONCROWD_USERNAME",
+    "commissioncrowd_password": "COMMISSIONCROWD_PASSWORD",
     "commissioncrowd_base_url": "COMMISSIONCROWD_BASE_URL",
     "cca_client_name": "CCA_CLIENT_NAME",
     "cca_daily_volume_limit": "CCA_DAILY_VOLUME_LIMIT",
