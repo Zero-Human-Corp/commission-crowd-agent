@@ -1,15 +1,17 @@
 # CCA Browser Discovery MVP — Release Candidate Report
 
 **Date:** 2026-06-10  
-**Status:** `MVP_CONDITIONALLY_READY`  
-**Commit:** (to be inserted after push)  
+**Status:** `MVP_CONDITIONALLY_READY` — *See superseding status below*  
+**Superseded by:** `/home/ubuntu/hermes-control/reports/cca_mvp_external_dependency_closeout_v1.md`  
+**Current four-part status:** `MVP_IMPLEMENTATION_COMPLETE` — `BLOCKED_EXTERNAL_DEPENDENCY` — `NOT_READY_FOR_OPERATOR_DECISIONS` — `NOT_READY_FOR_PRODUCTION`  
+**Commit:** `ab6fd3d611a834f4d2d5f655cd236b2d564d8e24`  
 **Branch:** `master`  
 
 ---
 
 ## Summary
 
-The authenticated browser discovery pipeline is architecturally complete and safe. All reconciliation, qualification, CRM write, application-pack generation, and approval-creation infrastructure is in place and tested. The pipeline is **conditionally ready** because the most recent CommissionCrowd Find Opportunities extraction returned a 404/error page instead of real results, yielding zero net-new candidates.
+The authenticated browser discovery pipeline is architecturally complete and safe. All reconciliation, qualification, CRM write, application-pack generation, and approval-creation infrastructure is in place and tested. The pipeline is **blocked** because CommissionCrowd's TLS certificate for `app.commissioncrowd.com` expired on **October 23, 2024** (595 days ago), confirmed by OpenSSL (verify code 10), curl, Python, Node.js, and Chromium. No authenticated navigation is possible. Prior to this blocker, prior runs extracted 4 My Opportunities, 2 Applications, and 48 Find Opportunities candidates. See `/home/ubuntu/hermes-control/reports/cca_external_dependency_blocker_2026-06-10.md` for full details.
 
 ---
 

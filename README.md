@@ -2,7 +2,7 @@
 
 Headless AI-powered automation system for B2B lead research, personalised outreach, and pipeline management.
 
-**Current Status:** `MVP_CONDITIONALLY_READY` — Browser Discovery MVP complete. Pipeline is architecturally ready. Last authenticated Find Opportunities run returned a 404 error page, yielding **0 net-new candidates**. See [Known Limitations](docs/known-limitations.md). Tests passing (500). Ruff clean. n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
+**Current Status:** `MVP_IMPLEMENTATION_COMPLETE` — Browser Discovery MVP code is complete and tested. `BLOCKED_EXTERNAL_DEPENDENCY` — CommissionCrowd TLS certificate expired 2024-10-23, blocking all authenticated navigation. `NOT_READY_FOR_OPERATOR_DECISIONS` — Prior runs identified 48 net-new Find Opportunities candidates and 5 shortlisted prospects, but none have verified commercial details. `NOT_READY_FOR_PRODUCTION` — External dependency must be resolved before any CRM write, approval, or application. See [Known Limitations](docs/known-limitations.md) and `/home/ubuntu/hermes-control/reports/cca_external_dependency_blocker_2026-06-10.md`. Tests passing. Ruff clean. n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
 
 ---
 
