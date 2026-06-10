@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""CommissionCrowd browser discovery — robust v3.
-"""
+"""CommissionCrowd browser discovery — robust v3."""
+
 from __future__ import annotations
 
 import json
@@ -65,7 +65,9 @@ def _extract_first_matching_table(page, header_keywords: set[str]) -> list[list[
     """Find the first table whose headers contain ALL keywords, return data rows."""
     tables = page.locator("table").all()
     for table in tables:
-        header_cells = table.locator("thead th, tbody tr:first-child td, tbody tr:first-child th").all_inner_texts()
+        header_cells = table.locator(
+            "thead th, tbody tr:first-child td, tbody tr:first-child th"
+        ).all_inner_texts()
         header_text = " ".join(header_cells).lower()
         if all(kw.lower() in header_text for kw in header_keywords):
             all_rows = table.locator("tr").all()
@@ -118,7 +120,9 @@ def _extract_id_from_table(page, table_kw: str, cell_index: int, title_prefix: s
 
 
 def _extract_my_opportunities(page) -> list[dict[str, Any]]:
-    page.goto(f"{BASE_URL}/app/#/agent/my-opportunities", wait_until="domcontentloaded", timeout=30000)
+    page.goto(
+        f"{BASE_URL}/app/#/agent/my-opportunities", wait_until="domcontentloaded", timeout=30000
+    )
     page.wait_for_timeout(4000)
     rows = _extract_first_matching_table(page, {"opportunity", "completeness", "status"})
     items: list[dict[str, Any]] = []
@@ -129,16 +133,18 @@ def _extract_my_opportunities(page) -> list[dict[str, Any]]:
         if not title or len(title) < 10 or "awaiting approval" in title.lower():
             continue
         opp_id = _extract_id_from_table(page, "opportunity", 0, title[:20])
-        items.append({
-            "opportunity_id": opp_id,
-            "title": title[:200],
-            "completeness": cells[1] if len(cells) > 1 else "",
-            "status": cells[2] if len(cells) > 2 else "",
-            "lifecycle_state": _map_status(cells[2] if len(cells) > 2 else ""),
-            "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
-            "route": "my_opportunities",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        items.append(
+            {
+                "opportunity_id": opp_id,
+                "title": title[:200],
+                "completeness": cells[1] if len(cells) > 1 else "",
+                "status": cells[2] if len(cells) > 2 else "",
+                "lifecycle_state": _map_status(cells[2] if len(cells) > 2 else ""),
+                "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
+                "route": "my_opportunities",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
     return items
 
 
@@ -156,16 +162,18 @@ def _extract_applications(page) -> list[dict[str, Any]]:
         if not title or len(title) < 10:
             continue
         opp_id = _extract_id_from_table(page, "opportunity", 1, title[:20])
-        items.append({
-            "opportunity_id": opp_id,
-            "title": title[:200],
-            "status": status,
-            "application_date": date_str,
-            "lifecycle_state": _map_status(status),
-            "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
-            "route": "applications",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        items.append(
+            {
+                "opportunity_id": opp_id,
+                "title": title[:200],
+                "status": status,
+                "application_date": date_str,
+                "lifecycle_state": _map_status(status),
+                "source_url": f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else "",
+                "route": "applications",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
     return items
 
 
@@ -182,7 +190,15 @@ def _extract_messages(page) -> list[dict[str, Any]]:
                 sender = lines[i + 1].strip()
                 subject = lines[i + 2].strip()
                 if "→" in sender or " to " in sender.lower():
-                    bad_subjects = {"Reply", "Custom reply", "Block", "Report", "Choose a quick", "Add to favourites", "Quick reply"}
+                    bad_subjects = {
+                        "Reply",
+                        "Custom reply",
+                        "Block",
+                        "Report",
+                        "Choose a quick",
+                        "Add to favourites",
+                        "Quick reply",
+                    }
                     if any(skip in subject for skip in bad_subjects):
                         continue
                     msg_id = f"msg-{abs(hash(line + sender)) % 100000}"
@@ -190,15 +206,17 @@ def _extract_messages(page) -> list[dict[str, Any]]:
                         continue
                     seen.add(msg_id)
                     opp_id = _infer_opp_id(subject + " " + sender)
-                    messages.append({
-                        "message_id": msg_id,
-                        "timestamp": line,
-                        "sender": sender[:80],
-                        "subject": subject[:200],
-                        "linked_opportunity_id": opp_id,
-                        "route": "conversations",
-                        "retrieved_at": datetime.now(UTC).isoformat(),
-                    })
+                    messages.append(
+                        {
+                            "message_id": msg_id,
+                            "timestamp": line,
+                            "sender": sender[:80],
+                            "subject": subject[:200],
+                            "linked_opportunity_id": opp_id,
+                            "route": "conversations",
+                            "retrieved_at": datetime.now(UTC).isoformat(),
+                        }
+                    )
     return messages
 
 
@@ -214,23 +232,31 @@ def _extract_favourites_dashboard(page) -> list[dict[str, Any]]:
             in_fav = True
             continue
         if in_fav:
-            if any(kw in line.lower() for kw in [
-                "setup steps", "complete your profile",
-                "spread the word", "total referrals",
-                "unread conversations", "applications",
-            ]):
+            if any(
+                kw in line.lower()
+                for kw in [
+                    "setup steps",
+                    "complete your profile",
+                    "spread the word",
+                    "total referrals",
+                    "unread conversations",
+                    "applications",
+                ]
+            ):
                 break
             if line in {"chat", "trash", "View all"}:
                 continue
             if len(line) > 20:
                 opp_id = _infer_opp_id(line)
                 if any(c in line for c in {"%", "$", "£", "Commission", "Earn", "Residual"}):
-                    fav_items.append({
-                        "opportunity_id": opp_id,
-                        "title": line[:200],
-                        "route": "favourite_opportunities",
-                        "retrieved_at": datetime.now(UTC).isoformat(),
-                    })
+                    fav_items.append(
+                        {
+                            "opportunity_id": opp_id,
+                            "title": line[:200],
+                            "route": "favourite_opportunities",
+                            "retrieved_at": datetime.now(UTC).isoformat(),
+                        }
+                    )
     return fav_items
 
 
@@ -245,22 +271,30 @@ def _extract_find_opportunities_dashboard(page) -> list[dict[str, Any]]:
             in_find = True
             continue
         if in_find:
-            if any(kw in line.lower() for kw in [
-                "favourite opportunities", "unread conversations",
-                "setup steps", "my opportunities", "applications",
-            ]):
+            if any(
+                kw in line.lower()
+                for kw in [
+                    "favourite opportunities",
+                    "unread conversations",
+                    "setup steps",
+                    "my opportunities",
+                    "applications",
+                ]
+            ):
                 break
             if line in skip_set or line.lower().startswith("check"):
                 continue
             if len(line) > 20:
                 opp_id = _infer_opp_id(line)
                 if any(c in line for c in {"%", "$", "£", "Commission", "Earn", "Residual"}):
-                    find_items.append({
-                        "opportunity_id": opp_id,
-                        "title": line[:200],
-                        "route": "find_opportunities",
-                        "retrieved_at": datetime.now(UTC).isoformat(),
-                    })
+                    find_items.append(
+                        {
+                            "opportunity_id": opp_id,
+                            "title": line[:200],
+                            "route": "find_opportunities",
+                            "retrieved_at": datetime.now(UTC).isoformat(),
+                        }
+                    )
     return find_items
 
 
@@ -297,7 +331,15 @@ def main() -> int:
         for m in inventory["messages"][:5]:
             print(f"  -> {m['sender'][:30]}: {m['subject'][:50]}")
 
-        invite_keywords = ["invite", "invitation", "apply", "represent", "join", "connect", "review your application"]
+        invite_keywords = [
+            "invite",
+            "invitation",
+            "apply",
+            "represent",
+            "join",
+            "connect",
+            "review your application",
+        ]
         for msg in inventory["messages"]:
             combined = (msg.get("subject", "") + " " + msg.get("sender", "")).lower()
             if any(kw in combined for kw in invite_keywords):
@@ -305,7 +347,9 @@ def main() -> int:
             else:
                 msg["classification"] = "uncertain"
             msg["invitation_confidence"] = msg["classification"]
-        inventory["invitations"] = [m for m in inventory["messages"] if m.get("classification") == "explicit_invitation"]
+        inventory["invitations"] = [
+            m for m in inventory["messages"] if m.get("classification") == "explicit_invitation"
+        ]
         print(f"Invitations: {len(inventory['invitations'])}")
 
         inventory["favourites"] = _extract_favourites_dashboard(page)

@@ -12,6 +12,7 @@ Covers:
 from __future__ import annotations
 
 import json
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -34,7 +35,7 @@ def _make_settings(api_key: str = "fake-key") -> CcaSettings:
     )
 
 
-def _fake_ok_response(json_body: dict, status: int = 200) -> MagicMock:
+def _fake_ok_response(json_body: dict[str, Any], status: int = 200) -> MagicMock:
     """Build a mock httpx.Response."""
     resp = MagicMock(spec=httpx.Response)
     resp.status_code = status
@@ -268,7 +269,7 @@ class TestDomainModels:
     def test_opportunity_validation_fails_on_bad_data(self) -> None:
         """Pydantic should reject fields that don't match declared types."""
         with pytest.raises(ValidationError):
-            CommissionCrowdOpportunity(id="not-an-int")
+            CommissionCrowdOpportunity(id="not-an-int")  # type: ignore[arg-type]
 
 
 class TestUrlBuilding:

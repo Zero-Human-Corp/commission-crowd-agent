@@ -48,7 +48,7 @@ def _stub_row(approval_id: str, status: str) -> list[str]:
     ]
 
 
-def test_read_approval_record_found():
+def test_read_approval_record_found() -> None:
     """read_approval_record must return a full dict when the row exists."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -67,7 +67,7 @@ def test_read_approval_record_found():
     assert "created_at_utc" in record
 
 
-def test_read_approval_record_missing():
+def test_read_approval_record_missing() -> None:
     """read_approval_record must return empty dict when the ID is not found."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -81,13 +81,13 @@ def test_read_approval_record_missing():
     assert gate.read_approval_record("A999") == {}
 
 
-def test_read_approval_record_no_adapter():
+def test_read_approval_record_no_adapter() -> None:
     """read_approval_record must return empty dict when no adapter is wired."""
     gate = ApprovalGate()
     assert gate.read_approval_record("A001") == {}
 
 
-def test_downstream_blocks_pending():
+def test_downstream_blocks_pending() -> None:
     """Pending approval must block downstream action."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -101,7 +101,7 @@ def test_downstream_blocks_pending():
     assert gate.is_approved("A001") is False
 
 
-def test_downstream_blocks_rejected():
+def test_downstream_blocks_rejected() -> None:
     """Rejected approval must block downstream action."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -115,7 +115,7 @@ def test_downstream_blocks_rejected():
     assert gate.is_approved("A001") is False
 
 
-def test_downstream_blocks_expired():
+def test_downstream_blocks_expired() -> None:
     """Expired approval must block downstream action."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -129,7 +129,7 @@ def test_downstream_blocks_expired():
     assert gate.is_approved("A001") is False
 
 
-def test_downstream_allows_approved():
+def test_downstream_allows_approved() -> None:
     """Approved approval must allow downstream action."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -143,7 +143,7 @@ def test_downstream_allows_approved():
     assert gate.is_approved("A001") is True
 
 
-def test_downstream_blocks_missing():
+def test_downstream_blocks_missing() -> None:
     """Missing approval must block downstream action."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {"ok": True, "rows": []}
@@ -151,7 +151,7 @@ def test_downstream_blocks_missing():
     assert gate.is_approved("A999") is False
 
 
-def test_read_record_no_secrets_in_output():
+def test_read_record_no_secrets_in_output() -> None:
     """Approval record must not contain secrets even if Sheet had them."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -169,7 +169,7 @@ def test_read_record_no_secrets_in_output():
         assert "spreadsheet" not in str(value).lower()
 
 
-def test_create_approval_writes_correct_row():
+def test_create_approval_writes_correct_row() -> None:
     """create_approval must produce a row matching canonical schema."""
     mock_adapter = MagicMock()
     mock_adapter.SCHEMA = {"approvals": _APPROVALS_HEADER}

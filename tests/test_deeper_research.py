@@ -48,7 +48,7 @@ def _make_mock_gate_and_adapter():
     return gate, adapter
 
 
-def test_research_one_lead_marks_unverifiable_source():
+def test_research_one_lead_marks_unverifiable_source() -> None:
     """When source_url does not resolve, finding is marked unverified."""
     svc = DeeperResearchService()
     result = svc.research_one_lead(
@@ -61,7 +61,7 @@ def test_research_one_lead_marks_unverifiable_source():
     assert homepage[0].verified is False
 
 
-def test_research_one_lead_with_notes_finds_verified_note():
+def test_research_one_lead_with_notes_finds_verified_note() -> None:
     """Existing ingestion notes are treated as verified sourced data."""
     svc = DeeperResearchService()
     result = svc.research_one_lead(
@@ -75,7 +75,7 @@ def test_research_one_lead_with_notes_finds_verified_note():
     assert note[0].verified is True
 
 
-def test_unapproved_research_is_blocked():
+def test_unapproved_research_is_blocked() -> None:
     """If approval status is not approved, research must not proceed."""
     svc = DeeperResearchService()
     gate, adapter = _make_mock_gate_and_adapter()
@@ -86,7 +86,7 @@ def test_unapproved_research_is_blocked():
     assert block.confidence == "low"
 
 
-def test_dry_run_does_not_write():
+def test_dry_run_does_not_write() -> None:
     """write_research_result with dry_run=True must call no append_row."""
     svc = DeeperResearchService()
     result = svc.research_one_lead(
@@ -100,7 +100,7 @@ def test_dry_run_does_not_write():
     adapter.append_row.assert_not_called()
 
 
-def test_write_research_result_live():
+def test_write_research_result_live() -> None:
     """write_research_result with dry_run=False appends to outcomes tab."""
     svc = DeeperResearchService()
     result = svc.research_one_lead(
@@ -116,7 +116,7 @@ def test_write_research_result_live():
     assert len(call_args[0][1]) == 10  # outcomes schema is 10 columns
 
 
-def test_request_outreach_draft_approval_dry_run():
+def test_request_outreach_draft_approval_dry_run() -> None:
     """dry_run must not create a real approval."""
     svc = DeeperResearchService()
     result = svc.research_one_lead(
@@ -131,7 +131,7 @@ def test_request_outreach_draft_approval_dry_run():
     gate.create_approval.assert_not_called()
 
 
-def test_request_outreach_draft_approval_live():
+def test_request_outreach_draft_approval_live() -> None:
     """With dry_run=False, an approval is created for outreach-draft."""
     svc = DeeperResearchService()
     result = svc.research_one_lead(
@@ -149,7 +149,7 @@ def test_request_outreach_draft_approval_live():
     assert "outreach draft" in call_args["requested_action"].lower()
 
 
-def test_no_outreach_path_in_module():
+def test_no_outreach_path_in_module() -> None:
     """Deeper research module must not import or call any outreach mechanism."""
     import inspect
 
@@ -162,7 +162,7 @@ def test_no_outreach_path_in_module():
         assert term not in source.lower(), f"Banned call {term!r} found in deeper_research"
 
 
-def test_result_to_outcome_row_aligned_with_schema():
+def test_result_to_outcome_row_aligned_with_schema() -> None:
     """Research result serialised to outcomes tab must have 10 columns."""
     from commission_crowd_agent.adapters import GoogleSheetsAdapter
 

@@ -18,7 +18,7 @@ from commission_crowd_agent.lead_ingestion import CandidateLead, LeadIngester
 _SAMPLES = Path(__file__).with_name("fixtures") / "sample_candidates.json"
 
 
-def test_discover_from_json():
+def test_discover_from_json() -> None:
     """discover_from_json must load candidates from a JSON file."""
     mock_adapter = MagicMock()
     ingester = LeadIngester(sheets_adapter=mock_adapter)
@@ -30,7 +30,7 @@ def test_discover_from_json():
     assert candidates[1].email == ""  # must not invent email
 
 
-def test_discover_from_search_stub():
+def test_discover_from_search_stub() -> None:
     """discover_from_search must return empty list (stub implementation)."""
     mock_adapter = MagicMock()
     ingester = LeadIngester(sheets_adapter=mock_adapter)
@@ -38,7 +38,7 @@ def test_discover_from_search_stub():
     assert result == []
 
 
-def test_write_candidates_dry_run():
+def test_write_candidates_dry_run() -> None:
     """write_candidates with dry_run=True must not call append_row."""
     mock_adapter = MagicMock()
     ingester = LeadIngester(sheets_adapter=mock_adapter)
@@ -50,7 +50,7 @@ def test_write_candidates_dry_run():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_write_candidates_live():
+def test_write_candidates_live() -> None:
     """write_candidates with dry_run=False must call append_row."""
     mock_adapter = MagicMock()
     mock_adapter.append_row.return_value = {"ok": True, "row": 42}
@@ -65,7 +65,7 @@ def test_write_candidates_live():
     assert mock_adapter.append_row.call_count == 2
 
 
-def test_write_candidates_no_adapter():
+def test_write_candidates_no_adapter() -> None:
     """write_candidates with no adapter must fail gracefully."""
     ingester = LeadIngester()
     candidates = [CandidateLead(company="X", source="test")]
@@ -74,7 +74,7 @@ def test_write_candidates_no_adapter():
     assert "No sheets adapter" in result["error"]
 
 
-def test_create_approval_requests_dry_run():
+def test_create_approval_requests_dry_run() -> None:
     """create_approval_requests dry-run must not call create_approval with dry_run=False."""
     mock_gate = MagicMock()
     mock_gate.create_approval.return_value = MagicMock(
@@ -93,7 +93,7 @@ def test_create_approval_requests_dry_run():
     assert call_kwargs["dry_run"] is True
 
 
-def test_create_approval_requests_live():
+def test_create_approval_requests_live() -> None:
     """create_approval_requests with dry_run=False must create real approvals."""
     mock_gate = MagicMock()
     mock_gate.create_approval.return_value = MagicMock(
@@ -108,7 +108,7 @@ def test_create_approval_requests_live():
     assert call_kwargs["dry_run"] is False
 
 
-def test_create_approval_requests_no_gate():
+def test_create_approval_requests_no_gate() -> None:
     """create_approval_requests with no gate must return empty list."""
     ingester = LeadIngester()
     candidates = [CandidateLead(company="X", source="test")]
@@ -116,14 +116,14 @@ def test_create_approval_requests_no_gate():
     assert results == []
 
 
-def test_to_sheets_lead_row_no_email():
+def test_to_sheets_lead_row_no_email() -> None:
     """Serialised row must have empty email when not provided."""
     lead = CandidateLead(company="X", source="test")
     row = lead.to_sheets_lead_row()
     assert row[6] == ""  # email column (index 6 in 15-col schema)
 
 
-def test_to_sheets_lead_row_has_provenance():
+def test_to_sheets_lead_row_has_provenance() -> None:
     """Serialised row must include source and notes."""
     lead = CandidateLead(
         company="X", source="web_search", notes="found via DDG", provenance="ddg: X"
@@ -133,7 +133,7 @@ def test_to_sheets_lead_row_has_provenance():
     assert row[14] == "found via DDG"  # notes column
 
 
-def test_discover_from_json_respects_limit():
+def test_discover_from_json_respects_limit() -> None:
     """discover_from_json must ingest at most the number of items in the file."""
     mock_adapter = MagicMock()
     ingester = LeadIngester(sheets_adapter=mock_adapter)
@@ -141,7 +141,7 @@ def test_discover_from_json_respects_limit():
     assert len(candidates) <= 3
 
 
-def test_discover_from_json_hard_cap():
+def test_discover_from_json_hard_cap() -> None:
     """If JSON had more than 5 items, only first 5 should be ingested."""
     mock_adapter = MagicMock()
     ingester = LeadIngester(sheets_adapter=mock_adapter)

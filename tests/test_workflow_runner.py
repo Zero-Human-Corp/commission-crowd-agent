@@ -9,7 +9,7 @@ from commission_crowd_agent.domain import Lead, LeadStatus, WorkflowRun
 from commission_crowd_agent.workflow_runner import WorkflowRunner
 
 
-def test_dry_run_skips_non_new_leads():
+def test_dry_run_skips_non_new_leads() -> None:
     runner = WorkflowRunner(dry_run=True)
     leads = [
         Lead(lead_id="L001", client_name="C", status=LeadStatus.DRAFT_READY),
@@ -22,7 +22,7 @@ def test_dry_run_skips_non_new_leads():
     assert leads[0].status == LeadStatus.DRAFT_READY  # skipped but unchanged
 
 
-def test_dry_run_populates_fields():
+def test_dry_run_populates_fields() -> None:
     runner = WorkflowRunner(dry_run=True)
     leads = [
         Lead(
@@ -41,7 +41,7 @@ def test_dry_run_populates_fields():
     assert lead.personalization_score is not None
 
 
-def test_no_sheets_writes_when_adapter_is_none():
+def test_no_sheets_writes_when_adapter_is_none() -> None:
     """Backward-compat: without adapter no Sheets calls happen."""
     runner = WorkflowRunner(dry_run=True)
     leads = [Lead(lead_id="L001", client_name="C", status=LeadStatus.NEW)]
@@ -50,7 +50,7 @@ def test_no_sheets_writes_when_adapter_is_none():
     # No exception = pass
 
 
-def test_to_sheets_lead_row_format():
+def test_to_sheets_lead_row_format() -> None:
     lead = Lead(
         lead_id="L001",
         client_name="C",
@@ -69,7 +69,7 @@ def test_to_sheets_lead_row_format():
     assert row[8] == "test"
 
 
-def test_to_sheets_opportunity_row_format():
+def test_to_sheets_opportunity_row_format() -> None:
     lead = Lead(
         lead_id="L002",
         client_name="C",
@@ -90,7 +90,7 @@ def test_to_sheets_opportunity_row_format():
     assert row[5] == "draft"
 
 
-def test_to_sheets_run_row_format():
+def test_to_sheets_run_row_format() -> None:
     from commission_crowd_agent.domain import WorkflowRun
 
     run = WorkflowRun(run_id="R001", client_name="C")
@@ -102,7 +102,7 @@ def test_to_sheets_run_row_format():
     assert "total" in row[-1]
 
 
-def test_sheets_adapter_dry_run_writes_no_rows():
+def test_sheets_adapter_dry_run_writes_no_rows() -> None:
     """When adapter is in dry_run mode, append_row returns ok without network."""
     mock_adapter = MagicMock()
     mock_adapter.dry_run = True
@@ -116,7 +116,7 @@ def test_sheets_adapter_dry_run_writes_no_rows():
     assert mock_adapter.append_row.called is True
 
 
-def test_sheets_adapter_live_writes_expected_rows():
+def test_sheets_adapter_live_writes_expected_rows() -> None:
     """With dry_run=False adapter, append_row is invoked for runs, leads, opps."""
     mock_adapter = MagicMock()
     mock_adapter.dry_run = False
@@ -145,14 +145,14 @@ def test_sheets_adapter_live_writes_expected_rows():
 # --- Notification lifecycle tests ---
 
 
-def test_no_notification_when_notifier_is_none():
+def test_no_notification_when_notifier_is_none() -> None:
     runner = WorkflowRunner(dry_run=True)
     leads = [Lead(lead_id="L001", client_name="C", status=LeadStatus.NEW)]
     run = runner.run_research_and_draft(client_name="C", leads=leads)
     assert run.status == "completed"
 
 
-def test_notification_start_and_success_sent_when_enabled():
+def test_notification_start_and_success_sent_when_enabled() -> None:
     from unittest.mock import MagicMock
 
     mock_notifier = MagicMock()
@@ -179,7 +179,7 @@ def test_notification_start_and_success_sent_when_enabled():
         assert "spreadsheet" not in text.lower()
 
 
-def test_notification_dry_run_does_not_call_api():
+def test_notification_dry_run_does_not_call_api() -> None:
     from unittest.mock import MagicMock
 
     mock_notifier = MagicMock()
@@ -198,7 +198,7 @@ def test_notification_dry_run_does_not_call_api():
     assert mock_notifier.send_message.call_count == 2
 
 
-def test_notification_failure_path():
+def test_notification_failure_path() -> None:
     from unittest.mock import MagicMock
 
     mock_notifier = MagicMock()
@@ -218,7 +218,7 @@ def test_notification_failure_path():
     assert "Something went wrong" in text
 
 
-def test_enabling_notifications_does_not_force_sheets_writes():
+def test_enabling_notifications_does_not_force_sheets_writes() -> None:
     """Having a notifier must not cause Google Sheets writes if adapter is None."""
     from unittest.mock import MagicMock
 

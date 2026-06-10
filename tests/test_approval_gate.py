@@ -28,7 +28,7 @@ _APPROVALS_HEADER = [
 ]
 
 
-def test_create_approval_dry_run_no_write():
+def test_create_approval_dry_run_no_write() -> None:
     """Dry-run must not call append_row on the sheets adapter."""
     mock_adapter = MagicMock()
     gate = ApprovalGate(sheets_adapter=mock_adapter)
@@ -43,7 +43,7 @@ def test_create_approval_dry_run_no_write():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_create_approval_write_appends_row():
+def test_create_approval_write_appends_row() -> None:
     """When dry_run=False the approval row must be appended."""
     mock_adapter = MagicMock()
     mock_adapter.SCHEMA = {"approvals": _APPROVALS_HEADER}
@@ -74,7 +74,7 @@ def test_create_approval_write_appends_row():
     assert row[10] == "stub test"  # notes
 
 
-def test_read_approval_status_found():
+def test_read_approval_status_found() -> None:
     """Reading by approval_id must return the matching status."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -116,7 +116,7 @@ def test_read_approval_status_found():
     assert gate.read_approval_status("A002") == "approved"
 
 
-def test_read_approval_status_missing():
+def test_read_approval_status_missing() -> None:
     """Reading a non-existent approval_id must return 'missing'."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -142,7 +142,7 @@ def test_read_approval_status_missing():
     assert gate.read_approval_status("A999") == "missing"
 
 
-def test_is_approved_true_only_for_approved():
+def test_is_approved_true_only_for_approved() -> None:
     """is_approved must return True only when status == 'approved'."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -160,7 +160,7 @@ def test_is_approved_true_only_for_approved():
     assert gate.is_approved("A003") is False
 
 
-def test_is_approved_missing_is_false():
+def test_is_approved_missing_is_false() -> None:
     """Missing approval must be treated as not approved."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {"ok": True, "rows": []}
@@ -168,7 +168,7 @@ def test_is_approved_missing_is_false():
     assert gate.is_approved("A999") is False
 
 
-def test_notify_operator_disabled_by_default():
+def test_notify_operator_disabled_by_default() -> None:
     """Without a notifier, notify_operator must return sent=False."""
     gate = ApprovalGate()
     req = ApprovalRequest(approval_id="A001", entity_id="OPP-001")
@@ -177,7 +177,7 @@ def test_notify_operator_disabled_by_default():
     assert result["ok"] is True
 
 
-def test_notify_operator_sends_safe_text():
+def test_notify_operator_sends_safe_text() -> None:
     """When a notifier is wired, the message must contain no secrets."""
     mock_notifier = MagicMock()
     mock_notifier.send_message.return_value = {
@@ -202,7 +202,7 @@ def test_notify_operator_sends_safe_text():
     assert "private" not in text.lower()
 
 
-def test_downstream_guard_blocks_pending():
+def test_downstream_guard_blocks_pending() -> None:
     """A simulated downstream action must be blocked when approval is pending."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -222,7 +222,7 @@ def test_downstream_guard_blocks_pending():
     assert downstream_action("A001") == "BLOCKED"
 
 
-def test_downstream_guard_allows_approved():
+def test_downstream_guard_allows_approved() -> None:
     """A simulated downstream action must execute when approval is approved."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {
@@ -242,7 +242,7 @@ def test_downstream_guard_allows_approved():
     assert downstream_action("A002") == "EXECUTED"
 
 
-def test_validate_header_match():
+def test_validate_header_match() -> None:
     """validate_header must pass when live header matches SCHEMA."""
     mock_adapter = MagicMock()
     mock_adapter.SCHEMA = {"approvals": _APPROVALS_HEADER}
@@ -257,7 +257,7 @@ def test_validate_header_match():
     assert result["live_header"] == _APPROVALS_HEADER
 
 
-def test_validate_header_mismatch():
+def test_validate_header_mismatch() -> None:
     """validate_header must fail when live header differs from SCHEMA."""
     mock_adapter = MagicMock()
     mock_adapter.SCHEMA = {"approvals": _APPROVALS_HEADER}
@@ -275,7 +275,7 @@ def test_validate_header_mismatch():
 # ---- Tests for create_and_write_approval (production path) ----
 
 
-def test_create_and_write_approval_raises_if_no_adapter():
+def test_create_and_write_approval_raises_if_no_adapter() -> None:
     """Without a sheets_adapter, create_and_write_approval must refuse."""
     from commission_crowd_agent.approval_gate import ApprovalGate
 
@@ -288,7 +288,7 @@ def test_create_and_write_approval_raises_if_no_adapter():
         )
 
 
-def test_create_and_write_approval_raises_on_header_mismatch():
+def test_create_and_write_approval_raises_on_header_mismatch() -> None:
     """If validate_tab_header fails, create_and_write_approval must abort."""
     from commission_crowd_agent.approval_gate import ApprovalGate
 
@@ -306,7 +306,7 @@ def test_create_and_write_approval_raises_on_header_mismatch():
         )
 
 
-def test_create_and_write_approval_raises_on_write_failure():
+def test_create_and_write_approval_raises_on_write_failure() -> None:
     """If append_row fails, create_and_write_approval must raise."""
     from commission_crowd_agent.approval_gate import ApprovalGate
 
@@ -325,7 +325,7 @@ def test_create_and_write_approval_raises_on_write_failure():
         )
 
 
-def test_create_and_write_approval_raises_on_readback_missing():
+def test_create_and_write_approval_raises_on_readback_missing() -> None:
     """If the written row is not found in readback, raise."""
     from commission_crowd_agent.approval_gate import ApprovalGate
 
@@ -348,7 +348,7 @@ def test_create_and_write_approval_raises_on_readback_missing():
         )
 
 
-def test_create_and_write_approval_succeeds_with_verification():
+def test_create_and_write_approval_succeeds_with_verification() -> None:
     """Happy path: write succeeds and readback finds the row."""
     from commission_crowd_agent.approval_gate import ApprovalGate
 

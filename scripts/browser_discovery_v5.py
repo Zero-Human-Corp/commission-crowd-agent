@@ -4,6 +4,7 @@
 Uses in-page JavaScript evaluation to extract data from the live Ember.js
 DOM rather than parsing raw HTML or using generic text heuristics.
 """
+
 from __future__ import annotations
 
 import json
@@ -15,6 +16,7 @@ from typing import Any
 from playwright.sync_api import sync_playwright
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from commission_crowd_agent.config import load_settings
 
@@ -72,23 +74,27 @@ def _js_extract_my_opportunities(page) -> list[dict[str, Any]]:
     raw = page.evaluate(js)
     items = []
     for r in raw:
-        items.append({
-            "opportunity_id": r.get("opp_id", ""),
-            "title": r["title"][:200],
-            "completeness": r.get("completeness", ""),
-            "status": r.get("status", ""),
-            "lifecycle_state": _map_status(r.get("status", "")),
-            "source_url": f"{BASE_URL}/app/opportunities/{r.get('opp_id', '')}" if r.get("opp_id") else "",
-            "route": "my_opportunities",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        items.append(
+            {
+                "opportunity_id": r.get("opp_id", ""),
+                "title": r["title"][:200],
+                "completeness": r.get("completeness", ""),
+                "status": r.get("status", ""),
+                "lifecycle_state": _map_status(r.get("status", "")),
+                "source_url": f"{BASE_URL}/app/opportunities/{r.get('opp_id', '')}"
+                if r.get("opp_id")
+                else "",
+                "route": "my_opportunities",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
     return items
 
 
 def _js_extract_applications(page) -> list[dict[str, Any]]:
     """Navigate to Applications tab and extract via JS."""
     # Click Applications in sidebar
-    app_link = page.locator('text=Applications').first
+    app_link = page.locator("text=Applications").first
     if app_link.count() > 0:
         try:
             app_link.click(force=True)
@@ -130,16 +136,20 @@ def _js_extract_applications(page) -> list[dict[str, Any]]:
     raw = page.evaluate(js)
     items = []
     for r in raw:
-        items.append({
-            "opportunity_id": r.get("opp_id", ""),
-            "title": r["title"][:200],
-            "status": r.get("status", ""),
-            "application_date": r.get("date", ""),
-            "lifecycle_state": _map_status(r.get("status", "")),
-            "source_url": f"{BASE_URL}/app/opportunities/{r.get('opp_id', '')}" if r.get("opp_id") else "",
-            "route": "applications",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        items.append(
+            {
+                "opportunity_id": r.get("opp_id", ""),
+                "title": r["title"][:200],
+                "status": r.get("status", ""),
+                "application_date": r.get("date", ""),
+                "lifecycle_state": _map_status(r.get("status", "")),
+                "source_url": f"{BASE_URL}/app/opportunities/{r.get('opp_id', '')}"
+                if r.get("opp_id")
+                else "",
+                "route": "applications",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
     return items
 
 
@@ -199,13 +209,16 @@ def _js_extract_favourites(page) -> list[dict[str, Any]]:
             continue
         seen.add(title)
         opp_id = r.get("opp_id", "")
-        items.append({
-            "opportunity_id": opp_id,
-            "title": title,
-            "source_url": r.get("href", "") or (f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else ""),
-            "route": "favourite_opportunities",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        items.append(
+            {
+                "opportunity_id": opp_id,
+                "title": title,
+                "source_url": r.get("href", "")
+                or (f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else ""),
+                "route": "favourite_opportunities",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
     return items
 
 
@@ -271,23 +284,36 @@ def _js_extract_conversations(page) -> dict[str, Any]:
         msg_id = f"msg-{abs(hash(key)) % 100000}"
         opp_id = _infer_opp_id(r.get("subject", "") + " " + r.get("sender", ""))
         combined = (r.get("subject", "") + " " + r.get("sender", "")).lower()
-        if any(kw in combined for kw in ["invite", "invitation", "apply", "represent", "join", "connect", "review your application"]):
+        if any(
+            kw in combined
+            for kw in [
+                "invite",
+                "invitation",
+                "apply",
+                "represent",
+                "join",
+                "connect",
+                "review your application",
+            ]
+        ):
             classification = "explicit_invitation"
         elif any(kw in combined for kw in ["opportunity", "interested", "discuss"]):
             classification = "likely_net_new_invitation"
         else:
             classification = "uncertain"
-        messages.append({
-            "message_id": msg_id,
-            "timestamp": r["date"],
-            "sender": r["sender"][:80],
-            "subject": r["subject"][:200],
-            "linked_opportunity_id": opp_id,
-            "classification": classification,
-            "invitation_confidence": classification,
-            "route": "conversations",
-            "retrieved_at": datetime.now(UTC).isoformat(),
-        })
+        messages.append(
+            {
+                "message_id": msg_id,
+                "timestamp": r["date"],
+                "sender": r["sender"][:80],
+                "subject": r["subject"][:200],
+                "linked_opportunity_id": opp_id,
+                "classification": classification,
+                "invitation_confidence": classification,
+                "route": "conversations",
+                "retrieved_at": datetime.now(UTC).isoformat(),
+            }
+        )
 
     invitations = [m for m in messages if m["classification"] == "explicit_invitation"]
     likely = [m for m in messages if m["classification"] == "likely_net_new_invitation"]
@@ -331,7 +357,7 @@ def _map_status(status_text: str) -> str:
 def _extract_find_opportunities(page, query: str = "", max_pages: int = 2) -> list[dict[str, Any]]:
     """Search Find Opportunities using JS DOM extraction."""
     # Navigate to Find opportunities
-    find_link = page.locator('text=Find opportunities').first
+    find_link = page.locator("text=Find opportunities").first
     if find_link.count() > 0:
         try:
             find_link.click(force=True)
@@ -376,15 +402,18 @@ def _extract_find_opportunities(page, query: str = "", max_pages: int = 2) -> li
                 continue
             seen.add(title)
             opp_id = r.get("opp_id", "")
-            all_results.append({
-                "opportunity_id": opp_id,
-                "title": title,
-                "full_text": r.get("full_text", "")[:500],
-                "search_query": query,
-                "source_url": r.get("href", "") or (f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else ""),
-                "route": "find_opportunities",
-                "retrieved_at": datetime.now(UTC).isoformat(),
-            })
+            all_results.append(
+                {
+                    "opportunity_id": opp_id,
+                    "title": title,
+                    "full_text": r.get("full_text", "")[:500],
+                    "search_query": query,
+                    "source_url": r.get("href", "")
+                    or (f"{BASE_URL}/app/opportunities/{opp_id}" if opp_id else ""),
+                    "route": "find_opportunities",
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                }
+            )
 
         # Try next page
         next_btns = page.locator('button:has-text("Next"), [aria-label="Next"]').all()
@@ -520,8 +549,14 @@ def main() -> int:
 
         # Find Opportunities — multiple searches
         search_queries = [
-            "B2B SaaS", "AI", "automation", "cybersecurity",
-            "software", "recurring revenue", "data", "business services",
+            "B2B SaaS",
+            "AI",
+            "automation",
+            "cybersecurity",
+            "software",
+            "recurring revenue",
+            "data",
+            "business services",
         ]
         all_find: list[dict[str, Any]] = []
         for q in search_queries:
@@ -529,7 +564,9 @@ def main() -> int:
             print(f"Find '{q}': {len(results)} results")
             all_find.extend(results)
             # Navigate back to dashboard between searches to reset state
-            page.goto(f"{BASE_URL}/app/#/agent/dashboard", wait_until="domcontentloaded", timeout=30000)
+            page.goto(
+                f"{BASE_URL}/app/#/agent/dashboard", wait_until="domcontentloaded", timeout=30000
+            )
             page.wait_for_timeout(3000)
 
         # Deduplicate find results
@@ -548,7 +585,11 @@ def main() -> int:
     # Save reports
     fav_path = REPORTS_DIR / "cca_favourite_opportunities_inventory.json"
     with open(fav_path, "w") as fh:
-        json.dump({"favourites": inventory["favourites"], "retrieved_at": inventory["retrieved_at"]}, fh, indent=2)
+        json.dump(
+            {"favourites": inventory["favourites"], "retrieved_at": inventory["retrieved_at"]},
+            fh,
+            indent=2,
+        )
     print(f"\nSaved: {fav_path}")
 
     conv_path = REPORTS_DIR / "cca_conversations_inventory.json"
@@ -558,12 +599,16 @@ def main() -> int:
 
     find_path = REPORTS_DIR / "cca_find_opportunities_search_log.json"
     with open(find_path, "w") as fh:
-        json.dump({
-            "search_queries": search_queries,
-            "results_count": len(deduped_find),
-            "results": deduped_find,
-            "retrieved_at": inventory["retrieved_at"],
-        }, fh, indent=2)
+        json.dump(
+            {
+                "search_queries": search_queries,
+                "results_count": len(deduped_find),
+                "results": deduped_find,
+                "retrieved_at": inventory["retrieved_at"],
+            },
+            fh,
+            indent=2,
+        )
     print(f"Saved: {find_path}")
 
     # Reconcile
@@ -594,58 +639,78 @@ def main() -> int:
         f"- Count: {len(inventory['my_opportunities'])}",
     ]
     for o in inventory["my_opportunities"]:
-        md_lines.append(f"  - `{o['opportunity_id']}` — {o['title'][:80]} — *{o['lifecycle_state']}*")
+        md_lines.append(
+            f"  - `{o['opportunity_id']}` — {o['title'][:80]} — *{o['lifecycle_state']}*"
+        )
 
     md_lines.extend(["", "## Applications", f"- Count: {len(inventory['applications'])}"])
     for a in inventory["applications"]:
-        md_lines.append(f"  - `{a['opportunity_id']}` — {a['title'][:80]} — *{a['lifecycle_state']}*")
+        md_lines.append(
+            f"  - `{a['opportunity_id']}` — {a['title'][:80]} — *{a['lifecycle_state']}*"
+        )
 
-    md_lines.extend([
-        "", "## Favourite Opportunities",
-        f"- Count: {len(inventory['favourites'])}",
-        f"- Net-new candidates: {len(reconciliation['favourite_candidates'])}",
-        f"- Excluded existing: {len(reconciliation['favourite_excluded'])}",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Favourite Opportunities",
+            f"- Count: {len(inventory['favourites'])}",
+            f"- Net-new candidates: {len(reconciliation['favourite_candidates'])}",
+            f"- Excluded existing: {len(reconciliation['favourite_excluded'])}",
+        ]
+    )
     for f in inventory["favourites"][:10]:
         md_lines.append(f"  - `{f.get('opportunity_id', '')}` — {f['title'][:80]}")
 
-    md_lines.extend([
-        "", "## Conversations / Messages",
-        f"- Badge count: {conv.get('badge_count')}",
-        f"- Messages inspected: {len(conv.get('messages', []))}",
-        f"- Explicit invitations: {len(conv.get('invitations', []))}",
-        f"- Likely invitations: {len(conv.get('likely_invitations', []))}",
-        f"- Net-new candidates: {len(reconciliation['conversation_candidates'])}",
-        f"- Excluded existing: {len(reconciliation['conversation_excluded'])}",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Conversations / Messages",
+            f"- Badge count: {conv.get('badge_count')}",
+            f"- Messages inspected: {len(conv.get('messages', []))}",
+            f"- Explicit invitations: {len(conv.get('invitations', []))}",
+            f"- Likely invitations: {len(conv.get('likely_invitations', []))}",
+            f"- Net-new candidates: {len(reconciliation['conversation_candidates'])}",
+            f"- Excluded existing: {len(reconciliation['conversation_excluded'])}",
+        ]
+    )
     for m in conv.get("messages", [])[:10]:
-        md_lines.append(f"  - `{m['message_id']}` — {m['sender'][:30]} — {m['subject'][:50]} — *{m['classification']}*")
+        md_lines.append(
+            f"  - `{m['message_id']}` — {m['sender'][:30]} — {m['subject'][:50]} — *{m['classification']}*"
+        )
 
-    md_lines.extend([
-        "", "## Find Opportunities",
-        f"- Search queries: {', '.join(search_queries)}",
-        f"- Total results (deduped): {len(deduped_find)}",
-        f"- Net-new candidates: {len(reconciliation['find_candidates'])}",
-        f"- Excluded existing: {len(reconciliation['find_excluded'])}",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Find Opportunities",
+            f"- Search queries: {', '.join(search_queries)}",
+            f"- Total results (deduped): {len(deduped_find)}",
+            f"- Net-new candidates: {len(reconciliation['find_candidates'])}",
+            f"- Excluded existing: {len(reconciliation['find_excluded'])}",
+        ]
+    )
     for f in deduped_find[:10]:
-        md_lines.append(f"  - `{f.get('opportunity_id', '')}` — {f['title'][:80]} (query: {f.get('search_query', '')})")
+        md_lines.append(
+            f"  - `{f.get('opportunity_id', '')}` — {f['title'][:80]} (query: {f.get('search_query', '')})"
+        )
 
-    md_lines.extend([
-        "", "## Reconciliation Summary",
-        f"- Existing opportunity IDs: {len(reconciliation['existing_ids'])}",
-        f"- Existing titles tracked: {reconciliation['existing_titles_count']}",
-        f"- Favourite candidates: {len(reconciliation['favourite_candidates'])}",
-        f"- Conversation candidates: {len(reconciliation['conversation_candidates'])}",
-        f"- Find candidates: {len(reconciliation['find_candidates'])}",
-        "",
-        "## Safety Checks",
-        "- No applications submitted.",
-        "- No invitations accepted.",
-        "- No messages sent.",
-        "- No emails sent.",
-        "- No external calendar invitations created.",
-    ])
+    md_lines.extend(
+        [
+            "",
+            "## Reconciliation Summary",
+            f"- Existing opportunity IDs: {len(reconciliation['existing_ids'])}",
+            f"- Existing titles tracked: {reconciliation['existing_titles_count']}",
+            f"- Favourite candidates: {len(reconciliation['favourite_candidates'])}",
+            f"- Conversation candidates: {len(reconciliation['conversation_candidates'])}",
+            f"- Find candidates: {len(reconciliation['find_candidates'])}",
+            "",
+            "## Safety Checks",
+            "- No applications submitted.",
+            "- No invitations accepted.",
+            "- No messages sent.",
+            "- No emails sent.",
+            "- No external calendar invitations created.",
+        ]
+    )
 
     md_path = REPORTS_DIR / "cca_browser_discovery_reconciliation.md"
     with open(md_path, "w") as fh:
@@ -666,7 +731,9 @@ def main() -> int:
         "favourite_candidates": len(reconciliation["favourite_candidates"]),
         "conversation_candidates": len(reconciliation["conversation_candidates"]),
         "find_candidates": len(reconciliation["find_candidates"]),
-        "existed_activity_excluded": len(reconciliation["favourite_excluded"]) + len(reconciliation["conversation_excluded"]) + len(reconciliation["find_excluded"]),
+        "existed_activity_excluded": len(reconciliation["favourite_excluded"])
+        + len(reconciliation["conversation_excluded"])
+        + len(reconciliation["find_excluded"]),
     }
     summary_path = REPORTS_DIR / "cca_browser_discovery_summary.json"
     with open(summary_path, "w") as fh:
@@ -679,4 +746,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

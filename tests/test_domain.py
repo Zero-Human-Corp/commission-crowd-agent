@@ -3,19 +3,19 @@
 from commission_crowd_agent.domain import Lead, LeadStatus, Task, TaskType, WorkflowRun
 
 
-def test_lead_defaults():
+def test_lead_defaults() -> None:
     lead = Lead(lead_id="L001", client_name="ClientA")
     assert lead.status == LeadStatus.NEW
     assert lead.approved is False
     assert lead.sent_timestamp is None
 
 
-def test_lead_email_lowercased():
+def test_lead_email_lowercased() -> None:
     lead = Lead(lead_id="L001", client_name="ClientA", email="Alice@Example.COM")
     assert lead.email == "alice@example.com"
 
 
-def test_lead_to_sheet_row():
+def test_lead_to_sheet_row() -> None:
     lead = Lead(lead_id="L001", client_name="ClientA", personalization_score=8)
     row = lead.to_sheet_row()
     assert row["Lead ID"] == "L001"
@@ -23,7 +23,7 @@ def test_lead_to_sheet_row():
     assert row["Personalization Score"] == 8
 
 
-def test_task_lifecycle():
+def test_task_lifecycle() -> None:
     task = Task(task_id="T1", task_type=TaskType.RESEARCH, lead_id="L001")
     assert task.status == "pending"
     task.mark_started()
@@ -33,7 +33,7 @@ def test_task_lifecycle():
     assert task.output == "notes"
 
 
-def test_workflow_run_completion():
+def test_workflow_run_completion() -> None:
     run = WorkflowRun(run_id="R1", client_name="ClientA")
     t1 = Task(task_id="T1", task_type=TaskType.RESEARCH, lead_id="L001")
     t1.mark_done("done")
@@ -43,7 +43,7 @@ def test_workflow_run_completion():
     assert run.is_complete is True
 
 
-def test_workflow_run_summary():
+def test_workflow_run_summary() -> None:
     run = WorkflowRun(run_id="R1", client_name="ClientA")
     t1 = Task(task_id="T1", task_type=TaskType.RESEARCH, lead_id="L001")
     t1.mark_done("done")

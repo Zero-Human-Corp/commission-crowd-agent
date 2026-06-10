@@ -70,7 +70,7 @@ _GAMMA_PARTIAL = [
 ]
 
 
-def test_score_full_lead():
+def test_score_full_lead() -> None:
     """Full lead with email, company, URL, name, notes >= 70 points."""
     scorer = LeadScorer()
     result = scorer.from_lead_row(_ACME_FULL)
@@ -80,7 +80,7 @@ def test_score_full_lead():
     assert result.company_name == "Acme Solutions"
 
 
-def test_score_missing_email_lowers():
+def test_score_missing_email_lowers() -> None:
     """Missing email should lower score and set confidence to low."""
     scorer = LeadScorer()
     result = scorer.from_lead_row(_BETA_NO_EMAIL)
@@ -91,7 +91,7 @@ def test_score_missing_email_lowers():
     assert result.company_name == "BetaCorp"
 
 
-def test_score_partial_without_email():
+def test_score_partial_without_email() -> None:
     """Gamma has company, name, URL, notes but no email = medium confidence."""
     scorer = LeadScorer()
     result = scorer.from_lead_row(_GAMMA_PARTIAL)
@@ -102,7 +102,7 @@ def test_score_partial_without_email():
     assert "contact_email" not in result.reasons
 
 
-def test_opportunity_row_shape():
+def test_opportunity_row_shape() -> None:
     """Opportunity row must match SCHEMA['opportunities'] (14 columns)."""
     from commission_crowd_agent.adapters import GoogleSheetsAdapter
 
@@ -112,7 +112,7 @@ def test_opportunity_row_shape():
     assert len(row) == len(GoogleSheetsAdapter.SCHEMA["opportunities"])
 
 
-def test_write_opportunities_dry_run():
+def test_write_opportunities_dry_run() -> None:
     """write_opportunities in dry-run must not call append_row."""
     mock_adapter = MagicMock()
     scorer = LeadScorer()
@@ -124,7 +124,7 @@ def test_write_opportunities_dry_run():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_write_opportunities_live():
+def test_write_opportunities_live() -> None:
     """write_opportunities with dry_run=False must call append_row."""
     mock_adapter = MagicMock()
     mock_adapter.validate_tab_header.return_value = {"ok": True}
@@ -137,7 +137,7 @@ def test_write_opportunities_live():
     mock_adapter.append_row.assert_called_once()
 
 
-def test_write_opportunities_blocks_on_header_mismatch():
+def test_write_opportunities_blocks_on_header_mismatch() -> None:
     """write_opportunities must abort if header mismatch."""
     mock_adapter = MagicMock()
     mock_adapter.read_last_rows.return_value = {"ok": True, "rows": []}  # no duplicates
@@ -153,7 +153,7 @@ def test_write_opportunities_blocks_on_header_mismatch():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_research_approval_above_threshold():
+def test_research_approval_above_threshold() -> None:
     """request_deeper_research_approvals must create approvals for fit_score >= 50."""
     scorer = LeadScorer()
     mock_gate = MagicMock()
@@ -168,7 +168,7 @@ def test_research_approval_above_threshold():
     assert results[0]["approval_id"] == "APP-001"
 
 
-def test_research_approval_below_threshold_skipped():
+def test_research_approval_below_threshold_skipped() -> None:
     """Leads below 50 must NOT create deeper-research approvals."""
     mock_gate = MagicMock()
     mock_adapter = MagicMock()
@@ -181,7 +181,7 @@ def test_research_approval_below_threshold_skipped():
     mock_gate.create_approval.assert_not_called()
 
 
-def test_no_outreach_in_scoring_module():
+def test_no_outreach_in_scoring_module() -> None:
     """Scoring module must not import or call any outreach mechanism."""
     import inspect
 
@@ -229,7 +229,7 @@ def _make_mock_adapter(tab_rows: dict[str, list[list[str]]]) -> MagicMock:
     return adapter
 
 
-def test_write_opportunity_skips_existing_by_lead_id():
+def test_write_opportunity_skips_existing_by_lead_id() -> None:
     """If lead_id already present in opportunities, don't append again."""
     scorer = LeadScorer()
     scores = [scorer.from_lead_row(_ACME_FULL)]
@@ -244,7 +244,7 @@ def test_write_opportunity_skips_existing_by_lead_id():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_write_opportunity_creates_when_new():
+def test_write_opportunity_creates_when_new() -> None:
     """If lead_id not found, append_row is called."""
     scorer = LeadScorer()
     scores = [scorer.from_lead_row(_ACME_FULL)]
@@ -259,7 +259,7 @@ def test_write_opportunity_creates_when_new():
     mock_adapter.append_row.assert_called_once()
 
 
-def test_write_opportunity_dry_run_reports_existing_without_writing():
+def test_write_opportunity_dry_run_reports_existing_without_writing() -> None:
     """Dry-run should detect duplicates and report skipped without any append_row."""
     scorer = LeadScorer()
     scores = [scorer.from_lead_row(_ACME_FULL)]
@@ -274,7 +274,7 @@ def test_write_opportunity_dry_run_reports_existing_without_writing():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_approval_skips_existing_pending_or_approved():
+def test_approval_skips_existing_pending_or_approved() -> None:
     """If a pending/approved approval exists for the same entity, skip creation."""
     scorer = LeadScorer()
     mock_gate = MagicMock()
@@ -309,7 +309,7 @@ def test_approval_skips_existing_pending_or_approved():
     mock_gate.create_approval.assert_not_called()
 
 
-def test_approval_creates_when_no_existing():
+def test_approval_creates_when_no_existing() -> None:
     """When no prior approval exists, create_approval is called."""
     scorer = LeadScorer()
     mock_gate = MagicMock()
@@ -336,7 +336,7 @@ def test_approval_creates_when_no_existing():
     mock_gate.create_approval.assert_called_once()
 
 
-def test_approval_allows_rejected_to_create_new():
+def test_approval_allows_rejected_to_create_new() -> None:
     """Rejected approvals don't block new creation (they are terminal)."""
     scorer = LeadScorer()
     mock_gate = MagicMock()
@@ -371,7 +371,7 @@ def test_approval_allows_rejected_to_create_new():
     mock_gate.create_approval.assert_called_once()
 
 
-def test_no_opportunity_write_when_no_sheets_adapter():
+def test_no_opportunity_write_when_no_sheets_adapter() -> None:
     """If sheets_adapter is None, write_opportunities fails fast."""
     scorer = LeadScorer()
     scores = [scorer.from_lead_row(_ACME_FULL)]
@@ -380,7 +380,7 @@ def test_no_opportunity_write_when_no_sheets_adapter():
     assert "No sheets adapter" in result["error"]
 
 
-def test_no_approval_create_when_no_sheets_adapter():
+def test_no_approval_create_when_no_sheets_adapter() -> None:
     """If sheets_adapter is None, request_deeper_research_approvals returns empty."""
     scorer = LeadScorer()
     mock_gate = MagicMock()
@@ -394,7 +394,7 @@ def test_no_approval_create_when_no_sheets_adapter():
 # ── Threshold enforcement tests ───────────────────────────────────────────────
 
 
-def test_sub_threshold_lead_skipped_in_write_opportunities():
+def test_sub_threshold_lead_skipped_in_write_opportunities() -> None:
     """Leads below RESEARCH_THRESHOLD must not create opportunity rows."""
     mock_adapter = _make_mock_adapter({"opportunities": []})
     scorer = LeadScorer()
@@ -407,7 +407,7 @@ def test_sub_threshold_lead_skipped_in_write_opportunities():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_below_threshold_reported_in_dry_run():
+def test_below_threshold_reported_in_dry_run() -> None:
     """Dry-run must report below-threshold leads without writing."""
     mock_adapter = _make_mock_adapter({"opportunities": []})
     scorer = LeadScorer()
@@ -419,7 +419,7 @@ def test_below_threshold_reported_in_dry_run():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_eligible_lead_above_threshold_creates_opportunity_and_approval():
+def test_eligible_lead_above_threshold_creates_opportunity_and_approval() -> None:
     """Above-threshold leads create both opportunity and approval when new."""
     scorer = LeadScorer()
     mock_gate = MagicMock()
@@ -444,7 +444,7 @@ def test_eligible_lead_above_threshold_creates_opportunity_and_approval():
     mock_gate.create_approval.assert_called_once()
 
 
-def test_repeated_scoring_idempotent_with_threshold_and_dedupe():
+def test_repeated_scoring_idempotent_with_threshold_and_dedupe() -> None:
     """Re-running scoring must produce zero new writes
     (threshold + dedupe both active)."""
     scorer = LeadScorer()

@@ -13,7 +13,7 @@ from commission_crowd_agent.adapters import GoogleSheetsAdapter
 from commission_crowd_agent.lead_ingestion import CandidateLead, LeadIngester
 
 
-def test_write_candidates_blocked_on_header_mismatch():
+def test_write_candidates_blocked_on_header_mismatch() -> None:
     """write_candidates must abort if live header does not match SCHEMA."""
     mock_adapter = MagicMock()
     mock_adapter.validate_tab_header.return_value = {
@@ -28,7 +28,7 @@ def test_write_candidates_blocked_on_header_mismatch():
     mock_adapter.append_row.assert_not_called()
 
 
-def test_write_candidates_passes_on_header_match():
+def test_write_candidates_passes_on_header_match() -> None:
     """write_candidates must proceed if live header matches SCHEMA."""
     mock_adapter = MagicMock()
     mock_adapter.validate_tab_header.return_value = {"ok": True, "error": None}
@@ -41,7 +41,7 @@ def test_write_candidates_passes_on_header_match():
     mock_adapter.append_row.assert_called_once()
 
 
-def test_append_row_returns_updated_range():
+def test_append_row_returns_updated_range() -> None:
     """append_row result must include updated_range field."""
     adapter = GoogleSheetsAdapter(spreadsheet_id="test", dry_run=True)
     result = adapter.append_row("leads", ["a", "b"])
@@ -49,7 +49,7 @@ def test_append_row_returns_updated_range():
     assert result["updated_range"] == ""
 
 
-def test_approval_gate_blocks_on_header_mismatch():
+def test_approval_gate_blocks_on_header_mismatch() -> None:
     """ApprovalGate.create_approval must raise if header mismatch."""
     from commission_crowd_agent.approval_gate import ApprovalGate
 

@@ -25,7 +25,7 @@ CANONICAL_APPROVALS_HEADER = [
 ]
 
 
-def test_append_row_writes_to_logical_next_row():
+def test_append_row_writes_to_logical_next_row() -> None:
     """append_row reads the tab first, then writes to the next empty data row."""
     from unittest.mock import MagicMock, patch
 
@@ -67,7 +67,7 @@ def test_append_row_writes_to_logical_next_row():
     assert captured["url"].endswith("approvals!A4?valueInputOption=USER_ENTERED")
 
 
-def test_validate_tab_header_detects_pollution():
+def test_validate_tab_header_detects_pollution() -> None:
     """validate_tab_header flags 'Column N' style columns."""
     adapter = GoogleSheetsAdapter(spreadsheet_id="S", access_token="T")
     adapter.read_rows = MagicMock(
@@ -81,7 +81,7 @@ def test_validate_tab_header_detects_pollution():
     assert result["polluted_columns"] == ["Column 1", "Column 2"]
 
 
-def test_validate_tab_header_fails_on_mismatch():
+def test_validate_tab_header_fails_on_mismatch() -> None:
     """If canonical header is not a prefix, validation fails."""
     adapter = GoogleSheetsAdapter(spreadsheet_id="S", access_token="T")
     adapter.read_rows = MagicMock(
@@ -94,7 +94,7 @@ def test_validate_tab_header_fails_on_mismatch():
     assert result["ok"] is False
 
 
-def test_compact_tab_dry_run_returns_counts():
+def test_compact_tab_dry_run_returns_counts() -> None:
     """compact_tab in dry-run mode reports row counts without writing."""
     adapter = GoogleSheetsAdapter(spreadsheet_id="S", access_token="T")
     adapter.read_last_rows = MagicMock(
@@ -116,7 +116,7 @@ def test_compact_tab_dry_run_returns_counts():
     assert result["dry_run"] is True
 
 
-def test_compact_tab_real_run_is_not_tested_without_mocks():
+def test_compact_tab_real_run_is_not_tested_without_mocks() -> None:
     """Real compact_tab with dry_run=False requires live Sheet credentials.
     Unit-test coverage is provided by the dry-run path; integration tests
     should run against a test spreadsheet.
@@ -124,7 +124,7 @@ def test_compact_tab_real_run_is_not_tested_without_mocks():
     assert True
 
 
-def test_audit_approvals_detects_stale():
+def test_audit_approvals_detects_stale() -> None:
     """audit_approvals flags entities with multiple pending approvals."""
     adapter = GoogleSheetsAdapter(spreadsheet_id="S", access_token="T")
     adapter.read_last_rows = MagicMock(
@@ -146,7 +146,7 @@ def test_audit_approvals_detects_stale():
     assert result["stale_entities"][0]["pending_count"] == 2
 
 
-def test_audit_approvals_detects_duplicates():
+def test_audit_approvals_detects_duplicates() -> None:
     """audit_approvals flags duplicate approval_ids."""
     adapter = GoogleSheetsAdapter(spreadsheet_id="S", access_token="T")
     adapter.read_last_rows = MagicMock(

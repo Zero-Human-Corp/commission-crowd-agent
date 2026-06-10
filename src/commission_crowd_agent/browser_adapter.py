@@ -20,7 +20,7 @@ from rich.console import Console
 try:
     from playwright.sync_api import sync_playwright
 except ImportError:
-    sync_playwright = None
+    sync_playwright = None  # type: ignore[assignment]
 
 console = Console()
 
