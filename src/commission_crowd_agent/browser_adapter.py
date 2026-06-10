@@ -162,6 +162,7 @@ class CommissionCrowdBrowserAdapter:
 
         # Fresh login via login form
         self._page.goto(f"{self.base_url}/login", wait_until="domcontentloaded", timeout=30000)
+        self._page.wait_for_timeout(2000)
         html = self._page.content().lower()
         if "captcha" in html or "recaptcha" in html:
             raise RuntimeError("CAPTCHA detected – operator intervention required.")
