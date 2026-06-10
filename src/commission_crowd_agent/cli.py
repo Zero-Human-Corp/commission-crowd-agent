@@ -13,7 +13,6 @@ from rich.table import Table
 
 from .adapters import GoogleSheetsAdapter, NotifierAdapter, ScoringAdapter
 from .approval_gate import ApprovalGate
-from .calendar_adapter import CalendarAdapter
 from .config import CcaSettings, load_settings
 from .domain import Lead
 from .lead_ingestion import LeadIngester
@@ -1014,84 +1013,155 @@ def supervisor_smoke(
     relay = SupervisorRelay(settings=settings, dry_run=True)
     result = relay.primary_check("Ping test.")
     console.print(f"[green]✅ Supervisor dry-run response: {result.model_dump_json()}[/green]")
-
-
 @app.command(name="prospect")
 def prospect_cmd(
-    dry_run: bool = typer.Option(default=True, help="Dry-run mode (default: True, no real writes)"),
-    limit: int = typer.Option(default=5, help="Max opportunities to process per cycle"),
-    min_commission: int = typer.Option(default=20, help="Minimum commission %"),
-    write: bool = typer.Option(default=False, help="Write leads to CRM (requires --dry-run False)"),
-    api_key: str = typer.Option(default="", help="CommissionCrowd API key (or load from config)"),
+    source: str = typer.Option(
+        default="commissioncrowd",
+        help="Data source: commissioncrowd | sample",
+    ),
+    live_shadow: bool = typer.Option(
+        default=False,
+        help="Use real data with zero external writes",
+    ),
+    write_crm: bool = typer.Option(
+        default=False,
+        help="Enable CRM and approval writes (live data)",
+    ),
+    create_approvals: bool = typer.Option(
+        default=False,
+        help="Create approval records (requires --write-crm)",
+    ),
+    limit: int = typer.Option(default=5, help="Max opportunities to fetch"),
+    min_commission: float = typer.Option(default=20.0, help="Minimum commission %"),
+    dry_run: bool = typer.Option(
+        default=False,
+        help="Legacy: if True, implies sample mode with no writes",
+    ),
 ) -> None:
-    """Run autonomous prospector: find high-commission opportunities, score, and optionally log."""
-    from .browser_prospector import BrowserBasedProspector
-    from .sales_orchestrator import SalesOrchestrator
+    """Run prospector with real CommissionCrowd data or explicit sample mode.
 
-    settings = load_settings()
-
-    if not dry_run:
-        console.print("[yellow]⚠️  LIVE MODE — real API calls and CRM writes will occur[/yellow]")
-    else:
-        console.print("[green]🔒 DRY RUN — no real writes[/green]")
-
-    # Try browser-based prospecting (realistic sample data for now)
-    browser_prospector = BrowserBasedProspector(dry_run=dry_run)
-    raw_opps = browser_prospector.discover_opportunities(limit=limit)
-    scored = browser_prospector.filter_and_score(
-        raw_opps,
-        min_commission_pct=min_commission,
-        min_deal_value=2500,
+    Default: --source commissioncrowd with --live-shadow (zero writes).
+    Use --write-crm to persist qualified opportunities and approvals.
+    Use --source sample for synthetic demo data.
+    """
+    from .mvp_pipeline import (
+        filter_qualified,
+        run_controlled_write,
+        run_live_shadow,
+        score_opportunities,
     )
 
-    console.print(
-        f"[cyan]Discovered {len(raw_opps)} opportunities, {len(scored)} scored >= threshold[/cyan]"
-    )
+    # Normalize mode
+    if dry_run and source == "commissioncrowd":
+        source = "sample"
 
-    # Build the orchestrator with dry_run safety
-    if not dry_run:
-        from .adapters import GoogleSheetsAdapter
-
-        sheets_adapter = GoogleSheetsAdapter(
-            spreadsheet_id=settings.google_sheets_spreadsheet_id,
-            credentials_path=settings.google_application_credentials_path,
-            dry_run=False,
+    if create_approvals and not write_crm:
+        console.print(
+            "[yellow]⚠ create-approvals requires --write-crm. "
+            "Exiting safely.[/yellow]"
         )
-        console.print("[cyan]Google Sheets backend connected[/cyan]")
+        raise typer.Exit(1)
+
+    # Execution mode summary
+    if source == "sample":
+        exec_mode = "sample"
+        writes_enabled = False
+    elif live_shadow and not write_crm:
+        exec_mode = "live-shadow"
+        writes_enabled = False
+    elif write_crm:
+        exec_mode = "controlled-write"
+        writes_enabled = True
     else:
-        sheets_adapter = None
+        exec_mode = "live-shadow"
+        writes_enabled = False
 
-    orchestrator = SalesOrchestrator(
-        sheets_adapter=sheets_adapter,
-        calendar_adapter=CalendarAdapter(dry_run=dry_run),
-        dry_run=dry_run,
-    )
+    summary = Table(title="CCA MVP Execution Mode")
+    summary.add_column("Setting", style="cyan")
+    summary.add_column("Value", style="green")
+    summary.add_row("Source", source)
+    summary.add_row("Mode", exec_mode)
+    summary.add_row("Writes Enabled", "yes" if writes_enabled else "no")
+    summary.add_row("Limit", str(limit))
+    summary.add_row("Min Commission %", str(min_commission))
+    console.print(summary)
 
-    # Run full campaign cycle: ingest → enrich → optional draft
-    campaign_result = orchestrator.run_campaign_cycle(
-        opportunities=scored,
-        auto_draft=True,
-        min_score=50,
-    )
+    if source == "sample":
+        console.print("[yellow]📦 SAMPLE MODE — no live API calls[/yellow]")
+        from .canonical import CanonicalOpportunity
 
-    table = Table(title="Autonomous Prospector Results")
+        opps = CanonicalOpportunity.sample_opportunities(mode="sample", limit=limit)
+        scored = score_opportunities(opps, min_commission_pct=min_commission)
+        qualified = filter_qualified(scored)
+        console.print(
+            f"[cyan]Sample opportunities: {len(opps)} | "
+            f"Qualified: {len(qualified)}[/cyan]"
+        )
+        for s in scored:
+            icon = "✅" if s["passes_threshold"] else "❌"
+            console.print(
+                f"   {icon} {s['opportunity'].display_name} — "
+                f"score={s['score']} | action={s['recommended']}"
+            )
+        return
+
+    # CommissionCrowd live path
+    if live_shadow and not write_crm:
+        result = run_live_shadow(limit=limit, min_commission=min_commission)
+    elif write_crm:
+        result = run_controlled_write(limit=limit, min_commission=min_commission)
+    else:
+        result = run_live_shadow(limit=limit, min_commission=min_commission)
+
+    # Synthetic contamination guard
+    contaminated = False
+    synthetic_names = {
+        "SecureFlow Technologies",
+        "IntellectAI",
+        "NimbusWatch",
+        "PeopleFirst",
+    }
+    if exec_mode in ("live-shadow", "controlled-write"):
+        for sid in result.get("source_ids", []):
+            if "SAMPLE" in str(sid):
+                contaminated = True
+        for d in result.get("drafts", []):
+            title = d.get("title", "")
+            for name in synthetic_names:
+                if name in title:
+                    contaminated = True
+
+    if contaminated:
+        console.print("[red]❌ Synthetic contamination detected in live run. Aborting.[/red]")
+        raise typer.Exit(1)
+
+    table = Table(title="Prospector Results")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
-    for k, v in campaign_result.items():
-        table.add_row(str(k), str(v))
+    for key in (
+        "mode",
+        "total_fetched",
+        "qualified",
+        "rejected",
+        "drafts_prepared",
+        "crm_created",
+        "duplicates",
+        "approvals_created",
+        "sheets_written",
+        "emails_sent",
+        "calendars_created",
+    ):
+        if key in result:
+            table.add_row(key.replace("_", " "), str(result[key]))
     console.print(table)
 
-    if campaign_result.get("errors"):
-        for err in campaign_result["errors"]:
-            console.print(f"[red]Error: {err}[/red]")
+    if not result.get("ok"):
+        console.print(f"[red]❌ Run FAILED: {result.get('error')}[/red]")
         raise typer.Exit(1)
-    console.print("[green]✅ Prospector cycle complete[/green]")
-    console.print(f"[bold]Pending approvals: {campaign_result.get('pending_approvals', 0)}[/bold]")
-    for draft in campaign_result.get("drafts", []):
-        console.print(
-            f"  [dim]→ {draft['lead_id']} | {draft['to_email']} | "
-            f"Subject: {draft['subject'][:50]}...[/dim]"
-        )
+
+    console.print(f"[green]✅ {exec_mode} run complete[/green]")
+    for sid in result.get("source_ids", []):
+        console.print(f"  [dim]→ Source ID: {sid}[/dim]")
 
 
 def main() -> None:

@@ -93,6 +93,15 @@ class ApprovalRequest:
             self.approval_action,
         ]
 
+    def validate_integrity(self) -> list[str]:
+        """Return list of integrity violations. Empty list means valid."""
+        errors: list[str] = []
+        if self.status == "approved" and not self.operator_decision:
+            errors.append("approved status without operator_decision")
+        if self.status == "approved" and not self.decided_at_utc:
+            errors.append("approved status without decided_at_utc")
+        return errors
+
 
 class ApprovalGate:
     """Service for creating and checking approval requests.
@@ -120,13 +129,41 @@ class ApprovalGate:
         risk_level: str = "low",
         source_url: str = "",
         notes: str = "",
+        opportunity_lifecycle_state: str = "",
     ) -> ApprovalRequest:
         """Create a pending approval write it to the Google Sheet CRM, and verify.
 
         This is the production path for operator-review approvals.
         It always writes to Sheets and fails closed if the write/readback fails.
         **Never** silently creates a local-only approval.
+
+        Args:
+            opportunity_lifecycle_state: If the opportunity is already active,
+                applied, accepted, rejected, closed, or withdrawn, creation is
+                blocked to prevent duplicate application approvals.
         """
+        # Hard exclusion: never create apply_to_principal for existing activities
+        _terminal_states = {
+            "active",
+            "application_submitted",
+            "application_approved",
+            "principal_accepted",
+            "application_rejected",
+            "closed",
+            "withdrawn",
+            "expired",
+            "paused",
+        }
+        if (
+            requested_action == "apply_to_principal"
+            and opportunity_lifecycle_state in _terminal_states
+        ):
+            raise RuntimeError(
+                f"Approval blocked: opportunity {entity_id} is "
+                f"'{opportunity_lifecycle_state}' in My Opportunities. "
+                f"Cannot create apply_to_principal for an existing activity."
+            )
+
         req = ApprovalRequest(
             entity_type=entity_type,
             entity_id=entity_id,
@@ -138,6 +175,13 @@ class ApprovalGate:
             notes=notes,
             status="pending",
         )
+
+        # Integrity check before writing
+        integrity_errors = req.validate_integrity()
+        if integrity_errors:
+            raise RuntimeError(
+                f"Approval integrity violations: {'; '.join(integrity_errors)}"
+            )
 
         # Sanity check: if Sheets is not wired, we must not pretend the approval
         # is pending in a system the operator cannot see.

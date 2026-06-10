@@ -372,35 +372,63 @@ def run_controlled_write(
 
     for q in qualified[:2]:
         opp = q["opportunity"]
-        # Idempotent CRM write
-        crm_result = crm.add_lead(
-            lead_id=f"CC-{opp.source_opportunity_id}",
-            company_name=opp.title,
-            contact_name=opp.contact_name or "",
-            contact_email=opp.contact_email or "",
-            source=opp.source,
-            source_url=opp.source_url,
-            notes=f"Score={q['score']}; reasons={' | '.join(q['reasons'])}",
-            dry_run=False,
-        )
+
+        # Idempotent CRM write — only if email present
+        crm_result: dict[str, Any] = {"ok": True, "dedup": True, "rows_changed": 0}
+        if opp.contact_email:
+            crm_result = crm.add_lead(
+                lead_id=f"CC-{opp.source_opportunity_id}",
+                company_name=opp.title,
+                contact_name=opp.contact_name or "",
+                contact_email=opp.contact_email,
+                source=opp.source,
+                source_url=opp.source_url,
+                notes=f"Score={q['score']}; reasons={' | '.join(q['reasons'])}",
+                dry_run=False,
+            )
         if crm_result.get("dedup"):
             duplicates += 1
         elif crm_result.get("ok"):
             created += 1
 
-        # Create approval (draft is generated inline; no need to store)
-        approval_req = gate.create_and_write_approval(
-            entity_type="opportunity",
-            entity_id=opp.source_opportunity_id,
-            entity_name=opp.title,
-            requested_action="apply_to_principal",
-            approval_action="apply_to_principal",
-            risk_level="medium" if q["score"] >= 70 else "high",
-            source_url=opp.source_url,
-            notes=f"Commission: {opp.commission_text or 'unknown'} | Score: {q['score']}",
-        )
-        if approval_req.approval_id:
-            approvals_created += 1
+        # Duplicate approval check: read back existing approvals
+        approval_lookup = sheets.read_last_rows("approvals", count=500)
+        already_exists = False
+        if approval_lookup.get("ok"):
+            rows = approval_lookup.get("rows", [])
+            if rows:
+                header = rows[0]
+                if "entity_id" in header:
+                    eidx = header.index("entity_id")
+                    for row in rows[1:]:
+                        if len(row) > eidx and row[eidx] == opp.source_opportunity_id:
+                            already_exists = True
+                            break
+
+        if not already_exists:
+            draft_obj = generate_application_draft(opp, settings)
+            draft_body = draft_obj["body"]
+            payload_hash = opp.payload_hash(
+                action_type="apply_to_principal",
+                target="CommissionCrowd",
+                body=draft_body,
+            )
+            approval_req = gate.create_and_write_approval(
+                entity_type="opportunity",
+                entity_id=opp.source_opportunity_id,
+                entity_name=opp.title,
+                requested_action="apply_to_principal",
+                approval_action="apply_to_principal",
+                risk_level="medium" if q["score"] >= 70 else "high",
+                source_url=opp.source_url,
+                notes=(
+                    f"Commission: {opp.commission_text or 'unknown'}"
+                    f" | Score: {q['score']}"
+                    f" | Hash: {payload_hash}"
+                ),
+            )
+            if approval_req.approval_id:
+                approvals_created += 1
 
     return {
         "ok": True,

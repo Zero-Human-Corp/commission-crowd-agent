@@ -2,7 +2,7 @@
 
 Headless AI-powered automation system for B2B lead research, personalised outreach, and pipeline management.
 
-**Current Status**: Hermes hooks + Python CLI are the primary workflow engine. Tests passing (306). n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
+**Current Status:** `MVP_CONDITIONALLY_READY` — Browser Discovery MVP complete. Pipeline is architecturally ready. Last authenticated Find Opportunities run returned a 404 error page, yielding **0 net-new candidates**. See [Known Limitations](docs/known-limitations.md). Tests passing (500). Ruff clean. n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
 
 ---
 
@@ -17,12 +17,76 @@ pip install -e ".[dev]"
 
 ---
 
+## Browser Discovery MVP (new)
+
+The authenticated browser discovery pipeline extracts live account state from CommissionCrowd and reconciles it against the CRM.
+
+### Verified commands
+
+```bash
+# 1. Authenticated browser discovery (Playwright SPA-safe)
+python3 scripts/browser_discovery_v6.py
+
+# 2. Reconcile with CRM and identify net-new candidates
+python3 scripts/reconcile_inventory.py
+```
+
+### Source-of-truth hierarchy (highest first)
+
+1. My Opportunities authenticated account state
+2. Applications authenticated account state
+3. Conversations / Messages / Invitations
+4. Favourite Opportunities
+5. Find Opportunities
+6. CRM and approval history
+7. CommissionCrowd API enrichment
+
+### Protected opportunities (cannot receive new `apply_to_principal` approvals)
+
+- **My Opportunities:** `30130` (active), `30754` (paused), `33021` (active), `34234` (active)
+- **Applications:** 2 records awaiting approval (lifecycle_state `application_submitted`)
+
+### Current authenticated counts
+
+| Source | Count | Notes |
+|--------|-------|-------|
+| My Opportunities | 4 | Protected |
+| Applications | 2 | Protected (awaiting approval) |
+| Messages | 0 | |
+| Invitations | 0 | |
+| Favourite Opportunities | 0 | |
+| Find Opportunities | 1 | **Garbage/error result** (404 page; filtered by reconciliation) |
+| **Net-new candidates** | **0** | |
+
+### Artifact locations
+
+All browser discovery outputs are written to `/home/ubuntu/hermes-control/reports/`:
+
+- `cca_opportunity_state_registry.json` — unified source of truth
+- `cca_browser_discovery_summary.json` — counts and metadata
+- `cca_favourite_opportunities_inventory.json`
+- `cca_conversations_inventory.json`
+- `cca_find_opportunities_search_log.json`
+- `cca_reconciliation_report.md`
+- `cca_state_registry.json` — registry output from `reconcile_inventory.py`
+- `cca_net_new_candidates.json`
+
+See [Operator Runbook](docs/mvp-operator-runbook.md) for full recovery procedures.
+
+---
+
 ## Project Structure
 
 - `docs/` — All documentation and decisions
   - `decisions/` — Architecture Decision Records (ADRs)
   - `legacy/n8n/` — Legacy n8n workflow reference (optional)
   - `operations/` — Operator-facing runbooks
+  - `commissioncrowd-browser-discovery.md` — Browser discovery architecture
+  - `icon-only-navigation.md` — SPA visual navigation guide
+  - `known-limitations.md` — Honest MVP limitations
+  - `manual-application-workflow.md` — Operator application steps
+  - `mvp-operator-runbook.md` — Verified CLI commands
+  - `opportunity-lifecycle.md` — Lifecycle state definitions
 - `specs/` — AGENTOS-style specs (agents, workflows, prompts, schemas)
 - `src/commission_crowd_agent/` — Python workflow core
   - `config.py` — Pydantic Settings (env + shared secrets)
@@ -31,8 +95,14 @@ pip install -e ".[dev]"
   - `workflow_runner.py` — Orchestrator
   - `adapters.py` — Source, Scoring, Notifier, Outreach stubs
   - `cli.py` — Operator CLI (`cca` commands)
+  - `browser_adapter.py` — Playwright SPA adapter
+  - `state_registry.py` — Opportunity lifecycle registry
+  - `approval_gate.py` — Approval validation and integrity
   - `workflows/` — Research, Scoring, Outreach, Approvals modules
-- `tests/` — pytest suite (306 tests, all passing)
+- `scripts/` — Standalone mission scripts
+  - `browser_discovery.py` / `v4` / `v5` / `v6.py` — Iterative discovery scripts
+  - `reconcile_inventory.py` — CRM reconciliation
+- `tests/` — pytest suite (500 tests, all passing)
 - `scripts/dev_check.sh` — Runs ruff, mypy, pytest
 - `scripts/hooks/` — Hermes hook entrypoints (bash)
 - `data/runs/` — Transient workflow outputs (gitignored)
@@ -106,9 +176,20 @@ Full architecture: `docs/architecture.md`
 ## Tests
 
 ```bash
-pytest          # 29 passing
+pytest          # 500 passing
 ./scripts/dev_check.sh  # lint + type + tests
 ```
+
+### Quality gates
+
+| Gate | Result |
+|------|--------|
+| Tests | 500 passed |
+| Ruff (src + tests + reconcile_inventory.py) | Clean |
+| MyPy (state_registry + approval_gate) | Clean* |
+| Secret scan (changed files) | No secrets found |
+
+*MyPy on `browser_adapter.py` reports 1 pre-existing type mismatch (`sync_playwright = None` fallback pattern). This is a safe import-guard pattern and is documented.
 
 ---
 
