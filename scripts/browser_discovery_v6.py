@@ -104,7 +104,8 @@ def _js_extract_table_rows(
                     if (tds.length >= 3) {{
                         const cells = Array.from(tds).map(td => td.innerText.trim());
                         const title = cells[0];
-                        if (title.length >= {title_min_len} && !title.toLowerCase().includes('opportunity name')) {{
+                        if (title.length >= {title_min_len} &&
+                            !title.toLowerCase().includes('opportunity name')) {{
                             const link = tds[0].querySelector('a[href*="/opportunities/"]');
                             let oppId = '';
                             if (link) {{
@@ -196,10 +197,13 @@ def _extract_favourites(page) -> list[dict[str, Any]]:
         js = """
         () => {
             const items = [];
-            const cards = document.querySelectorAll('.opportunity-card, .opportunity-item, [class*="opportunity"]');
+            const cards = document.querySelectorAll(
+                '.opportunity-card, .opportunity-item, [class*="opportunity"]'
+            );
             for (const card of cards) {
                 const text = card.innerText.trim();
-                if (text.length > 20 && (text.includes('%') || text.includes('$') || text.includes('£') || text.includes('Commission'))) {
+                if (text.length > 20 && (text.includes('%') || text.includes('$') ||
+                    text.includes('£') || text.includes('Commission'))) {
                     const link = card.querySelector('a[href*="/opportunities/"]');
                     const href = link ? link.href : '';
                     const m = href.match(/\\/opportunities\\/(\\d+)/);
@@ -236,7 +240,9 @@ def _extract_conversations(page) -> dict[str, Any]:
     with contextlib.suppress(Exception):
         badge_count = page.evaluate("""
             () => {
-                const bubbles = document.querySelectorAll('.count-bubble.conversations, .count-bubble');
+                const bubbles = document.querySelectorAll(
+                    '.count-bubble.conversations, .count-bubble'
+                );
                 for (const b of bubbles) {
                     const text = b.innerText.trim();
                     if (/^\\d+$/.test(text)) return parseInt(text);
@@ -261,9 +267,11 @@ def _extract_conversations(page) -> dict[str, Any]:
                         const date = tds[0].innerText.trim();
                         const sender = tds[1].innerText.trim();
                         const subject = tds[2].innerText.trim();
-                        if (date && sender && subject && sender !== 'From' && !sender.toLowerCase().includes('reply')) {
+                        if (date && sender && subject &&
+                            sender !== 'From' &&
+                            !sender.toLowerCase().includes('reply')) {{
                             rows.push({date, sender, subject});
-                        }
+                        }}
                     }
                 }
             }
@@ -391,7 +399,9 @@ def _extract_find_opportunities(
             # Also try the "Products / Keyword" or "Search by company name" field
             try:
                 keyword_input = page.locator(
-                    'input[placeholder*="keyword" i], input[placeholder*="company" i], input#id-products-keyword'
+                    'input[placeholder*="keyword" i],'
+                    ' input[placeholder*="company" i],'
+                    ' input#id-products-keyword'
                 ).first
                 if keyword_input.count() > 0:
                     keyword_input.fill(query)
@@ -425,7 +435,8 @@ def _extract_find_opportunities(
         () => {
             const items = [];
             const seenIds = new Set();
-            // CommissionCrowd search results use .search-results .card (parent card, avoid .card-body duplication)
+            // CommissionCrowd search results use .search-results .card
+            // (parent card, avoid .card-body duplication)
             const cards = document.querySelectorAll('.search-results .card');
             for (const card of cards) {
                 const text = card.innerText.trim();
@@ -713,7 +724,9 @@ def main() -> int:
     )
     for m in conv.get("messages", [])[:10]:
         md_lines.append(
-            f"  - `{m['message_id']}` — {m['sender'][:30]} — {m['subject'][:50]} — *{m['classification']}*"
+            f"  - `{m['message_id']}` — {m['sender'][:30]}"
+            f" — {m['subject'][:50]}"
+            f" — *{m['classification']}*"
         )
 
     md_lines.extend(
@@ -728,7 +741,9 @@ def main() -> int:
     )
     for f in deduped_find[:10]:
         md_lines.append(
-            f"  - `{f.get('opportunity_id', '')}` — {f['title'][:80]} (query: {f.get('search_query', '')})"
+            f"  - `{f.get('opportunity_id', '')}`"
+            f" — {f['title'][:80]}"
+            f" (query: {f.get('search_query', '')})"
         )
 
     md_lines.extend(

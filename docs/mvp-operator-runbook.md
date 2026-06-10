@@ -94,6 +94,31 @@ After each run, a digest is prepared (not sent automatically) summarizing counts
 | Platform messaging | **No** | Pipeline never sends messages |
 | External email | **No** | Pipeline never sends email |
 | Telegram send | **No** | Draft prepared; operator must approve send |
+| Cover letter creation | **No** | Requires operator approval |
+| Cover letter editing | **No** | Requires operator approval |
+| Cover letter deletion | **No** | Requires operator approval |
+
+## Read-only Applications and Cover Letters workflow
+
+The authenticated browser can be used to **read** (not modify) the operator's saved Cover Letters library for pattern analysis:
+
+```bash
+# Navigate to Applications → Cover Letters (read-only)
+# No creation, editing, deletion, or submission of cover letters
+```
+
+**Private storage:** Extracted cover-letter content is saved to `/home/ubuntu/hermes-control/reports/cca_cover_letters/` **outside the repository**. These files are **never committed** to Git.
+
+**Important:** Cover letter patterns extracted from prior submissions may contain unverified operator claims. Reuse requires explicit operator confirmation. See `cca_cover_letters/cca_operator_claims_verification.md`.
+
+**Platform actions requiring operator approval:**
+- Create new cover letter
+- Edit existing cover letter
+- Delete/trash existing cover letter
+- Select cover letter for application submission
+- Submit application with cover letter
+
+These remain **prohibited** in the automated pipeline.
 
 ## When something goes wrong
 
