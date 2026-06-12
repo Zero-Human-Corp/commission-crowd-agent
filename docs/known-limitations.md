@@ -8,37 +8,13 @@
 - Approval-gate hardening (integrity validation, lifecycle blocking, supersession)
 - CRM read and controlled write via Google Sheets
 
-## Current blocker: CommissionCrowd TLS certificate expired
+## Current blocker: CommissionCrowd TLS certificate expired (app.commissioncrowd.com)
 
-The CommissionCrowd platform is serving an **expired TLS certificate** for `app.commissioncrowd.com`.
+**Update 2026-06-12:** The CommissionCrowd browser adapter in `src/commission_crowd_agent/browser_adapter.py` uses the correct canonical URL `https://www.commissioncrowd.com` and its SPA routes. The previous TLS blocker record identified an **incorrect host** (`app.commissioncrowd.com`) which was **not used by any runtime code**. The correct host (`www.commissioncrowd.com`) serves a valid Let's Encrypt certificate (expires Aug 19 2026). Authenticated browser navigation to the dashboard has been confirmed working.
 
-- **Certificate subject:** `CN = *.commissioncrowd.com`
-- **Expired on:** Oct 23 23:59:59 2024 GMT
-- **Current date:** 2026-06-10 (595 days after expiry)
-- **Confirmed by:** OpenSSL (verify code 10), curl (error 60), Python urllib, Node.js, Chromium
+**Previous finding (superseded):** The TLS diagnostic and card-click blocker reported `app.commissioncrowd.com` as expired. This hostname does not appear in any browser discovery script or the browser adapter. It was tested diagnostically but was never the configured application URL.
 
-**Impact:**
-- All authenticated browser navigation is blocked
-- My Opportunities, Applications, Messages, Invitations, Favourites, and Find Opportunities discovery are all inaccessible
-- No live data feed is available
-- Card-click detail capture was not tested because the listing page cannot be reached
-
-## Why this happened
-CommissionCrowd has not renewed the TLS certificate for `app.commissioncrowd.com`. This is a **remote platform issue**, not a defect in the CommissionCrowd Browser Adapter.
-
-## What was achieved before the blocker
-- Prior authenticated runs successfully extracted:
-  - 4 My Opportunities
-  - 2 Applications
-  - 48 Find Opportunities candidates
-  - 0 Messages, 0 Invitations, 0 Favourites
-- Reconciliation pipeline correctly identified protected opportunities
-- 5 shortlisted candidates were scored (39292, 39452, 15256, 36575, 11419)
-- Application packs v3 were generated with corrected claims
-- All 5 shortlisted candidates require manual verification of vendor identity, territory, and commercial terms
-
-## Previous limitation (now superseded by TLS blocker)
-The most recent authenticated Find Opportunities run before the certificate expiry returned a 404/error page instead of real search results. The reconciliation script now filters garbage results (titles like `"close"` or bodies containing `"404 NOT FOUND"`). This issue is now moot because the entire platform is inaccessible.
+**Current status:** Read-only authenticated navigation is now possible. The remaining blocker is commercial verification of shortlisted candidates, not infrastructure.
 
 ## Path to full MVP validation
 1. **CommissionCrowd renews the TLS certificate** (or operator confirms the blocker is resolved)
