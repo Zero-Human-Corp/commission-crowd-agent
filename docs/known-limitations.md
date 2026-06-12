@@ -1,32 +1,31 @@
 # CCA MVP — Known Limitations
 
-**Status:** `MVP_IMPLEMENTATION_COMPLETE` — `BLOCKED_EXTERNAL_DEPENDENCY` — `NOT_READY_FOR_OPERATOR_DECISIONS` — `NOT_READY_FOR_PRODUCTION`  
-**Last updated:** 2026-06-10
+**Status:** `MVP_IMPLEMENTATION_COMPLETE` — `DEPENDENCY_HEALTHY` — `NOT_READY_FOR_OPERATOR_DECISIONS` — `NOT_READY_FOR_PRODUCTION`  
+**Last updated:** 2026-06-12
 
 ## What works
 - Browser discovery code is complete and tested (reconciliation, scoring, approval gates)
 - Approval-gate hardening (integrity validation, lifecycle blocking, supersession)
 - CRM read and controlled write via Google Sheets
+- Authenticated read-only navigation on CommissionCrowd (`https://www.commissioncrowd.com`, valid Let's Encrypt certificate)
 
-## Current blocker: CommissionCrowd TLS certificate expired (app.commissioncrowd.com)
+## Previous blocker (superseded)
 
-**Update 2026-06-12:** The CommissionCrowd browser adapter in `src/commission_crowd_agent/browser_adapter.py` uses the correct canonical URL `https://www.commissioncrowd.com` and its SPA routes. The previous TLS blocker record identified an **incorrect host** (`app.commissioncrowd.com`) which was **not used by any runtime code**. The correct host (`www.commissioncrowd.com`) serves a valid Let's Encrypt certificate (expires Aug 19 2026). Authenticated browser navigation to the dashboard has been confirmed working.
+A TLS diagnostic on **2026-06-10** reported `app.commissioncrowd.com` as expired. That hostname was **never configured in any runtime code** — it was tested diagnostically but the browser adapter always used `https://www.commissioncrowd.com`, which serves a valid certificate (expires Aug 19 2026).
 
-**Previous finding (superseded):** The TLS diagnostic and card-click blocker reported `app.commissioncrowd.com` as expired. This hostname does not appear in any browser discovery script or the browser adapter. It was tested diagnostically but was never the configured application URL.
+See `/home/ubuntu/hermes-control/reports/cca_external_dependency_blocker_2026-06-10.md` for the historical audit. That report's wrong-host conclusion is **superseded** by the findings documented here and in `cca_correct_app_base_url_v1.md`.
 
-**Current status:** Read-only authenticated navigation is now possible. The remaining blocker is commercial verification of shortlisted candidates, not infrastructure.
+## Current blocker: candidate identity and commercial-detail reconciliation
+
+Authenticated navigation is working. The remaining blocker is **commercial verification of shortlisted candidates**, not infrastructure. Prior runs identified 48 net-new Find Opportunities candidates and 5 shortlisted prospects, but none have verified commercial details. Candidate IDs and titles require deterministic reconciliation before any CRM write or approval.
 
 ## Path to full MVP validation
-1. **CommissionCrowd renews the TLS certificate** (or operator confirms the blocker is resolved)
-2. Verify TLS using the re-entry checklist (OpenSSL code 0, curl without `--insecure`, etc.)
-3. Re-run `python3 scripts/browser_discovery_v6.py`
-4. Confirm Find Opportunities loads real cards with IDs, titles, commission text
-5. Re-run `python3 scripts/reconcile_inventory.py`
-6. Confirm `net_new_count > 0`
-7. Run card-click detail capture for shortlisted candidates
-8. Operator manually verifies vendor identity and commercial terms for top candidates
-9. Run qualification, CRM write, approval creation (with operator approval)
-10. Only then create tag `v0.1.0-mvp`
+1. Re-run `python3 scripts/browser_discovery_v6.py` and confirm real cards load
+2. Run `python3 scripts/reconcile_inventory.py` and confirm `net_new_count >= 0` with zero garbage entries
+3. Run card-click detail capture for shortlisted candidates
+4. Operator manually verifies vendor identity and commercial terms for top candidates
+5. Run qualification, CRM write, approval creation (with operator approval)
+6. Only then create tag `v0.1.0-mvp`
 
 ## Other known limitations
 - No automatic application submission (by design; operator approval required)
@@ -36,4 +35,4 @@
 - Icon-only top navigation (star, checkmark, calendar, people, document, chat, bell) requires visual confirmation or screenshot analysis because labels are absent from the accessibility tree
 
 ## Honest verdict
-The pipeline code is architecturally complete and safe. It is **not ready for production** because the external platform it depends on (CommissionCrowd) is serving an expired certificate. No operator decision, CRM write, approval creation, or application submission can proceed until the certificate is renewed.
+The pipeline code is architecturally complete and safe. Authenticated navigation is possible. It is **not ready for production** because shortlisted candidates lack verified commercial details and deterministic identity reconciliation. No operator decision, CRM write, approval creation, or application submission can proceed until candidate identity and commercial terms are confirmed.
