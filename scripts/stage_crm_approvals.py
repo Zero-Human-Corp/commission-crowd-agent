@@ -23,7 +23,9 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+from commission_crowd_agent.adapters import GoogleSheetsAdapter, NotifierAdapter
 from commission_crowd_agent.approval_gate import ApprovalAction, ApprovalGate
+from commission_crowd_agent.config import load_settings
 from commission_crowd_agent.crm_pipeline import CRMPipeline
 from commission_crowd_agent.domain import OpportunityStage
 
@@ -153,15 +155,51 @@ def main() -> int:
 
     if args.live:
         print("Live mode: will attempt to write to Google Sheets.")
+        settings = load_settings()
+        if not settings.google_ready:
+            print(
+                "ERROR: Google Sheets credentials are not configured. "
+                "Set GOOGLE_APPLICATION_CREDENTIALS_PATH or GOOGLE_SERVICE_ACCOUNT_JSON.",
+                file=sys.stderr,
+            )
+            return 1
+
+        sheets = GoogleSheetsAdapter(
+            spreadsheet_id=settings.google_sheets_spreadsheet_id,
+            credentials_path=settings.google_application_credentials_path,
+            service_account_json=settings.google_service_account_json,
+        )
+        health = sheets.health_check()
+        if not health.get("ok"):
+            err = health.get("error")
+            print(f"ERROR: Google Sheets health check failed: {err}", file=sys.stderr)
+            return 1
+
+        notifier: NotifierAdapter | None = None
+        if args.notify:
+            if settings.telegram_ready:
+                notifier = NotifierAdapter(
+                    bot_token=settings.telegram_bot_token,
+                    chat_id=settings.telegram_chat_id,
+                )
+            else:
+                print(
+                    "WARN: --notify requested but Telegram is not configured. "
+                    "Skipping notifications.",
+                    file=sys.stderr,
+                )
     else:
         print("Dry-run mode: no external writes will occur.")
+        settings = None
+        sheets = None
+        notifier = None
 
     shortlist = _load_shortlist()
     candidates = shortlist.get("top_10", [])
     print(f"Staging {len(candidates)} candidates for CRM + approvals\n")
 
-    crm = CRMPipeline(sheets_adapter=None)
-    approval_gate = ApprovalGate(sheets_adapter=None)
+    crm = CRMPipeline(sheets_adapter=sheets)
+    approval_gate = ApprovalGate(sheets_adapter=sheets, notifier=notifier)
 
     staged: list[dict[str, Any]] = []
     errors: list[dict[str, Any]] = []

@@ -109,6 +109,51 @@ See [Operator Runbook](docs/mvp-operator-runbook.md) for full recovery procedure
 
 ---
 
+## Obsidian Vault
+
+The `obsidian/` folder is an Obsidian vault that mirrors the `docs/` directory structure and surfaces the runtime reports generated under `/home/ubuntu/hermes-control/reports/`.
+
+### Opening the vault
+
+1. Open Obsidian.
+2. **Open folder as vault** → select `/home/ubuntu/projects/commission-crowd-agent/obsidian/`.
+3. The root `README.md` is the vault landing page and links to every report and docs section.
+
+### Vault layout
+
+- `README.md` — vault index and report dashboard
+- `reports/` — synced Markdown + JSON reports (net-new candidates, qualified candidates, shortlist, web research, detail capture, deduplication report)
+- Top-level `.md` files — symlinked from `docs/` for easy navigation
+- `decisions/` — architecture decision records
+- `legacy/` → `legacy/n8n/` — reference documentation for legacy integrations
+- `operations/` — operator runbooks (Google Sheets, shared secrets)
+
+### Reading reports
+
+Start from `obsidian/README.md` and use the table to jump to the latest pipeline outputs:
+
+| Report | What to read | Outcome |
+|---|---|---|
+| `reports/cca_net_new_candidates.md` | Whole market of net-new opportunities | Prioritise sourcing |
+| `reports/cca_qualified_candidates.md` | Opportunities that passed the score threshold | Decide what to research next |
+| `reports/cca_detail_capture.md` | CommissionCrowd detail page capture | Verify commercial signals |
+| `reports/cca_web_research.md` | Public web research signals | Cross-check credibility |
+| `reports/cca_shortlist.md` | Top-10 operator shortlist | Choose approvals |
+| `reports/cca_opportunity_id_deduplication_v1.md` | Deduplication mission report | Audit data quality |
+
+### Reports from `/home/ubuntu/hermes-control/reports/`
+
+Runtime reports live outside the repo for safety. To refresh the Obsidian view, run the project sync script:
+
+```bash
+cd /home/ubuntu/projects/commission-crowd-agent
+python3 scripts/sync_reports_to_repo.py
+```
+
+The sync copies only JSON + Markdown reports and never copies secret-bearing files.
+
+---
+
 ## CLI
 
 ```bash
