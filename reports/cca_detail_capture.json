@@ -1,0 +1,619 @@
+{
+  "summary": {
+    "generated_at": "2026-06-15T20:16:18.821549+00:00",
+    "qualified_report": "/home/ubuntu/hermes-control/reports/cca_qualified_candidates.json",
+    "requested_limit": 20,
+    "min_score": 50,
+    "attempted": 20,
+    "succeeded": 20,
+    "failed": 0
+  },
+  "enriched": [
+    {
+      "opportunity_id": "22763",
+      "fit_score": 61,
+      "score_reasons": [
+        "High commission (30.0%)",
+        "No residual terms",
+        "Global territory",
+        "B2B keyword match: platform",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "platform"
+      ],
+      "search_queries": [
+        "business services"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Cutting Edge Platform Connecting Companies & Social Influencers Globally - 30% Commission\u00a0+ Lifetime Residuals",
+      "commission_percent": 30.0,
+      "residual_terms": true,
+      "territory": "Further territory details\tWe are concentrating on the UK market for launch.",
+      "description": "SwipeAbove connects exciting brands and Social Media Influencers like never before. We\u2019re a true one-stop platform that allows for seamless interactions with top-tier creators and influencers to promote the growth of companies all over the world. We blend discovery, dialogue, payment, and collaboration seamlessly into one engaging platform.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/22763",
+      "category": "SaaS / Software",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nCutting Edge Platform Connecting Companies & Social Influencers Globally - 30% Commission\u00a0+ Lifetime Residuals\nShort summary\n\n\nSwipeAbove connects exciting brands and Social Media Influencers like never before. We\u2019re a true one-stop platform that allows for seamless interactions with top-tier creators and influencers to promote the growth of companies all over the world. We blend discovery, dialogue, payment, and collaboration seamlessly into one engaging platform.\n\nWe\u2019re at an exciting stage in our business and are looking to forge long-term, win-win partnerships with commission-based sales professionals who are excited to share the next stage of this journey with us. We offer industry leading commissions of 30% plus lifetime residuals\n\nThe Compensation:\n\n\nIn recognition of the pivotal role you'll play, we're offering:\n\nA generous 30% commission on our product, which is priced between $199 to $599 per month. Given the unique value proposition and the growing demand for data-driven influencer marketing solutions, the earning potential is substantial.\nA bonus structure designed to reward consistent performance. For every set of 5 customers you onboard, you'll receive a $1000 bonus. This is over and above the regular commission, ensuring that your efforts are lucratively rewarded.\n\t\nUSP:\u00a0\n\nSwipeAbove stands at the forefront of influencer marketing by directly integrating with social platforms, ensuring 100% accurate, real-time data for all campaigns. While many in the industry rely on approximations or third-party data, our direct link to social platforms provides brands with unmatched insights, guaranteeing",
+      "fetched_at": "2026-06-15T20:14:05.399637+00:00"
+    },
+    {
+      "opportunity_id": "2774",
+      "fit_score": 61,
+      "score_reasons": [
+        "High commission (45.0%)",
+        "No residual terms",
+        "Global territory",
+        "B2B keyword match: ai",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "ai"
+      ],
+      "search_queries": [
+        "business services"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Global luxury retail brand selling high end books to corporates for gifting purposes.\u00a0 Commission up to 45%.",
+      "commission_percent": 45.0,
+      "residual_terms": false,
+      "territory": "Further territory details\tAll regions available",
+      "description": "ROADS is a global lifestyle brand based in Dublin, Ireland. \u00a0This opportunity relates to its book division, ROADS Publishing.",
+      "principal": "ROADS",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/2774",
+      "category": "",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nGlobal luxury retail brand selling high end books to corporates for gifting purposes.\u00a0 Commission up to 45%.\nShort summary\n\n\nROADS is a global lifestyle brand based in Dublin, Ireland. \u00a0This opportunity relates to its book division, ROADS Publishing.\u00a0\n\nROADS Publishing is a high-end publisher of illustrated books specialising in art, design, culture and fashion, together with designer classics, travel guides and luxury special editions.\n\nROADS Publishing's products are sold on every continent in all good book stores as well as in high end department stores, such as Harrods, Sefridges, Corso Como, FortyFiveTen & Neiman Marcus. \u00a0Our books are also sold in the most prestigious museums in the world, including the MET in New York and the Tate Modern in London.\n\nOur books range in price from \u00a39 to \u00a31,000 each.\n\nThis opportunity is to sell our books to corporate entities for their use as corporate gifts. \u00a0For example, to a company that wants to provide unique & special gifts to their clients at a particular event or on a particular occasion.\u00a0\n\nMore details on our books (along with our current catalogue) can be found on the ROADS Publishing section of our website: http://www.roads.co/books/\n\n\t\nUSP:\u00a0\n\nROADS includes a publishing house, a fragrance division and a film production company. \u00a0\n\nROADS Publishing is unique in modern publishing: it combines elegance and escapism with a truly forward-thinking world view and a focus on innovation. Working with the best international artists, curators and designers, ROADS creates books that are collectable and timeless works of art.\n\nOur unique and varied collection of book t",
+      "fetched_at": "2026-06-15T20:14:12.417502+00:00"
+    },
+    {
+      "opportunity_id": "27755",
+      "fit_score": 61,
+      "score_reasons": [
+        "High commission (50.0%)",
+        "No residual terms",
+        "Global territory",
+        "B2B keyword match: ai",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "ai"
+      ],
+      "search_queries": [
+        "cybersecurity"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Global AI Wellness Sales For HR Departments, Healthcare And Government Agencies - 50% Commissions And Lifetime Residuals",
+      "commission_percent": 50.0,
+      "residual_terms": true,
+      "territory": "Exclusive territory available\tNo",
+      "description": "Global AI Wellness Sales For HR Departments, Healthcare And Government Agencies - 50% Commissions And Lifetime Residuals",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/27755",
+      "category": "AI / ML",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nGlobal AI Wellness Sales For HR Departments, Healthcare And Government Agencies - 50% Commissions And Lifetime Residuals\nShort summary\n\n\nKetoTrust offers a game-changing solution that combines cutting-edge AI with science-backed nutrition coaching. \u00a0KetoTrust's \"Keto Keith,\" is a first-to-market conversational AI coach, that delivers personalized, 24/7 support for individuals transitioning to a low-carb lifestyle, making this a truly unique opportunity setting us apart in the health tech space. \u00a0The corporate wellness and preventative health markets are booming, and KetoTrust\u2019s innovative AI-driven product ensures you\u2019ll stay ahead of industry trends while helping people transform their lives.\n\nTarget Markets For The KetoTrust Conversational AI Coach\n\n1. Medium to Large Businesses\n\nWhy the Need Exists Today:\n\nEmployee wellness programs are increasingly a priority as companies recognize the link between health and productivity.\n\nChronic illnesses like diabetes and obesity, often linked to poor diet, drive up healthcare costs and absenteeism. KetoTrust offers a proactive, cost-effective solution to combat these issues.\n\nThe conversational AI coach provides 24/7 personalized support, aligning well with busy employee schedules, fostering improved focus, energy, and overall workplace efficiency.\n\n2. Healthcare Organizations\n\nWhy the Need Exists Today:\n\nRising healthcare costs are prompting hospitals and clinics to adopt preventative care programs.\n\nPatients recovering from metabolic disorders, cardiovascular diseases, or obesity need guidance in making lasting dietary changes. KetoTrust's AI coach can assist wi",
+      "fetched_at": "2026-06-15T20:14:19.435817+00:00"
+    },
+    {
+      "opportunity_id": "22099",
+      "fit_score": 58,
+      "score_reasons": [
+        "Solid commission (20.0%)",
+        "No residual terms",
+        "Global territory",
+        "B2B keyword match: ai, enterprise, software",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "ai",
+        "enterprise",
+        "software"
+      ],
+      "search_queries": [
+        "recurring revenue"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Prospect or Refer\u00a0Startups and Enterprises\u00a0for Global Software Solutions: Bridging AI, Blockchain, and the Metaverse 20% Residual Comms",
+      "commission_percent": 20.0,
+      "residual_terms": true,
+      "territory": "We're a competitive software agency and product development team spread across three countries, empowering startups, SMEs, and enterprise clients in AI, custom software, MLM, Blockchain, Metaverse, an",
+      "description": "Prospect or Refer\u00a0Startups and Enterprises\u00a0for Global Software Solutions: Bridging AI, Blockchain, and the Metaverse 20% Residual Comms",
+      "principal": "hashthink technologies inc",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/22099",
+      "category": "SaaS / Software / AI / ML",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nProspect or Refer\u00a0Startups and Enterprises\u00a0for Global Software Solutions: Bridging AI, Blockchain, and the Metaverse 20% Residual Comms\nShort summary\n\n\nWe're a competitive software agency and product development team spread across three countries, empowering startups, SMEs, and enterprise clients in AI, custom software, MLM, Blockchain, Metaverse, and tech consultancy.\n\nHashthink is not just a company; it's a testament to what passion for technology and innovation can achieve. Born in Malaysia in 2016, our goal was clear: to carve a niche in software and product development using the sharpest technologies, supported by a league of extraordinary minds.\n\nWe've stacked our portfolio with projects that reflect our expertise and our dedication to excellence. Our mission is to guide clients through the crucial phases of building groundbreaking software:\n\nUnearthing market data, demands, and analytics\nSelecting the most potent technologies and platforms\nCrafting detailed plans, intuitive UX/UI designs, and strategic roadmaps\nOverseeing a full implementation life cycle, complete with rigorous testing\nEnsuring robust maintenance and efficient procurement\n\nWith pride, we've partnered with many clients worldwide and are ever-ready to craft exceptional software that defines the future. As we expand, we seek commission-only sales professionals who thrive on challenges and are ready to sell success.\u00a0\n\nIf the thrill of the chase drives you, you find us the prospects, and we'll close the deals, pay you any residuals, and help our new clients shape the future of technology.\n\nApply now and be part of the force forging tomor",
+      "fetched_at": "2026-06-15T20:14:26.450575+00:00"
+    },
+    {
+      "opportunity_id": "25253",
+      "fit_score": 58,
+      "score_reasons": [
+        "High commission (40.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: b2b, enterprise, saas",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "b2b",
+        "enterprise",
+        "saas"
+      ],
+      "search_queries": [
+        "data"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "High Commission & Bonuses! - Enterprise Order Management Solutions (B2B SaaS) - Up To 40% Commissions",
+      "commission_percent": 40.0,
+      "residual_terms": false,
+      "territory": "Our collaboration with eveSleep, a mattress company, showcases our capability: we facilitated their growth from \u00a33.4m to \u00a316m and expansion into 14 countries within just 12 months. This was achieved b",
+      "description": "Join us in selling Modulus365, the ultimate Enterprise Order Management Solution that has revolutionized D2C businesses, escalating order capacity from 75 to 25,000 orders per day. This transformative OMS caters to D2C, B2C, and B2B sectors and is designed to seamlessly integrate with major e-commerce platforms, carriers, CRMs & data warehouses, making it the last OMS you'll ever need.",
+      "principal": "Creatum.com",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/25253",
+      "category": "SaaS / Software / Data / Analytics",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nHigh Commission & Bonuses! - Enterprise Order Management Solutions (B2B SaaS) - Up To 40% Commissions\nShort summary\n\n\nJoin us in selling Modulus365, the ultimate Enterprise Order Management Solution that has revolutionized D2C businesses, escalating order capacity from 75 to 25,000 orders per day. This transformative OMS caters to D2C, B2C, and B2B sectors and is designed to seamlessly integrate with major e-commerce platforms, carriers, CRMs & data warehouses, making it the last OMS you'll ever need.\n\nBenefit from earning up to 40% commission on first-year revenues with an average deal size ranging from \u00a310,000 to \u00a3100,000 annually. Modulus365 is a proud Creatum.com product, offering robust, ERP-agnostic solutions with turnkey integrations into Carriers, CRMs & Data Platforms.\n\n\t\nUSP:\u00a0\n\nModulus365 is crafted by industry veterans with over 40 years of combined experience in retail technology. Under the leadership of Shiva Kumar, a luminary recognized among the TOP 100 CIOs in the UK for 2014 and 2015, our product is designed to turbocharge growth for high-velocity businesses and enhance operational efficiency for cost-conscious companies.\n\nOur collaboration with eveSleep, a mattress company, showcases our capability: we facilitated their growth from \u00a33.4m to \u00a316m and expansion into 14 countries within just 12 months. This was achieved by seamlessly integrating multiple 3PLs, distributors, and carriers, demonstrating our exceptional implementation speed of 2-4 weeks\u2014far ahead of industry norms.\n\nOpportunity for Sales Professionals:If you have senior-level contacts in retail companies with a turnover of \u00a32m ",
+      "fetched_at": "2026-06-15T20:14:33.465317+00:00"
+    },
+    {
+      "opportunity_id": "14618",
+      "fit_score": 57,
+      "score_reasons": [
+        "High commission (30.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: b2b, saas",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "b2b",
+        "saas"
+      ],
+      "search_queries": [
+        "recurring revenue"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Timely B2B SaaS Sales Opportunity in Leading Niche Comms Business 30% Comm + Monthly Residuals - short selling cycle",
+      "commission_percent": 30.0,
+      "residual_terms": true,
+      "territory": "Exclusive territory available\tYes",
+      "description": "We're a small established B2B software company with a prestigious global client list. To date all sales have come through SEO and organic activity with no pro-active outreach.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/14618",
+      "category": "SaaS / Software",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nTimely B2B SaaS Sales Opportunity in Leading Niche Comms Business 30% Comm + Monthly Residuals - short selling cycle\nShort summary\n\n\nWe're a small established B2B software company with a prestigious global client list. To date all sales have come through SEO and organic activity with no pro-active outreach.\u00a0\n\nNewsletters are getting huge publicity and seeing a resurgence in popularity. This is an exciting time to be in the industry and as an established leader in our niche we want to capitalise on this opportunity.\n\nFlipRSS helps content publishers and communications teams connect with and engage their subscribers. It enables the automation of email newsletters using multiple RSS feeds to give our client's subscribers personalised content based on their specific interests and preferences. It is used by Government departments, leading education institutions, media outlets and publishers.\n\nFrom day one we've committed to donating 5% of sales to initiatives that benefit our wider community. This is an important part of being in business for us and we strive to maintain a low impact operation with high community and ethical values.\n\nWe are ambitious and looking to partner with and reward the right people to help us achieve our goals. We are looking for sales agents to sell on a regular basis or for referrals where existing clients fit.\n\n\t\nUSP:\u00a0\n\nOur small size and hands on service ensure we have a high conversion rate and high retention rate of clients.\u00a0\n\nFlipRSS provides businesses who offer a newsletter service with the only way to automate multiple RSS feeds through Mailchimp. This enables subscribers to re",
+      "fetched_at": "2026-06-15T20:14:40.479109+00:00"
+    },
+    {
+      "opportunity_id": "17031",
+      "fit_score": 57,
+      "score_reasons": [
+        "High commission (100.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: cloud, recurring",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "cloud",
+        "recurring"
+      ],
+      "search_queries": [
+        "software"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "100% Upfront + 2% Lifetime Recurring! Bespoke Managed IT Solutions (Managed Kubernetes, Servers, Cloud) | EUR 121,000+/Year | 99% Customer Satisfaction",
+      "commission_percent": 100.0,
+      "residual_terms": true,
+      "territory": "Further territory details\tThere are no territory limits, though English is the preferred language for support.",
+      "description": "100% Upfront + 2% Lifetime Recurring! Bespoke Managed IT Solutions (Managed Kubernetes, Servers, Cloud) | EUR 121,000+/Year | 99% Customer Satisfaction",
+      "principal": "VSHosting",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/17031",
+      "category": "",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\n100% Upfront + 2% Lifetime Recurring! Bespoke Managed IT Solutions (Managed Kubernetes, Servers, Cloud) | EUR 121,000+/Year | 99% Customer Satisfaction\nShort summary\n\n\nSell our bespoke managed IT services with 99% customer satisfaction and earn up to EUR 121,000 or more in 12 months!\n\nIn this role, you\u2019ll be targeting retailers running their own e-commerce solutions, companies providing e-commerce solutions to clients, and any medium or large B2B company with an IT department.\n\nAs a full-cycle agent, you\u2019ll earn 100% of our EUR 2,000 setup fee and a 2% lifetime commission on our monthly recurring fee of EUR 3,000!\n\nWhen you close just one deal per week as a full-cycle agent, you could earn as much as EUR 121,000 or more in 12 months!\n\nAlternatively, you can simply qualify and refer prospects to us, and we\u2019ll close them for you. As a referral agent, you\u2019ll earn 50% of our setup fee and the same 2% lifetime commission. You could earn EUR 1,600 or more for every referral that turns into a deal!\n\n\t\nUSP:\u00a0\n\nVSHosting offers managed IT solutions with a 99% client satisfaction rate! We build tailor-made solutions for each individual customer while saving them money.\n\nWe operate own Data Ceter, 70+ IT expert, (Linux, Windows, VMWare, Veeam, AWS, Kubernetes, AI, GPU, ERP, Odoo), \u00a024/7, 100% up time since opening, part of Contabo group, 14 DCs on 4 continents, \u2026\n\nThe Basics\nCommission\t99.00%\nCommission details\tFull-cycle: 100% of setup fee and 2% lifetime monthly recurring residual; referral-only: 50% of setup fee and 2% lifetime\nOur industry\tInformation Technology & Services\nTarget industries\tComputer Games Computer",
+      "fetched_at": "2026-06-15T20:14:47.495076+00:00"
+    },
+    {
+      "opportunity_id": "17990",
+      "fit_score": 57,
+      "score_reasons": [
+        "High commission (25.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: ai, data",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "ai",
+        "data"
+      ],
+      "search_queries": [
+        "recurring revenue"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Up to 25% Commission + Great Bonuses | Sell Innovative Data Services (Augmented AI) + Web Development / Design",
+      "commission_percent": 25.0,
+      "residual_terms": false,
+      "territory": "Exclusive territory available\tYes",
+      "description": "We are Intuisco LTD \u00a0- a London-based digital agency and data company with an international network of smart creatives, talented developers and exceptional project managers.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/17990",
+      "category": "Data / Analytics",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nUp to 25% Commission + Great Bonuses | Sell Innovative Data Services (Augmented AI) + Web Development / Design\nShort summary\n\n\nWe are Intuisco LTD \u00a0- a London-based digital agency and data company with an international network of smart creatives, talented developers and exceptional project managers.\n\nWe provide innovative digital solutions in areas such as Data (AI), Augmented Analytics, Web and App Development & Design, E-Commerce, Digital Marketing, Branding and UX & UI.\n\nActivities:\n\n\u2022 Sentiment Analysis\n\u2022 Natural Language Processing\n\u2022 Time series analysis\n\u2022 Data collection, management and optimization of data analysis platforms\n\u2022 Development of semantic engines for cataloguing and searching in the corpus of digitized documents, magazines and newspapers\n\u2022 Tax and levy control systems\n\u2022 Design, implementation and management of web portals\n\u2022 Management and optimization of hosting platforms and web portals\n\u2022 Optimization and hardening of Web platforms\n\u2022 Creation and development of e-commerce platforms\n\nWe are looking for a dynamic, independent, self-motivated sales agent that can generate leads. You will also be available to cross-sell/up-sell to your clients. \u00a0\n\n\t\nUSP:\u00a0\n\nTwenty years of know-how flows into it as an endowment brought by the founding partner and R&D manager.\u00a0\n\n\nOur expertise is a mix of data analysis and web development, so we can offer great business development opportunities to our customers.\n\nOur achievements:\n\n764 Finished projects\n10 Business Partners\n98% Satisfied clients\n82% Returning clients\nThe Basics\nCommission\t20.00%\nCommission details\tSales profits up to \u00a320.000 earn 20% commiss",
+      "fetched_at": "2026-06-15T20:14:54.507199+00:00"
+    },
+    {
+      "opportunity_id": "19128",
+      "fit_score": 57,
+      "score_reasons": [
+        "High commission (30.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: data, platform",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "data",
+        "platform"
+      ],
+      "search_queries": [
+        "cybersecurity"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Storied Data Inc. - Powerful Platform Combining Graphic Design, Business Intelligence For Business Professionals - 30% Commission",
+      "commission_percent": 30.0,
+      "residual_terms": false,
+      "territory": "Further territory details\tWe have significant traction in North America and Europe",
+      "description": "Storied Data Inc. - Powerful Platform Combining Graphic Design, Business Intelligence For Business Professionals - 30% Commission",
+      "principal": "Storied Data Inc.",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/19128",
+      "category": "SaaS / Software / Data / Analytics",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nStoried Data Inc. - Powerful Platform Combining Graphic Design, Business Intelligence For Business Professionals - 30% Commission\nShort summary\n\n\nSoftware for creation and distribution of digital documents such as reports, dashboards, infographics, visualizations, financial statements, product brochures, survey results, web pages, mobile content, etc. A single platform combining graphic design, business intelligence, and no code development for business professionals (managers, marketers, designers, business analysts) to create a wide variety of interactive and insightful documents. It is the only platform on the market that allows enterprises to distribute the same document across all channels - email, web and mobile, in a very cost effective way.\n\n\t\nUSP:\u00a0\nWe makes internal and external reporting applications more efficient, cost effective, and user friendly. Up to 90% cost savings on operational and customer-facing, large scale reporting. We turn external reporting into a marketing tool.\nOur unique pixel-perfect, interactive HTML allows companies to replace static PDFs, inefficient HTMLs, and CSV data dumps with a modern user-friendly enhance HTML.\nCompressed interactive documents and dashboards can be emailed or embedded in web and mobile apps. Interactive documents can be used online or offline.\nCost reduction as you generate reports 10x faster compared to PDF, eliminate Business Intelligence end-user licenses, lower server burn and maintenance.\nLess resource intensity \u2013 developers, programmers, DBAs, ETL specialists, administrators.\nThe Basics\nCommission\t30.00%\nOur industry\tComputer Software\nTarget in",
+      "fetched_at": "2026-06-15T20:15:01.536606+00:00"
+    },
+    {
+      "opportunity_id": "30688",
+      "fit_score": 57,
+      "score_reasons": [
+        "Solid commission (20.0%)",
+        "No residual terms",
+        "Global territory",
+        "B2B keyword match: ai, enterprise",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "ai",
+        "enterprise"
+      ],
+      "search_queries": [
+        "AI"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "20% Commission | AI-Driven Inclusivity Tool for E-Commerce | Global SME - Shopify - Enterprise Clients",
+      "commission_percent": 20.0,
+      "residual_terms": false,
+      "territory": "Exclusive territory available\tNo",
+      "description": "Reflekt Me is a VC-backed, AI-powered SaaS platform that helps e-commerce brands increase conversions and engagement through inclusive shopping experiences. By allowing online customers to \u201cpreview it\u201d on real people matching their size, skin tone, and hair texture, Reflekt Me bridges the gap between aspirational social content and uninspiring product pages.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/30688",
+      "category": "SaaS / Software / AI / ML",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\n20% Commission | AI-Driven Inclusivity Tool for E-Commerce | Global SME - Shopify - Enterprise Clients\nShort summary\n\n\nReflekt Me is a VC-backed, AI-powered SaaS platform that helps e-commerce brands increase conversions and engagement through inclusive shopping experiences. By allowing online customers to \u201cpreview it\u201d on real people matching their size, skin tone, and hair texture, Reflekt Me bridges the gap between aspirational social content and uninspiring product pages.\n\nHaving launched a successful $70K pilot with Levi\u2019s (increasing conversion rates by 75%), Reflekt Me is now scaling through direct Shopify integrations and enterprise deals.\n\nWe\u2019re looking for experienced sales agents with strong networks in fashion, e-commerce, or SaaS who can close mid-market and enterprise brands or help expand private integrations.\n\n\t\nUSP:\u00a0\n\nReflekt Me is a VC-backed, AI-powered SaaS platform that enables e-commerce brands to deliver radically inclusive and personalized shopping experiences. By showcasing REAL PEOPLE of every size, skin tone, and hair texture using every product variation\u2014directly on product landing pages\u2014Reflekt Me turns static pages into dynamic, conversion-driving storefronts.\n\nOur technology ensures that 100% of online shoppers see themselves represented in your clients brand\u2014building trust, boosting engagement, and lifting sales performance.\n\nWhy Reflekt Me Stands Out:\n\nTotal Shopper Inclusion: Customers see themselves in your products, which leads to deeper emotional connection and buying confidence.\n\nOn-Site Personalization: No redirects or third-party tools\u2014preview experiences are embedded",
+      "fetched_at": "2026-06-15T20:15:08.551391+00:00"
+    },
+    {
+      "opportunity_id": "8489",
+      "fit_score": 57,
+      "score_reasons": [
+        "High commission (30.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: ai, enterprise",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "ai",
+        "enterprise"
+      ],
+      "search_queries": [
+        "automation"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Training Content For Educators and Enterprises - Sell Business Support Videos Online At 30 % Commission",
+      "commission_percent": 30.0,
+      "residual_terms": false,
+      "territory": "Exclusive territory available\tNo",
+      "description": "At Animations Media, we transform ideas into striking visual narratives. We specialize in producing compelling explainer videos, engaging corporate presentations, and dynamic training content\u2014along with a wide array of animated solutions. Our commitment to exceptional visual storytelling is designed to drive tangible business results.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/8489",
+      "category": "AI / ML",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nTraining Content For Educators and Enterprises - Sell Business Support Videos Online At 30 % Commission\nShort summary\n\n\nJoin Forces with Animations Media \u2013 Experts in Motion Design & Animation!\n\nUnlock high earnings and limitless opportunities by selling high-impact video solutions with Animations Media!\n\nAt Animations Media, we transform ideas into striking visual narratives. We specialize in producing compelling explainer videos, engaging corporate presentations, and dynamic training content\u2014along with a wide array of animated solutions. Our commitment to exceptional visual storytelling is designed to drive tangible business results.\n\nWe are a passionate animation studio specializing in visually captivating storytelling through a diverse range of products and services, including 2D Animation, Isometric Animation, 3D Animation, Whiteboard Animation, Motion Graphics, Cut-out Animation, Screencast Videos, Kinetic Typography, Live-Action Videos, Stop Motion Animation, Mixed Media, Interactive Videos, UI Animation, and Logo Animation. Our portfolio is designed to meet every need\u2014from engaging explainer and corporate videos to dynamic training content and digital interface demonstrations.\n\nWe take pride in delivering exceptional content across industries, working with startups, Fortune 500 companies, and global enterprises. Some of our success stories include:\n\nClickFunnels \u2013 Crafted over 10 high-impact promo ads to elevate their video marketing efforts, driving engagement and conversions.\n\nIndusInd Bank \u2013 Developed secure, confidential training videos that improved employee comprehension and compliance.\n\nDelo",
+      "fetched_at": "2026-06-15T20:15:15.568123+00:00"
+    },
+    {
+      "opportunity_id": "15256",
+      "fit_score": 56,
+      "score_reasons": [
+        "High commission (30.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: platform",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "platform"
+      ],
+      "search_queries": [
+        "B2B SaaS"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Anonymous Incident Reporting and Case Management platform offering 20-30% commission and 15% on annual renewals for the lifetime of client.",
+      "commission_percent": 30.0,
+      "residual_terms": true,
+      "territory": "Exclusive territory available\tYes",
+      "description": "Anonymous Incident Reporting and Case Management platform offering 20-30% commission and 15% on annual renewals for the lifetime of client.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/15256",
+      "category": "SaaS / Software",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nAnonymous Incident Reporting and Case Management platform offering 20-30% commission and 15% on annual renewals for the lifetime of client.\nShort summary\n\n\nEmployee Confidential\u00a0is an online and mobile platform that provides employees with an anonymous reporting system for incidents. For example: discrimination, harassment, fraud, theft and workplace safety.\u00a0\n\nCampus Confidential provides students, faculty and employees a safe and anonymous reporting system for incidents. For example: hazing, alcohol and drug abuse, harassment, violence, bullying and suicide ideation.\u00a0\n\nThe EU Whistleblower Directive\u00a0now mandates that EU companies with 250+ employees (and 50+ employees in 2023) implement an internal whisleblower solution. See attached documents.\u00a0\n\nBoth platforms have a:\u00a0\n\nReporter Dashboard for employees (or students) to check on case status, correspond anonymously with HR personal at the company and add additional evidence or information.\u00a0\nAn Incident Management solution for companies to investigate and resolve cases. \u00a0This includes messaging, tasks, investigation management and analytics. The analytics help track and report on behaviors, organizational influences and environmental factors that drive misconduct.\u00a0\n\nCommission Structure:\n\nCLOSERS: 20% for closed new sales and 10% for renewals\u00a0\nBUSINESS DEVELOPERS:\u00a0\n\u00a020-30% commission on all closed business.\u00a0\n15% on annual renewals for the lifetime of the client. (95% clients renew for 6+ years)\n10% annual commission on all partner/reseller closed business ($50K -$1M per annum deals).\u00a0\n10% annual commission on qualified referrals that we close.\u00a0\n\nWe are seek",
+      "fetched_at": "2026-06-15T20:15:22.588415+00:00"
+    },
+    {
+      "opportunity_id": "16296",
+      "fit_score": 56,
+      "score_reasons": [
+        "High commission (25.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: software",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "software"
+      ],
+      "search_queries": [
+        "recurring revenue"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "25% Lead Gen Commissions! High-Value Custom Software Development | We\u2019ll Help You Build a Network | Set Your Own Prices and Earn Even More",
+      "commission_percent": 25.0,
+      "residual_terms": false,
+      "territory": "Exclusive territory available\tNo",
+      "description": "25% Lead Gen Commissions! High-Value Custom Software Development | We\u2019ll Help You Build a Network | Set Your Own Prices and Earn Even More",
+      "principal": "Tecocraft Ltd",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/16296",
+      "category": "SaaS / Software",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\n25% Lead Gen Commissions! High-Value Custom Software Development | We\u2019ll Help You Build a Network | Set Your Own Prices and Earn Even More\nShort summary\n\n\nGenerate qualified leads for our high-value custom software development services and earn lucrative 25% commissions with residuals!\n\nOur ideal prospects fall into two primary categories:\n\nB2B IT companies that recruit and staff outsourced development projects\nStartups with series-level funding\n\nWe are prepared to work with companies in any industry, though we have ready-made projects that can be implemented with minimal cost for companies in retail, food service and logistics.\n\nYou\u2019ll earn a generous 25% commission for every qualified lead you generate that our team closes. As an example, you could earn \u00a3750 per month for placing just one dedicated senior developer. Residual commissions are also available with conditions to be determined.\n\n\t\nUSP:\u00a0\n\nTecocraft is a full-fledged digital agency that provides top-quality web and mobile apps, custom software development, UX design and digital marketing. We bring an in-house team of more than 75 professionals.\n\nOur competitive advantage is our ability to produce professional-quality bespoke solutions at a lower cost. We're making it affordable for businesses to build their own platforms and get into the tech game. Additionally, our 6-step process and ability to meet clients\u2019 requirements make our business one-of-a-kind.\n\nWe are well-recognized for providing end-to-end IT consulting and support services to help clients grow their businesses overseas. We do not only focus on providing top-quality products and ser",
+      "fetched_at": "2026-06-15T20:15:29.604504+00:00"
+    },
+    {
+      "opportunity_id": "18798",
+      "fit_score": 56,
+      "score_reasons": [
+        "High commission (25.0%)",
+        "No residual terms",
+        "Global territory",
+        "B2B keyword match: saas"
+      ],
+      "matched_keywords": [
+        "saas"
+      ],
+      "search_queries": [
+        "cybersecurity"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "SaaS Communication, Global Sales Opportunity \u2013 High Commission Rates (25%+)",
+      "commission_percent": 25.0,
+      "residual_terms": false,
+      "territory": "Exclusive territory available\tNo",
+      "description": "CINNOX is made of a collective of individuals driven by success while motivating and supporting one another to cultivate an environment of encouragement and trust. We are committed to continuous improvement through innovation, curiosity and creativity to help businesses compete and win by humanising customer and employee connections. We have a team that supports each other grows together. By working together, our achievements are magnified.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/18798",
+      "category": "",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nSaaS Communication, Global Sales Opportunity \u2013 High Commission Rates (25%+)\nShort summary\n\n\nCINNOX is made of a collective of individuals driven by success while motivating and supporting one another to cultivate an environment of encouragement and trust. We are committed to continuous improvement through innovation, curiosity and creativity to help businesses compete and win by humanising customer and employee connections. We have a team that supports each other grows together. By working together, our achievements are magnified.\n\n\t\nUSP:\u00a0\n\nOur wealth of experience and Carrier-Grade Telecommunications Infrastructure separates us from everyone else.\n\nThe Basics\nCommission\t25.00%\nCommission details\t25% and up\nOur industry\tInformation Technology & Services\nTarget industries\tAirlines/Aviation Apparel & Fashion Banking Consumer Electronics Consumer Goods Entertainment Insurance Luxury Goods & Jewelry\nTerritories\tGlobal\nSelling method\tOnline Demos\nMinimum sales experience required\t3years\u2019 sales experience in IT, telecommunication, internet ormobile apps industries or related fields is required\nIndustry experience required\tYes\nDetails\nLeads provided\tNo\nAverage deal value:\t50,000 to 100,000 (US Dollar)\nRepeat customer spend:\t10,000 to 50,000 (US Dollar)\nExclusive territory available\tNo\nAverage sales cycle\tWeeks\nPayment terms\tInvoices are due within 30 days, agents receive commissions 30 days +7\nCustomer type\tB2B\nProducts & Services\nCommunication Customer engagement Customer Experience Omnichannel SaaS Saas b2b\nAbout the opportunity\n\nJOB RESPONSIBILITIES:\n\nGenerate sales independently and follow the corporate direc",
+      "fetched_at": "2026-06-15T20:15:36.617249+00:00"
+    },
+    {
+      "opportunity_id": "6655",
+      "fit_score": 56,
+      "score_reasons": [
+        "Solid commission (20.0%)",
+        "No residual terms",
+        "Global territory",
+        "B2B keyword match: software",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "software"
+      ],
+      "search_queries": [
+        "cybersecurity"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Software Sales Opportunity Targeting Industrial Small and Medium Size Companies Globally - 20% to 80% Commission",
+      "commission_percent": 20.0,
+      "residual_terms": false,
+      "territory": "Exclusive territory available\tYes",
+      "description": "Artintech ERP Software allows our clients to streamline their operations seamlessly. Whether in manufacturing, supply chain, maintenance, industrial services, or any other department, our modular system empowers companies to pick and choose the modules they need. Moreover, with Artintech ERP, you can adapt to your unique business requirements without paying extra for the modules you don\u2019t need.",
+      "principal": "Artintech",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/6655",
+      "category": "SaaS / Software / AI / ML / Services",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nSoftware Sales Opportunity Targeting Industrial Small and Medium Size Companies Globally - 20% to 80% Commission\nShort summary\n\n\nArtintech ERP Software allows our clients to streamline their operations seamlessly. Whether in manufacturing, supply chain, maintenance, industrial services, or any other department, our modular system empowers companies to pick and choose the modules they need. Moreover, with Artintech ERP, you can adapt to your unique business requirements without paying extra for the modules you don\u2019t need.\u00a0\n\nWhatever combination your clients use, all modules will work on a fully integrated and easy-to-use platform. Currently, the following modules are available:\n\nProduction and BOM\nQuality Inspection\nNon-Conformance and CAPA\nProcurement\nSales and Distribution\nInvoicing\nWarehouse Management and Inventory Control\nAudit Control\nTraining Control\nDocument Control\nWorkplace Safety Control\nProject Control (integrated with inventory)\nMaintenance Management System\nCalibration Management\nVendor Management\n\t\nUSP:\u00a0\n\nEmpowering Manufacturing, Supply Chain, and Industrial Services! An all-in-one integrated software with cutting-edge features and user-friendly tools designed to streamline your business processes and boost productivity.\n\nArtintech ERP has several integrated modules, including Supply Chain Management, Quality Management, Maintenance Management, Workplace Safety, and more.\u00a0\nOur system is cloud-based, so managers can access reports from anywhere through secure access.\u00a0\nOur system can integrate with their accounting systems, including QuickBooks.\nOur system will give them several staff access l",
+      "fetched_at": "2026-06-15T20:15:43.632933+00:00"
+    },
+    {
+      "opportunity_id": "8958",
+      "fit_score": 56,
+      "score_reasons": [
+        "High commission (30.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: recurring",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "recurring"
+      ],
+      "search_queries": [
+        "business services"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Help SME Companies to Transform their Business by Buying Affordable Transformation Packages (100+ Hrs)! 30% Recurring LIFETIME Commission!",
+      "commission_percent": 30.0,
+      "residual_terms": true,
+      "territory": "Exclusive territory available\tNo",
+      "description": "Help SME Companies to Transform their Business by Buying Affordable Transformation Packages (100+ Hrs)! 30% Recurring LIFETIME Commission!",
+      "principal": "We offer simple Lean & 6 Sigma based Business Improvement strategies to resolve their Business as Usual (BAU) \u00a0issues at around 1/10 of the cost of what Big 4 Consulting firms charge in the market.",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/8958",
+      "category": "",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nHelp SME Companies to Transform their Business by Buying Affordable Transformation Packages (100+ Hrs)! 30% Recurring LIFETIME Commission!\nShort summary\n\n\nDo you know any SMB who wants to uplift their Profit/Revenue by Proven Transformation Techniques?\n\n6 Sigma Consulting is on a mission to empower businesses to get rid of their business-related problems via the power of lean \u00a06 Sigma and Automation. In \"layman terms\", we are a company that specialises in transformation and management consulting.\u00a0\n\nIn other words, we help businesses to achieve their aspirations and business objectives, whether they are struggling, or want to scale up!\n\nWe offer fantastic and bespoke 100/500Hr Transformation Packages, from which you can earn USD 8K-50k in 1 shot! Our clients typically repurchase the same packages, meaning that you could also be earning between USD 5K-50k residuals PER CLIENT!\n\n\t\nUSP:\u00a0\n\nWe operate in Blue ocean where we are not \u201cDifferent\u201d but \u21d2 UNIQUE in our class by :\u00a0\n\nCustomer profitability always first i.e. his requirements, concerns, expectations & interests(RICE) are always first.\n\nNot only we meet but Exceed clients expectations.\n\nAccountable Success partnership with clients.\n\nContinuous Improvement always: we improve our own benchmark for clients.\n\nPure outcome in numbers ($ Value), No Frills. Our Solution based services based on. I.e. we provide min-300% -900% ROI.\n\nData driven productive and profitable solution specific to our client.\u00a0\n\nWe sell Lean 6 Sigma as Problem solving methodology to fix any problem, anytime, anywhere.\u00a0\n\nWe resolve business problems by engaging you (IBC) \u00a0in a structured, d",
+      "fetched_at": "2026-06-15T20:15:50.645316+00:00"
+    },
+    {
+      "opportunity_id": "24464",
+      "fit_score": 55,
+      "score_reasons": [
+        "High commission (40.0%)",
+        "No residual terms",
+        "Global territory",
+        "Brief description"
+      ],
+      "matched_keywords": [],
+      "search_queries": [
+        "AI"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Earn $900\u2013$2,000+ Per Order | 30\u201340% Commissions | Innovative Oral Spray Vitamins | Global Opportunity.",
+      "commission_percent": 40.0,
+      "residual_terms": true,
+      "territory": "Earn $900\u2013$2,000+ per wholesale order selling innovative oral spray supplements with 30\u201340% commissions and long-term recurring reorders from clinics and pharmacies worldwide.",
+      "description": "Earn $900\u2013$2,000+ per wholesale order selling innovative oral spray supplements with 30\u201340% commissions and long-term recurring reorders from clinics and pharmacies worldwide.",
+      "principal": "Nutrioz Ltd.",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/24464",
+      "category": "",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nEarn $900\u2013$2,000+ Per Order | 30\u201340% Commissions | Innovative Oral Spray Vitamins | Global Opportunity.\nShort summary\n\n\nEarn $900\u2013$2,000+ per wholesale order selling innovative oral spray supplements with 30\u201340% commissions and long-term recurring reorders from clinics and pharmacies worldwide.\n\nYou\u2019ll introduce Nutrioz\u2019s precision oral spray vitamins to pharmacies, wellness clinics, IV therapy centers, gyms, and health retailers looking for differentiated, high-margin supplement products. The concept is simple and compelling: no swallowing, fast absorption, and clean formulations manufactured in a certified U.S. facility.\n\nA typical first order ranges from $3,000\u2013$5,000, allowing you to earn $900\u2013$2,000+ per deal depending on volume tier. With commissions starting at 30% and scaling to 40%, your earning power increases as your accounts grow.\n\nBecause supplements are consumed daily, most clinics reorder monthly or every two months. You earn full commissions on every repeat order for as long as the account remains active, creating meaningful residual income.\n\nYou are welcome to operate globally and build your own market. This is a flexible, scalable B2B opportunity in a fast-growing wellness category.\n\n\t\nUSP:\u00a0\n\nNutrioz is pioneering a new category of vitamin delivery through Molecular Spray Technology\u00ae. Instead of relying on traditional tablets and capsules, we deliver nutrients via precision oral sprays absorbed directly through the mouth lining.\n\nEach spray is carefully formulated with non-GMO ingredients and manufactured in a certified U.S. cGMP facility. Our products are designed for consistent dosing, ",
+      "fetched_at": "2026-06-15T20:15:57.663329+00:00"
+    },
+    {
+      "opportunity_id": "30935",
+      "fit_score": 55,
+      "score_reasons": [
+        "High commission (30.0%)",
+        "No residual terms",
+        "Global territory",
+        "Brief description"
+      ],
+      "matched_keywords": [],
+      "search_queries": [
+        "AI"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Global VFX Sales Opportunity: Feature Film & Commercial Post-Production Services Commissions up to 30 % + bonus",
+      "commission_percent": 30.0,
+      "residual_terms": false,
+      "territory": "Exclusive territory available\tNo",
+      "description": "Binary Circus is a dynamic visual effects studio specializing in high-end post-production services for feature films and television commercials. With over 18 years of combined industry experience, our team excels in delivering exceptional VFX solutions, including CG creatures, simulations, set extensions, and more. Our end-to-end services encompass consulting, animation, and visualization, ensuring a seamless creative process from concept to final delivery.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/30935",
+      "category": "Services",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nGlobal VFX Sales Opportunity: Feature Film & Commercial Post-Production Services Commissions up to 30 % + bonus\nShort summary\n\n\nBinary Circus is a dynamic visual effects studio specializing in high-end post-production services for feature films and television commercials. With over 18 years of combined industry experience, our team excels in delivering exceptional VFX solutions, including CG creatures, simulations, set extensions, and more. Our end-to-end services encompass consulting, animation, and visualization, ensuring a seamless creative process from concept to final delivery.\u00a0\n\nLeveraging cutting-edge technology and a team of skilled artists, we transform visionary ideas into captivating visual narratives. We are seeking global sales agents to expand our reach and connect with clients requiring top-tier VFX services. This opportunity is ideal for professionals eager to represent a studio committed to excellence and innovation in visual storytelling.\n\n\t\nUSP:\u00a0\n\nBinary Circus stands out as a premium visual effects studio dedicated to crafting high-impact imagery for feature films and commercials. With a team of experienced professionals and a strong commitment to creative excellence, we consistently deliver work that meets global standards. Below are the key differentiators that set us apart in the competitive VFX landscape:\n\n\n\n\nEnd-to-End VFX Solutions\nBinary Circus offers comprehensive visual effects services, encompassing consulting, animation, and visualization. This holistic approach ensures a seamless creative process from concept to final delivery.\u00a0\n\nExperienced Creative Leadership\nWith over 18 ",
+      "fetched_at": "2026-06-15T20:16:04.679273+00:00"
+    },
+    {
+      "opportunity_id": "15343",
+      "fit_score": 52,
+      "score_reasons": [
+        "Solid commission (20.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: ai, recurring",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "ai",
+        "recurring"
+      ],
+      "search_queries": [
+        "data"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "Providing US New Car Dealers with Better Quality Leads-Be Paid as a Hunter AND Farmer with 20% COMM+Recurring+Upsells \u2013 Short Sales Cycle!",
+      "commission_percent": 20.0,
+      "residual_terms": true,
+      "territory": "Exclusive territory available\tNo",
+      "description": "Providing US New Car Dealers with Better Quality Leads-Be Paid as a Hunter AND Farmer with 20% COMM+Recurring+Upsells \u2013 Short Sales Cycle!",
+      "principal": "CarHive is a next generation pay per lead platform helping new car dealers throughout the U.S. get better quality, vetted sales leads at scale. Our proprietary technology delivers targeted, ready-to-b",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/15343",
+      "category": "AI / ML",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\nProviding US New Car Dealers with Better Quality Leads-Be Paid as a Hunter AND Farmer with 20% COMM+Recurring+Upsells \u2013 Short Sales Cycle!\nShort summary\n\n\nWHO WE ARE:\n\nCarHive is a next generation pay per lead platform helping new car dealers throughout the U.S. get better quality, vetted sales leads at scale. Our proprietary technology delivers targeted, ready-to-buy car shoppers with no long-term commitment and no monthly retainer. Dealers don\u2019t have to wade through bad leads anymore\u2026CarHive is here to save them time and help them sell more cars.\n\nWHO YOU ARE:\n\nA polished and enthusiastic sales pro who has mastered the art of the consultative phone sale. You are driven by a top-shelf pay plan and you take pride in nurturing the relationships necessary to build your \u2018book of business\u2019. You know activity drives results and you\u2019re not afraid to put in the effort every day. You\u2019re disciplined, organized, and ready to be part of a fun and supportive team.\n\nWHAT YOUR DAY WILL LOOK LIKE:\n\nYou will be calling out to US-based new car dealers and walking them through the opportunity to buy a minimum of 100+ leads or more each month. Each day you will call and work through our CRM with no set territories\u2026you choose the markets you want to call. After onboarding, you manage the account and foster the relationship necessary to grow their monthly spend.\n\n\t\nUSP:\u00a0\n\nCarHive provides better quality, thoroughly vetted leads at scale to new car dealers nationwide through a targeted and proprietary system, delivering on a promise to bring ready-to-buy car buyers to dealers who are paying too much for bad leads (fake phone nu",
+      "fetched_at": "2026-06-15T20:16:11.695172+00:00"
+    },
+    {
+      "opportunity_id": "16021",
+      "fit_score": 52,
+      "score_reasons": [
+        "Solid commission (20.0%)",
+        "No residual terms",
+        "Territory: north_america",
+        "B2B keyword match: recurring, saas",
+        "Brief description"
+      ],
+      "matched_keywords": [
+        "recurring",
+        "saas"
+      ],
+      "search_queries": [
+        "B2B SaaS"
+      ],
+      "query_overlap_count": 1,
+      "title": "CommissionCrowd",
+      "commission_text": "20% Recurring Commission! Sell \u00a365/Mo CDM 2015 SaaS to UK Principal Designers | Fast Closures | Exclusive Territory",
+      "commission_percent": 20.0,
+      "residual_terms": true,
+      "territory": "20% Recurring Commission! Sell \u00a365/Mo CDM 2015 SaaS to UK Principal Designers | Fast Closures | Exclusive Territory",
+      "description": "Earn 20% recurring commission selling a \u00a365/month CDM 2015 SaaS platform to UK Principal Designers who legally must manage compliance\u2014fast sales cycles, defined niche, exclusive territory.",
+      "principal": "",
+      "website_url": "",
+      "source_url": "https://www.commissioncrowd.com/app/#/opportunities/16021",
+      "category": "SaaS / Software",
+      "raw_text_sample": "CommissionCrowd\nsearch Find opportunities\nsearch Search everything\n \nadd Quick add\n  What's new star check calendar avatars document chat\n3\n notification settings\ndashboard Dashboard\nforward Pipeline\nclock Activity\nbullseye Leads\nmoneybag Opportunities\noutbox Applications\npricetag Invoices\nopenbook Training\ncompass Setup guide\ninfo Take the tour\nhelp Help centre\n\u00a0\n20% Recurring Commission! Sell \u00a365/Mo CDM 2015 SaaS to UK Principal Designers | Fast Closures | Exclusive Territory\nShort summary\n\n\nEarn 20% recurring commission selling a \u00a365/month CDM 2015 SaaS platform to UK Principal Designers who legally must manage compliance\u2014fast sales cycles, defined niche, exclusive territory.\n\nYou\u2019ll target Principal Designers, CDM Consultants, and Health & Safety leads inside architectural and construction-focused firms across the UK. These professionals are legally responsible for structured CDM documentation, yet many still rely on fragmented manual systems.\n\nYour role is to prospect and book qualified demos. We join the call, run the live walkthrough, and support the close. Prospects can activate a free project immediately, reducing buying resistance.\n\nAt \u00a365 average MRR, you earn \u00a313 per month per subscriber, or \u00a3156 across the first 12 months. With sales cycles measured in days and no heavy IT integration required, you can build a recurring commission base quickly and predictably.\n\n\t\nUSP:\u00a0\n\nMosaic App Limited is a SaaS company built by CDM professionals who were frustrated with fragmented tools and manual processes. We didn\u2019t build another file-sharing platform\u2014we built a structured CDM framework.\n\nThe software replaces spreadsheets, shared folders, and email chains with a purpose-built system designed specifically for CDM 2015 compliance. It allows Principal Designers to demonstrate the compliance work done\u2014not just produce final documents.\n\nOur proprietary HARI wizard-based Risk Identification tool creates structured, auditable Risk Registers with guided workflows. Combin",
+      "fetched_at": "2026-06-15T20:16:18.713204+00:00"
+    }
+  ],
+  "errors": []
+}

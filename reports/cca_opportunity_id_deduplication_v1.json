@@ -1,0 +1,57 @@
+{
+  "mission_id": "cca_opportunity_id_deduplication_fix_v1",
+  "project": "commission-crowd-agent",
+  "repo_path": "/home/ubuntu/projects/commission-crowd-agent",
+  "status": "complete",
+  "date": "2026-06-15",
+  "commit_before": "160ff1f0531ad0d5b26e73a923d20233817382fb",
+  "head_equals_origin_master": true,
+  "mvp_tag_unchanged": true,
+  "deduplication": {
+    "strategy": "opportunity_id_primary_title_fallback",
+    "before_count": 320,
+    "after_count": 320,
+    "distinct_opportunity_ids": 320,
+    "distinct_titles": 320,
+    "merged_by_opportunity_id": 0,
+    "title_fallback_missing_id": 0,
+    "records_missing_opportunity_id": 0,
+    "garbage_entries_filtered": 0,
+    "protected_ids_excluded": 6,
+    "crm_matches_excluded": 0
+  },
+  "quality_gates": {
+    "ruff": "All checks passed",
+    "pytest": "544 passed",
+    "mypy": "1 pre-existing error in reconcile_inventory.py:138 (unrelated)",
+    "secret_scan": "Clean"
+  },
+  "files_changed": [
+    "scripts/reconcile_inventory.py",
+    "src/commission_crowd_agent/state_registry.py",
+    "tests/test_browser_discovery.py"
+  ],
+  "safety_gates": {
+    "crm_write": false,
+    "google_sheets_write": false,
+    "approval_creation_or_modification": false,
+    "application_submission": false,
+    "platform_message": false,
+    "external_email": false,
+    "telegram_send": false,
+    "cover_letter_action": false,
+    "favourite_or_shortlist_action": false,
+    "state_changing_opportunity_click": false,
+    "git_tag_change": false,
+    "force_push": false,
+    "secret_printed": false
+  },
+  "report_paths": {
+    "markdown": "/home/ubuntu/hermes-control/reports/cca_opportunity_id_deduplication_v1.md",
+    "json": "/home/ubuntu/hermes-control/reports/cca_opportunity_id_deduplication_v1.json",
+    "net_new_candidates": "/home/ubuntu/hermes-control/reports/cca_net_new_candidates.json",
+    "reconciliation_report": "/home/ubuntu/hermes-control/reports/cca_reconciliation_report.md",
+    "state_registry": "/home/ubuntu/hermes-control/reports/cca_state_registry.json"
+  },
+  "recommended_next_action": "Qualify the 320 net-new candidates, then perform operator-approved card-click detail capture for shortlisted candidates before any CRM write or approval creation."
+}
