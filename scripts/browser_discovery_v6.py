@@ -341,8 +341,8 @@ def _navigate_to_find_opportunities(page) -> None:
     try:
         page.click("text=Find opportunities", timeout=10000)
     except Exception:
-        page.evaluate("window.location.hash = 'agent/opportunities/search_opportunities'")
-    page.wait_for_timeout(4000)
+        page.evaluate("window.location.hash = '#/agent/opportunities/search_opportunities'")
+    page.wait_for_timeout(5000)
 
 
 def _js_click(page, selector: str) -> bool:
@@ -363,22 +363,44 @@ def _extract_find_opportunities(
     if navigate:
         _navigate_to_find_opportunities(page)
 
-    # Check if we got an actual search shell or error
-    body_preview = page.evaluate("() => document.body.innerText.slice(0, 300)")
-    has_error = (
-        "There were errors" in body_preview
-        or "404 NOT FOUND" in body_preview
-        or "server is not responding" in body_preview
-    )
-    has_shell = (
-        "Advanced search" in body_preview
-        or "Search by company name" in body_preview
-        or "Target industries" in body_preview
-    )
+    has_error = False
+    has_shell = False
+    # Check if we got an actual search shell or error; allow one settle-and-retry
+    for attempt in range(2):
+        body_preview = page.evaluate("() => document.body.innerText.slice(0, 500)")
+        has_error = (
+            "There were errors" in body_preview
+            or "404 NOT FOUND" in body_preview
+            or "server is not responding" in body_preview
+        )
+        has_shell = (
+            "Advanced search" in body_preview
+            or "Search by company name" in body_preview
+            or "Target industries" in body_preview
+            or "Search everything" in body_preview
+        )
+
+        if has_error and not has_shell and attempt == 0:
+            page.wait_for_timeout(3000)
+            continue
+        break
 
     if has_error and not has_shell:
         # Genuine platform error, not a loadable search page
         return []
+
+    # Clear any existing keyword field before entering the new query
+    if query:
+        page.evaluate(
+            """() => {
+                const inputs = document.querySelectorAll(
+                    'input[placeholder*="keyword" i],'
+                    + ' input[placeholder*="company" i],'
+                    + ' input#id-products-keyword, input[type="search"]'
+                );
+                for (const el of inputs) { el.value = ''; }
+            }"""
+        )
 
     # If search shell is present but results not loaded, trigger Search button
     results_present = page.evaluate("() => !!document.querySelector('.search-results .card')")
@@ -416,12 +438,12 @@ def _extract_find_opportunities(
                     search_btn.click()
                 except Exception:
                     _js_click(page, "button.carrot.stretch")
-                page.wait_for_timeout(6000)
+                page.wait_for_timeout(7000)
         except Exception:
             pass
 
     # Wait for spinner to disappear if present
-    for _ in range(10):
+    for _ in range(15):
         spinner_visible = page.evaluate(
             "() => !!document.querySelector('.loading-spinner, .spinner, .ember-loading')"
         )
@@ -491,7 +513,7 @@ def _extract_find_opportunities(
         if visible_next is None:
             break
         visible_next.click()
-        page.wait_for_timeout(4000)
+        page.wait_for_timeout(5000)
 
     return all_results
 

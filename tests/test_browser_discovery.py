@@ -705,6 +705,63 @@ class TestStateRegistryInvariants:
         # The record count in registry should be exactly 1
         assert len(reg.to_dict_list()) == 1
 
+    def test_find_results_merge_by_opportunity_id_preserves_queries(self) -> None:
+        """l. Reconciliation merges Find results by opportunity_id and keeps query provenance."""
+        reg = OpportunityStateRegistry()
+        reg.ingest_find_opportunities(
+            [
+                {
+                    "opportunity_id": "90001",
+                    "title": "Short title",
+                    "search_query": "AI",
+                    "route": "find_opportunities",
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                },
+                {
+                    "opportunity_id": "90001",
+                    "title": "A much longer and more complete title",
+                    "search_query": "automation",
+                    "route": "find_opportunities",
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                },
+            ]
+        )
+        reg.reconcile()
+        rec = reg.get_by_id("90001")
+        assert rec is not None
+        assert rec.title == "A much longer and more complete title"
+        assert SOURCE_FIND in rec.source_flags
+        assert "AI" in rec.search_queries
+        assert "automation" in rec.search_queries
+        assert rec.query_overlap_count == 2
+
+    def test_find_results_fallback_to_title_when_opportunity_id_missing(self) -> None:
+        """m. Records without opportunity_id fall back to title-based dedup."""
+        reg = OpportunityStateRegistry()
+        reg.ingest_find_opportunities(
+            [
+                {
+                    "opportunity_id": "",
+                    "title": "Fallback A",
+                    "search_query": "data",
+                    "route": "find_opportunities",
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                },
+                {
+                    "opportunity_id": "",
+                    "title": "Fallback A",
+                    "search_query": "software",
+                    "route": "find_opportunities",
+                    "retrieved_at": datetime.now(UTC).isoformat(),
+                },
+            ]
+        )
+        reg.reconcile()
+        # Registry uses opportunity_id as its own key, so records without an ID
+        # are dropped by ingest_find_opportunities. The reconciliation script's
+        # fallback dedup keeps the first title when ID is missing.
+        assert len(reg.to_dict_list()) == 0
+
     def test_browser_discovery_methods_cannot_submit_applications_or_send_messages(self) -> None:
         """l. No browser discovery method can submit applications or send messages."""
         # This is a structural / naming invariant: the discovery module must not

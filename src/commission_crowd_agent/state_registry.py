@@ -85,6 +85,9 @@ class OpportunityStateRecord:
     requires_operator_review: bool = False
     conflicts: list[str] = field(default_factory=list)
     provenance: list[dict[str, str]] = field(default_factory=list)
+    search_queries: list[str] = field(default_factory=list)
+    query_overlap_count: int = 1
+    opportunity_id_missing: bool = False
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
@@ -164,6 +167,9 @@ class OpportunityStateRecord:
             "requires_operator_review": self.requires_operator_review,
             "conflicts": self.conflicts,
             "provenance": self.provenance,
+            "search_queries": self.search_queries,
+            "query_overlap_count": self.query_overlap_count,
+            "opportunity_id_missing": self.opportunity_id_missing,
             "record_hash": self.record_hash(),
             "created_at": self.created_at,
             "updated_at": self.updated_at,
@@ -281,6 +287,12 @@ class OpportunityStateRegistry:
             rec.source_flags.add(SOURCE_FIND)
             if rec.lifecycle_state == LIFECYCLE_UNKNOWN:
                 rec.lifecycle_state = LIFECYCLE_DISCOVERED
+            # Merge multi-query provenance
+            query = item.get("search_query", "")
+            if query and query not in rec.search_queries:
+                rec.search_queries.append(query)
+                rec.query_overlap_count = len(rec.search_queries)
+            rec.opportunity_id_missing = False
             rec.add_provenance(
                 "find_opportunities",
                 item.get("route", ""),

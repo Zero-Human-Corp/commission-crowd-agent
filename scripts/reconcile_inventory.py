@@ -151,6 +151,59 @@ def main() -> int:
     find_items = inventory.get("find_opportunities", [])
     print(f"Find Opportunities candidates: {len(find_items)}")
 
+    # Deduplicate Find results by opportunity_id, preserving multi-query provenance.
+    # Title-string dedup is kept as a fallback when opportunity_id is missing.
+    merged_by_id: dict[str, dict[str, Any]] = {}
+    title_fallback_seen: set[str] = set()
+    title_fallback: list[dict[str, Any]] = []
+    merged_count = 0
+    fallback_count = 0
+
+    for item in find_items:
+        opp_id = item.get("opportunity_id", "")
+        title = item.get("title", "").strip()
+        query = item.get("search_query", "")
+
+        # Skip known-error / garbage entries first
+        if title in {"close", ""} or "There were errors" in item.get("full_text", ""):
+            continue
+
+        if opp_id:
+            if opp_id in merged_by_id:
+                existing = merged_by_id[opp_id]
+                # Merge search queries
+                existing.setdefault("search_queries", [existing.get("search_query", "")])
+                if query and query not in existing["search_queries"]:
+                    existing["search_queries"].append(query)
+                # Keep longest/most complete title
+                if len(title) > len(existing.get("title", "")):
+                    existing["title"] = title
+                existing["query_overlap_count"] = len(existing["search_queries"])
+                merged_count += 1
+            else:
+                merged_by_id[opp_id] = {
+                    **item,
+                    "search_queries": [query] if query else [],
+                    "query_overlap_count": 1,
+                    "opportunity_id_missing": False,
+                }
+        else:
+            # Fallback: dedup by title string when opportunity_id is unavailable
+            key = title.lower()
+            if key and key not in title_fallback_seen:
+                title_fallback_seen.add(key)
+                title_fallback.append(
+                    {**item, "opportunity_id_missing": True, "query_overlap_count": 1}
+                )
+            else:
+                merged_count += 1
+            fallback_count += 1
+
+    deduped_find = list(merged_by_id.values()) + title_fallback
+    deduped_find.sort(
+        key=lambda x: (-x.get("query_overlap_count", 1), x.get("opportunity_id", ""))
+    )
+
     # Build protected IDs set
     protected_ids: set[str] = set()
     for item in inventory.get("my_opportunities", []):
@@ -169,13 +222,12 @@ def main() -> int:
             protected_ids.add(rec.opportunity_id)
 
     net_new = []
-    for item in find_items:
+    for item in deduped_find:
         opp_id = item.get("opportunity_id", "")
         title = item.get("title", "")
-        # Skip items without a valid trackable ID
+
         if not opp_id:
             continue
-        # Skip known-error / garbage entries
         if title in {"close", ""} or "There were errors" in item.get("full_text", ""):
             continue
         if opp_id in protected_ids:
@@ -186,9 +238,17 @@ def main() -> int:
             continue
         net_new.append(item)
 
-    print(f"Net-new candidates (after filtering): {len(net_new)}")
+    net_new_count_before_dedup = len(find_items)
+    net_new_count_after_dedup = len(net_new)
+    print(f"Net-new candidates (after filtering): {net_new_count_after_dedup}")
+    print(f"  Merged by opportunity_id: {merged_count}")
+    print(f"  Title-dedup fallback (missing opportunity_id): {fallback_count}")
     for c in net_new[:10]:
-        print(f"  -> {c['opportunity_id']}: {c['title'][:60]}")
+        queries = c.get("search_queries", [])
+        print(
+            f"  -> {c['opportunity_id']}: {c['title'][:55]} "
+            f"(queries={len(queries)}, first={queries[0]!r})"
+        )
 
     # 6. Save outputs
     registry_path = REPORTS_DIR / "cca_state_registry.json"
@@ -202,8 +262,16 @@ def main() -> int:
             {
                 "retrieved_at": inventory["retrieved_at"],
                 "find_opportunities_total": len(find_items),
+                "find_opportunities_deduped": net_new_count_after_dedup,
+                "deduplication": {
+                    "strategy": "opportunity_id_primary_title_fallback",
+                    "before_count": net_new_count_before_dedup,
+                    "after_count": net_new_count_after_dedup,
+                    "merged_by_opportunity_id": merged_count,
+                    "title_fallback_missing_id": fallback_count,
+                },
                 "protected_count": len(protected_ids),
-                "net_new_count": len(net_new),
+                "net_new_count": net_new_count_after_dedup,
                 "net_new": net_new,
                 "protected_ids": sorted(protected_ids),
             },
