@@ -1,0 +1,51 @@
+{
+  "synced_at": "2026-06-15 21:29:33",
+  "live_mode": true,
+  "tabs": [
+    {
+      "tab": "leads",
+      "created": false,
+      "ok": true
+    },
+    {
+      "tab": "approvals",
+      "created": false,
+      "ok": true
+    },
+    {
+      "tab": "opportunities",
+      "created": false,
+      "ok": true
+    },
+    {
+      "tab": "metrics",
+      "created": false,
+      "ok": true
+    },
+    {
+      "tab": "config",
+      "created": false,
+      "ok": true
+    },
+    {
+      "tab": "history",
+      "created": false,
+      "ok": true
+    },
+    {
+      "tab": "metrics",
+      "rows": 8,
+      "ok": true
+    },
+    {
+      "tab": "config",
+      "rows": 6,
+      "ok": true
+    },
+    {
+      "tab": "history",
+      "rows": 6,
+      "ok": true
+    }
+  ]
+}

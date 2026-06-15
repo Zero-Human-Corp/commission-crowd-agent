@@ -1,0 +1,112 @@
+{
+  "summary": {
+    "generated_at": "2026-06-15T21:19:17.505741+00:00",
+    "live_mode": true,
+    "approved_candidates_found": 10,
+    "packs_drafted": 10,
+    "errors": 0
+  },
+  "drafted": [
+    {
+      "opportunity_id": "14618",
+      "lead_id": "cca_14618_CommissionCrowd",
+      "parent_approval_id": "064dc316",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_14618.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_14618.json",
+      "submission_approval_id": "ae6d03cc",
+      "submission_approval_status": "pending",
+      "payload_hash": "bbd6bb20b30882b85362f3633b2cfcdf0dff79e555703ad0e3b991f0df9ff571"
+    },
+    {
+      "opportunity_id": "8958",
+      "lead_id": "cca_8958_CommissionCrowd",
+      "parent_approval_id": "57e7f388",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_8958.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_8958.json",
+      "submission_approval_id": "2751fce6",
+      "submission_approval_status": "pending",
+      "payload_hash": "4ca719b527a761729ebac63b6423357d7ec26d687b4815b279bff9b34bc29881"
+    },
+    {
+      "opportunity_id": "6655",
+      "lead_id": "cca_6655_CommissionCrowd",
+      "parent_approval_id": "a7522d7b",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_6655.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_6655.json",
+      "submission_approval_id": "22bb75ff",
+      "submission_approval_status": "pending",
+      "payload_hash": "d9db5e04370c37b539cbd977e30ed0e6841f5a4fd89859123eeaf7425b8a3765"
+    },
+    {
+      "opportunity_id": "18798",
+      "lead_id": "cca_18798_CommissionCrowd",
+      "parent_approval_id": "9654df86",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_18798.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_18798.json",
+      "submission_approval_id": "f562f820",
+      "submission_approval_status": "pending",
+      "payload_hash": "8668bcc25757c040950916f92543fb762b3b1914be1c5e7abf5af741441587fe"
+    },
+    {
+      "opportunity_id": "16296",
+      "lead_id": "cca_16296_CommissionCrowd",
+      "parent_approval_id": "e6d70437",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_16296.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_16296.json",
+      "submission_approval_id": "51273d85",
+      "submission_approval_status": "pending",
+      "payload_hash": "c73e89fe6257b8ae3a7695c079f932d1bfff76326077d7827f54771b23d665f8"
+    },
+    {
+      "opportunity_id": "25253",
+      "lead_id": "cca_25253_CommissionCrowd",
+      "parent_approval_id": "9d470a93",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_25253.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_25253.json",
+      "submission_approval_id": "aa171d3f",
+      "submission_approval_status": "pending",
+      "payload_hash": "6bbffa838615dcbffe5ee22bafd93579400fee566e4137dc1df0f9ee779d16dc"
+    },
+    {
+      "opportunity_id": "22763",
+      "lead_id": "cca_22763_CommissionCrowd",
+      "parent_approval_id": "1eb5e9d3",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_22763.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_22763.json",
+      "submission_approval_id": "7ceed61c",
+      "submission_approval_status": "pending",
+      "payload_hash": "4a998ad0d4997686b926f25bc85221b0212abed250bd222164b4285652d3bcc0"
+    },
+    {
+      "opportunity_id": "17031",
+      "lead_id": "cca_17031_CommissionCrowd",
+      "parent_approval_id": "705bca8c",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_17031.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_17031.json",
+      "submission_approval_id": "c023e12e",
+      "submission_approval_status": "pending",
+      "payload_hash": "8b57d8d479a31151b1ceb54eca9f94e8e3351adfa5039172e45472c2971aa369"
+    },
+    {
+      "opportunity_id": "22099",
+      "lead_id": "cca_22099_CommissionCrowd",
+      "parent_approval_id": "f36ca7b3",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_22099.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_22099.json",
+      "submission_approval_id": "91c66e1f",
+      "submission_approval_status": "pending",
+      "payload_hash": "510f18b5b8edd136542b44c85ed105fc13578b728886cc304aff0f558a564e70"
+    },
+    {
+      "opportunity_id": "27755",
+      "lead_id": "cca_27755_CommissionCrowd",
+      "parent_approval_id": "532cc108",
+      "pack_md": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_27755.md",
+      "pack_json": "/home/ubuntu/hermes-control/reports/cca_application_packs/cca_app_pack_27755.json",
+      "submission_approval_id": "d91a7755",
+      "submission_approval_status": "pending",
+      "payload_hash": "89d7473f7387e3801dce4e6fd6880f48f26f15aa92e46a93e65cc485645f88ef"
+    }
+  ],
+  "errors": []
+}

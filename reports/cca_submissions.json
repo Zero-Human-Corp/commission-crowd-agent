@@ -1,0 +1,1352 @@
+{
+  "summary": {
+    "generated_at": "2026-06-15T21:36:28.723895+00:00",
+    "live_mode": true,
+    "approved_packs": 10,
+    "supervised": 10,
+    "errors": 0
+  },
+  "results": [
+    {
+      "opportunity_id": "14618",
+      "lead_id": "cca_14618_CommissionCrowd",
+      "submission_approval_id": "ae6d03cc",
+      "recorded_approval_id": "dace01f0",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "8958",
+      "lead_id": "cca_8958_CommissionCrowd",
+      "submission_approval_id": "2751fce6",
+      "recorded_approval_id": "82d24f20",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "6655",
+      "lead_id": "cca_6655_CommissionCrowd",
+      "submission_approval_id": "22bb75ff",
+      "recorded_approval_id": "03e854a6",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "18798",
+      "lead_id": "cca_18798_CommissionCrowd",
+      "submission_approval_id": "f562f820",
+      "recorded_approval_id": "e2a57254",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "16296",
+      "lead_id": "cca_16296_CommissionCrowd",
+      "submission_approval_id": "51273d85",
+      "recorded_approval_id": "c1381fc5",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "25253",
+      "lead_id": "cca_25253_CommissionCrowd",
+      "submission_approval_id": "aa171d3f",
+      "recorded_approval_id": "488480e6",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "22763",
+      "lead_id": "cca_22763_CommissionCrowd",
+      "submission_approval_id": "7ceed61c",
+      "recorded_approval_id": "9ada3c0e",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "17031",
+      "lead_id": "cca_17031_CommissionCrowd",
+      "submission_approval_id": "c023e12e",
+      "recorded_approval_id": "d24a3840",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "22099",
+      "lead_id": "cca_22099_CommissionCrowd",
+      "submission_approval_id": "91c66e1f",
+      "recorded_approval_id": "ead5ef7b",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    },
+    {
+      "opportunity_id": "27755",
+      "lead_id": "cca_27755_CommissionCrowd",
+      "submission_approval_id": "d91a7755",
+      "recorded_approval_id": "e8a41518",
+      "status": "supervised_pending_operator_click",
+      "contact_options": {
+        "options": [
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "close",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "search Find opportunities",
+            "href": "https://www.commissioncrowd.com/app/#/agent/opportunities/search_opportunities",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "search Search everything",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "add Quick add",
+            "href": "https://www.commissioncrowd.com/app/",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "New lead",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New contact",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New task",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New event",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "New file",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": false
+          },
+          {
+            "tag": "a",
+            "text": "What's new",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "star",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "check",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "calendar",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "avatars",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "document",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "chat\n3",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "notification",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "settings",
+            "href": "https://www.commissioncrowd.com/app/#",
+            "visible": true
+          },
+          {
+            "tag": "a",
+            "text": "user \u00a0Gopolang\n                                    Makokwe",
+            "href": "",
+            "visible": false
+          }
+        ],
+        "email_links": [],
+        "text_email": "",
+        "page_title": "CommissionCrowd App"
+      }
+    }
+  ],
+  "errors": []
+}
