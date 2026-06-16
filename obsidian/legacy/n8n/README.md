@@ -1,0 +1,1 @@
+../docs/legacy/n8n/README.md

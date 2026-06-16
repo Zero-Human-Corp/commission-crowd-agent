@@ -1,0 +1,1 @@
+../docs/icon-only-navigation.md
