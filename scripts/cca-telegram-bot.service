@@ -1,0 +1,22 @@
+[Unit]
+Description=CCA Telegram Approval Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/projects/commission-crowd-agent
+Environment="PATH=/home/ubuntu/projects/commission-crowd-agent/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/home/ubuntu/projects/commission-crowd-agent/src"
+EnvironmentFile=/home/ubuntu/projects/commission-crowd-agent/.env
+EnvironmentFile=-/home/ubuntu/hermes-control/secrets/shared.env
+ExecStart=/home/ubuntu/projects/commission-crowd-agent/.venv/bin/python -m scripts.telegram_approval_daemon
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/home/ubuntu/hermes-control/runtime/cca_telegram_daemon.log
+StandardError=append:/home/ubuntu/hermes-control/runtime/cca_telegram_daemon.log
+
+[Install]
+WantedBy=multi-user.target
