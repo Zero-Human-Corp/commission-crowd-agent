@@ -34,6 +34,7 @@ def _base_opp() -> CanonicalOpportunity:
         view_count=100,
         application_count=10,
         residual_terms=True,
+        deal_value_usd=75000,
     )
 
 
@@ -77,8 +78,8 @@ class TestScoreThreshold:
 
 class TestFilterQualified:
     def test_filter_qualified_returns_only_passing(self, _base_opp: CanonicalOpportunity) -> None:
-        good = _base_opp.model_copy(update={"commission_percent": 25.0})
-        bad = _base_opp.model_copy(update={"commission_percent": 15.0})
+        good = _base_opp.model_copy(update={"commission_percent": 25.0, "deal_value_usd": 100000})
+        bad = _base_opp.model_copy(update={"commission_percent": 15.0, "deal_value_usd": 100000})
         scored = score_opportunities([good, bad], min_commission_pct=20.0)
         qualified = filter_qualified(scored)
         assert len(qualified) == 1

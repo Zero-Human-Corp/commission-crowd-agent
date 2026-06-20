@@ -246,6 +246,12 @@ def main() -> int:
         help="Minimum commission percent threshold (default: 20.0)",
     )
     parser.add_argument(
+        "--min-deal-size",
+        type=int,
+        default=50000,
+        help="Minimum deal size in USD (default: 50000)",
+    )
+    parser.add_argument(
         "--min-score",
         type=int,
         default=50,
@@ -267,13 +273,15 @@ def main() -> int:
     for item in items:
         score_data = _score_candidate(item)
         canonical = _to_canonical(item, score_data)
+        dv = canonical.deal_value_usd or 0
         scored.append(
             {
                 "opportunity_id": item.get("opportunity_id", ""),
                 "title": item.get("title", ""),
                 "score": score_data["score"],
                 "passes_threshold": score_data["commission_percent"] is not None
-                and score_data["commission_percent"] >= args.min_commission,
+                and score_data["commission_percent"] >= args.min_commission
+                and dv >= args.min_deal_size,
                 "passes_min_score": score_data["score"] >= args.min_score,
                 "commission_percent": score_data["commission_percent"],
                 "residual_terms": canonical.residual_terms,

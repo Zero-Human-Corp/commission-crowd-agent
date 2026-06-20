@@ -157,7 +157,7 @@ class BrowserBasedProspector:
         opportunities: list[dict[str, Any]],
         *,
         min_commission_pct: int = 20,
-        min_deal_value: int = 2500,
+        min_deal_value: int = 50000,
         preferred_methods: list[str] | None = None,
         max_sales_cycle_weeks: int | None = None,
     ) -> list[dict[str, Any]]:

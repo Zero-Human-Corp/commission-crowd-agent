@@ -92,7 +92,7 @@ class TestRunCycle:
                     "data": {"items": [], "next": None, "count": 0},
                     "using_fallback": True,
                     "raw_listings": [
-                        {"title": "$5,000 Per Deal | Short Cycle | Phone Sales", "url": "x"}
+                        {"title": "$75,000 Per Deal | 25% Commission | Short Cycle | Phone Sales", "url": "x"}
                     ],
                     "dry_run": False,
                 }

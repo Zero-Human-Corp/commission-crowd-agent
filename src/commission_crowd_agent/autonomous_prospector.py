@@ -6,7 +6,7 @@ them in the CRM, and create approval-gated application drafts.
 Rules:
 - Dry-run by default; live operations need explicit opt-in.
 - Max 5 opportunities per cycle (hard cap).
-- Target: commission >= 20 % or deal size >= $2,500, short sales cycle,
+- Target: commission >= 20 % or deal size >= $50,000, short sales cycle,
   email or phone preferred.
 - All scoring is deterministic; no LLM hallucination of commission terms.
 - Every application draft needs a pending approval before it can be sent.
@@ -53,7 +53,7 @@ class CommissionCrowdProspector:
         dry_run: bool = True,
         per_cycle_limit: int = 5,
         min_commission_pct: int = 20,
-        min_deal_value: int = 2500,
+        min_deal_value: int = 50000,
     ) -> None:
         self.adapter = CommissionCrowdApiAdapter(api_key=api_key, dry_run=dry_run)
         self.profile = profile or {}

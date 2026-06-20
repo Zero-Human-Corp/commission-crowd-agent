@@ -1035,6 +1035,7 @@ def prospect_cmd(
     ),
     limit: int = typer.Option(default=5, help="Max opportunities to fetch"),
     min_commission: float = typer.Option(default=20.0, help="Minimum commission %"),
+    min_deal_size: int = typer.Option(default=50000, help="Minimum deal size in USD"),
     dry_run: bool = typer.Option(
         default=False,
         help="Legacy: if True, implies sample mode with no writes",
@@ -1083,6 +1084,7 @@ def prospect_cmd(
     summary.add_row("Writes Enabled", "yes" if writes_enabled else "no")
     summary.add_row("Limit", str(limit))
     summary.add_row("Min Commission %", str(min_commission))
+    summary.add_row("Min Deal Size USD", f"${min_deal_size:,}")
     console.print(summary)
 
     if source == "sample":
@@ -1090,7 +1092,7 @@ def prospect_cmd(
         from .canonical import CanonicalOpportunity
 
         opps = CanonicalOpportunity.sample_opportunities(mode="sample", limit=limit)
-        scored = score_opportunities(opps, min_commission_pct=min_commission)
+        scored = score_opportunities(opps, min_commission_pct=min_commission, min_deal_value_usd=min_deal_size)
         qualified = filter_qualified(scored)
         console.print(
             f"[cyan]Sample opportunities: {len(opps)} | Qualified: {len(qualified)}[/cyan]"
@@ -1105,11 +1107,11 @@ def prospect_cmd(
 
     # CommissionCrowd live path
     if live_shadow and not write_crm:
-        result = run_live_shadow(limit=limit, min_commission=min_commission)
+        result = run_live_shadow(limit=limit, min_commission=min_commission, min_deal_size=min_deal_size)
     elif write_crm:
-        result = run_controlled_write(limit=limit, min_commission=min_commission)
+        result = run_controlled_write(limit=limit, min_commission=min_commission, min_deal_size=min_deal_size)
     else:
-        result = run_live_shadow(limit=limit, min_commission=min_commission)
+        result = run_live_shadow(limit=limit, min_commission=min_commission, min_deal_size=min_deal_size)
 
     # Synthetic contamination guard
     contaminated = False

@@ -32,7 +32,7 @@ runtime/
 .agent-os/
 .graphify/
 .code-review-graph/
-obsidian/
+.obsidian/
 graphify-out/
 
 # Secret-bearing files

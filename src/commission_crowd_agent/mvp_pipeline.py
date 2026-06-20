@@ -26,13 +26,14 @@ from .config import load_settings
 console = Console()
 
 
-def _build_summary_table(mode: str, limit: int, min_commission: float) -> Table:
+def _build_summary_table(mode: str, limit: int, min_commission: float, min_deal_size: int = 50000) -> Table:
     table = Table(title="CCA MVP Execution Mode")
     table.add_column("Setting", style="cyan")
     table.add_column("Value", style="green")
     table.add_row("Mode", mode)
     table.add_row("Limit", str(limit))
     table.add_row("Min Commission %", str(min_commission))
+    table.add_row("Min Deal Size USD", f"${min_deal_size:,}")
     return table
 
 
@@ -61,6 +62,7 @@ def score_opportunities(
     opps: list[CanonicalOpportunity],
     *,
     min_commission_pct: float = 20.0,
+    min_deal_value_usd: int = 50000,
     operator_territory: str = "",
 ) -> list[dict[str, Any]]:
     """Score each opportunity and produce evidence-based explanations.
@@ -156,8 +158,16 @@ def score_opportunities(
         else:
             reasons.append("Limited market data")
 
-        # Threshold gate
-        passes_threshold = pct is not None and pct >= min_commission_pct
+        # Threshold gate: commission ≥ min AND (deal size unknown OR ≥ $50k)
+        passes_commission = pct is not None and pct >= min_commission_pct
+        passes_deal_size = opp.deal_value_usd is None or opp.deal_value_usd >= min_deal_value_usd
+        passes_threshold = passes_commission and passes_deal_size
+        if opp.deal_value_usd is not None and opp.deal_value_usd < min_deal_value_usd:
+            flags.append("deal_size_below_threshold")
+            reasons.append(f"Deal size ${opp.deal_value_usd:,} below ${min_deal_value_usd:,} minimum")
+        elif opp.deal_value_usd is None:
+            missing.append("deal_value_usd")
+            flags.append("deal_size_unknown")
 
         # Clamp score
         score = min(100, max(0, score))
@@ -261,9 +271,10 @@ def run_live_shadow(
     *,
     limit: int = 5,
     min_commission: float = 20.0,
+    min_deal_size: int = 50000,
 ) -> dict[str, Any]:
     """Live-shadow mode: real data, zero external writes."""
-    console.print(_build_summary_table("live-shadow", limit, min_commission))
+    console.print(_build_summary_table("live-shadow", limit, min_commission, min_deal_size))
 
     # Fetch live data
     opps = fetch_live_opportunities(limit=limit)
@@ -271,7 +282,7 @@ def run_live_shadow(
         return {"ok": False, "error": "No opportunities fetched", "mode": "live-shadow"}
 
     # Score
-    scored = score_opportunities(opps, min_commission_pct=min_commission)
+    scored = score_opportunities(opps, min_commission_pct=min_commission, min_deal_value_usd=min_deal_size)
     qualified = filter_qualified(scored)
 
     # Verify lineage: all IDs must trace back to live API
@@ -342,9 +353,10 @@ def run_controlled_write(
     *,
     limit: int = 5,
     min_commission: float = 20.0,
+    min_deal_size: int = 50000,
 ) -> dict[str, Any]:
     """Controlled-write mode: real data, CRM + approvals only."""
-    console.print(_build_summary_table("controlled-write", limit, min_commission))
+    console.print(_build_summary_table("controlled-write", limit, min_commission, min_deal_size))
 
     from .adapters import GoogleSheetsAdapter
     from .approval_gate import ApprovalGate
@@ -361,7 +373,7 @@ def run_controlled_write(
 
     # Fetch and score
     opps = fetch_live_opportunities(limit=limit)
-    scored = score_opportunities(opps, min_commission_pct=min_commission)
+    scored = score_opportunities(opps, min_commission_pct=min_commission, min_deal_value_usd=min_deal_size)
     qualified = filter_qualified(scored)
 
     # Track counts
