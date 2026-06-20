@@ -543,3 +543,125 @@ class ApprovalGate:
             "lead_id": entity_id,
             "status": "approved",
         }
+
+    def reject(self, approval_id: str) -> dict[str, Any]:
+        """Reject a pending approval request by updating its Sheets row.
+
+        Mirrors the approve() method but sets status to 'rejected'. Returns a
+        structured result with ok, lead_id (entity_id), and status.
+        """
+        if self.sheets_adapter is None:
+            return {
+                "ok": False,
+                "error": "No sheets adapter",
+                "approval_id": approval_id,
+            }
+
+        result = self.sheets_adapter.read_last_rows("approvals", count=5000)
+        if not result.get("ok"):
+            return {
+                "ok": False,
+                "error": result.get("error", "Failed to read approvals"),
+                "approval_id": approval_id,
+            }
+
+        rows = result.get("rows", [])
+        if not rows:
+            return {
+                "ok": False,
+                "error": "Empty approvals tab",
+                "approval_id": approval_id,
+            }
+
+        header = rows[0]
+        try:
+            id_idx = header.index("approval_id")
+            status_idx = header.index("status")
+            created_idx = header.index("created_at_utc")
+        except ValueError as exc:
+            return {
+                "ok": False,
+                "error": f"Missing column: {exc}",
+                "approval_id": approval_id,
+            }
+
+        target_row: list[str] | None = None
+        for row in rows[1:]:
+            if len(row) > id_idx and row[id_idx] == approval_id:
+                target_row = list(row)
+                break
+
+        if target_row is None:
+            return {
+                "ok": False,
+                "error": f"Approval {approval_id} not found",
+                "approval_id": approval_id,
+            }
+
+        current_status = target_row[status_idx] if len(target_row) > status_idx else ""
+        if current_status == "rejected":
+            return {
+                "ok": False,
+                "error": f"Approval {approval_id} is already rejected",
+                "approval_id": approval_id,
+                "lead_id": target_row[header.index("entity_id")] if "entity_id" in header else "",
+                "status": "rejected",
+            }
+        if current_status == "approved":
+            return {
+                "ok": False,
+                "error": f"Approval {approval_id} was already approved and cannot be rejected",
+                "approval_id": approval_id,
+                "status": "approved",
+            }
+
+        from .cca_guardian import check_expiry
+
+        created_at = target_row[created_idx] if len(target_row) > created_idx else ""
+        expiry = check_expiry(created_at, ttl_hours=168.0)
+        if expiry.get("expired"):
+            remaining = expiry.get("remaining_hours", 0)
+            return {
+                "ok": False,
+                "error": f"Approval {approval_id} expired ({remaining:.1f}h remaining)",
+                "approval_id": approval_id,
+                "status": "expired",
+            }
+
+        updated = list(target_row)
+        while len(updated) <= status_idx:
+            updated.append("")
+        updated[status_idx] = "rejected"
+
+        now = datetime.utcnow().isoformat()
+        for col_name, value in [("operator_decision", "rejected"), ("decided_at_utc", now)]:
+            if col_name in header:
+                idx = header.index(col_name)
+                while len(updated) <= idx:
+                    updated.append("")
+                updated[idx] = value
+
+        upsert = self.sheets_adapter.upsert_row_by_key(
+            "approvals",
+            key_column="approval_id",
+            key_value=approval_id,
+            values=updated,
+        )
+        if not upsert.get("ok"):
+            return {
+                "ok": False,
+                "error": upsert.get("error", "Upsert failed"),
+                "approval_id": approval_id,
+            }
+
+        entity_id = ""
+        if "entity_id" in header:
+            eidx = header.index("entity_id")
+            entity_id = updated[eidx] if eidx < len(updated) else ""
+
+        return {
+            "ok": True,
+            "approval_id": approval_id,
+            "lead_id": entity_id,
+            "status": "rejected",
+        }

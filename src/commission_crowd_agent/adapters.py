@@ -204,8 +204,9 @@ class NotifierAdapter:
         chat_id: str | None = None,
         text: str = "",
         parse_mode: str = "Markdown",
+        reply_markup: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Send a plain-text message via Telegram Bot API.
+        """Send a plain-text or inline-keyboard message via Telegram Bot API.
 
         Returns a structured result dict with no secret values:
         {
@@ -233,15 +234,16 @@ class NotifierAdapter:
                 "error": "Missing bot_token or chat_id",
             }
 
+        payload: dict[str, Any] = {
+            "chat_id": target_chat,
+            "text": text,
+            "parse_mode": parse_mode,
+        }
+        if reply_markup is not None:
+            payload["reply_markup"] = reply_markup
+
         try:
-            response = self._post_with_retry(
-                "sendMessage",
-                {
-                    "chat_id": target_chat,
-                    "text": text,
-                    "parse_mode": parse_mode,
-                },
-            )
+            response = self._post_with_retry("sendMessage", payload)
             response.raise_for_status()
             data = response.json()
             if data.get("ok"):

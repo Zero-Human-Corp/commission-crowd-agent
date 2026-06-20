@@ -51,3 +51,7 @@ warn_unused_configs = true
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "--cov=src/commission_crowd_agent --cov-report=term-missing"
+markers = [
+    "telegram: tests covering Telegram inline-keyboard/callback behaviour",
+    "approvals: tests covering the approval workflow",
+]
