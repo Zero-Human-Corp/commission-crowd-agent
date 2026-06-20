@@ -220,6 +220,7 @@ class TestSchemaDefinition:
             "outcomes",
             "calendar_events",
             "outreach_log",
+            "submissions",
         }
 
     def test_leads_tab_has_expected_columns(self) -> None:
