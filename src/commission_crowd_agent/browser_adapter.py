@@ -106,7 +106,10 @@ class CommissionCrowdBrowserAdapter:
         if sync_playwright is None:
             raise RuntimeError("Playwright is not installed.")
         self._pw = sync_playwright().start()
-        self._browser = self._pw.chromium.launch(headless=headless)
+        self._browser = self._pw.chromium.launch(
+            headless=headless,
+            args=["--no-sandbox", "--disable-setuid-sandbox"],
+        )
         self._page = self._browser.new_page(
             viewport={"width": 1280, "height": 900},
             user_agent=(
@@ -152,7 +155,7 @@ class CommissionCrowdBrowserAdapter:
             restored = BrowserSession.load(path)
             if restored and restored.logged_in and restored.cookies:
                 self._page.context.add_cookies(restored.cookies)
-                self._page.goto(f"{self.base_url}/app", wait_until="networkidle", timeout=30000)
+                self._page.goto(f"{self.base_url}/app", wait_until="domcontentloaded", timeout=30000)
                 if self._detect_dashboard():
                     self._session = restored
                     restored.last_activity = datetime.now(UTC).isoformat()
@@ -249,7 +252,7 @@ class CommissionCrowdBrowserAdapter:
         if lower_tool in route_map:
             self._page.goto(
                 f"{self.base_url}{route_map[lower_tool]}",
-                wait_until="networkidle",
+                wait_until="domcontentloaded",
                 timeout=30000,
             )
             self._page.wait_for_timeout(3000)
@@ -406,7 +409,7 @@ class CommissionCrowdBrowserAdapter:
             # Direct navigation
             self._page.goto(
                 f"{self.base_url}/app/opportunities/search",
-                wait_until="networkidle",
+                wait_until="domcontentloaded",
                 timeout=30000,
             )
 
@@ -440,7 +443,7 @@ class CommissionCrowdBrowserAdapter:
         url = reference
         if not url.startswith("http"):
             url = f"{self.base_url}/app/opportunities/{reference}"
-        self._page.goto(url, wait_until="networkidle", timeout=30000)
+        self._page.goto(url, wait_until="domcontentloaded", timeout=30000)
         self._page.wait_for_timeout(2000)
         return self._extract_opportunity_detail()
 
