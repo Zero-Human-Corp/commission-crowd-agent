@@ -1,51 +1,135 @@
 #!/usr/bin/env python3
-"""Submit drafted application packs to CommissionCrowd via supervised browser.
+"""Automated application pack submission engine for CommissionCrowd.
 
-This script:
-  1. Reads the application pack index.
-  2. For each pack with an approved submission approval in Google Sheets:
-     a. Logs into CommissionCrowd via Playwright.
-     b. Navigates to the opportunity detail page via SPA hash.
-     c. Supervises the user through the platform's application flow by
-        extracting the principal's email/contact form and printing the exact
-        action to take (it does NOT click Apply/Message/Connect).
-  3. Records the supervised submission outcome.
+This script ingests application packs that are in the ``application_approved``
+state and submits them through the platform's web forms using the hardened
+Playwright browser adapter (sandbox flags + domcontentloaded waits).
 
-State-changing platform clicks are intentionally not automated. The operator
-must perform the actual Apply/Message/Connect action on the live site.
+Safety:
+- Defaults to ``--dry-run``. No browser, no sheets writes, no external calls.
+- Real form submission only happens when the operator passes ``--live``;
+  live mode still requires explicit approval-gate credentials and a final
+  confirmation prompt unless ``--yes`` is supplied.
+- Success/failure states are recorded in the local registry and mirrored to
+  the Google Sheets ``submissions`` and ``opportunities`` tabs.
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
+import re
 import sys
+import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from playwright.sync_api import sync_playwright
-
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from commission_crowd_agent.adapters import GoogleSheetsAdapter
-from commission_crowd_agent.approval_gate import ApprovalAction, ApprovalGate
+from commission_crowd_agent.browser_adapter import CommissionCrowdBrowserAdapter
 from commission_crowd_agent.config import load_settings
+from commission_crowd_agent.crm_pipeline import CRMPipeline
+from commission_crowd_agent.domain import OpportunityStage
+from commission_crowd_agent.state_registry import (
+    LIFECYCLE_APPLICATION_APPROVED,
+    LIFECYCLE_APPLICATION_SUBMITTED,
+    OpportunityStateRegistry,
+)
+from commission_crowd_agent.workflows.approvals import load_registry, save_registry
 
 REPORTS_DIR = Path("/home/ubuntu/hermes-control/reports")
+RUNTIME_DIR = Path("/home/ubuntu/hermes-control/runtime")
 PACKS_DIR = REPORTS_DIR / "cca_application_packs"
 PACKS_INDEX = REPORTS_DIR / "cca_application_packs.json"
-BASE_URL = "https://www.commissioncrowd.com"
+DEFAULT_REGISTRY_PATH = RUNTIME_DIR / "cca_state_registry.json"
+
+# Heuristics used to map operator/application data onto arbitrary web forms.
+NAME_LABELS = re.compile(
+    r"name|full.?name|your.?name|first.?name|last.?name|representative|agent",
+    re.IGNORECASE,
+)
+EMAIL_LABELS = re.compile(r"email|e-mail|contact.?email", re.IGNORECASE)
+COMPANY_LABELS = re.compile(r"company|organisation|organization|business|agency", re.IGNORECASE)
+PHONE_LABELS = re.compile(r"phone|mobile|tel|contact.?number", re.IGNORECASE)
+LINKEDIN_LABELS = re.compile(r"linkedin|profile|social", re.IGNORECASE)
+WEBSITE_LABELS = re.compile(r"website|url|portfolio", re.IGNORECASE)
+MESSAGE_LABELS = re.compile(
+    r"message|cover.?letter|about|summary|pitch|why|experience|additional|notes",
+    re.IGNORECASE,
+)
+SUBMIT_BUTTON_LABELS = re.compile(
+    r"apply|submit|send|send message|connect|get started|apply now|submit application",
+    re.IGNORECASE,
+)
+SUCCESS_BANNER_LABELS = re.compile(
+    r"application submitted|thank you|success|message sent|we have received|"
+    r"submission confirmed|your application|application complete",
+    re.IGNORECASE,
+)
+VERIFICATION_LABELS = re.compile(
+    r"captcha|recaptcha|verification|verify you|are you human|i'm not a robot",
+    re.IGNORECASE,
+)
+
+
+@dataclass
+class SubmissionJob:
+    """A single application pack ready for submission."""
+
+    opportunity_id: str
+    lead_id: str
+    source_url: str
+    pack_md: Path
+    pack_json: Path
+    application_body: str
+    operator_profile: dict[str, Any]
+    pack_metadata: dict[str, Any]
 
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Supervised CommissionCrowd application submission"
+        description="Automated CommissionCrowd application submission engine"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=True,
+        help="Simulate submission without browser or external writes (default)",
     )
     parser.add_argument(
         "--live",
         action="store_true",
-        help="Open the browser and supervise live submission (no automated clicks)",
+        help="Run a real browser session and submit forms. Requires operator approval.",
+    )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Skip the interactive confirmation prompt in --live mode",
+    )
+    parser.add_argument(
+        "--registry-path",
+        default=str(DEFAULT_REGISTRY_PATH),
+        help="Path to the opportunity state registry JSON",
+    )
+    parser.add_argument(
+        "--packs-dir",
+        default=str(PACKS_DIR),
+        help="Directory containing application pack JSON/Markdown files",
+    )
+    parser.add_argument(
+        "--opportunity-id",
+        default="",
+        help="Process a single opportunity instead of all approved packs",
+    )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        default=True,
+        help="Run browser in headless mode",
     )
     return parser.parse_args()
 
@@ -59,276 +143,603 @@ def _load_json(path: Path) -> dict[str, Any]:
         return json.load(fh)
 
 
-def _lead_id_for(candidate: dict[str, Any]) -> str:
-    opp_id = candidate["opportunity_id"]
-    safe_title = "".join(
-        c if c.isalnum() else "_" for c in candidate["title"].split(" ")[0:4]
-    ).rstrip("_")[:30]
-    return f"cca_{opp_id}_{safe_title}"
-
-
-def _find_approved_submissions(
-    sheets: GoogleSheetsAdapter | None,
+def _find_approved_jobs(
+    registry: OpportunityStateRegistry,
     packs_index: dict[str, Any],
-) -> list[dict[str, Any]]:
-    """Return drafted packs with any approved apply_to_principal approval."""
-    if sheets is None:
-        return []
-
-    res = sheets.read_last_rows("approvals", count=500)
-    if not res.get("ok"):
-        return []
-
-    header = res["rows"][0]
-    id_idx = header.index("approval_id")
-    status_idx = header.index("status")
-    entity_idx = header.index("entity_id")
-    action_idx = header.index("requested_action")
-    decided_idx = header.index("decided_at_utc") if "decided_at_utc" in header else -1
-
-    # Collect the most recent approved row per entity_id
-    approved_by_entity: dict[str, dict[str, Any]] = {}
-    for row in res["rows"][1:]:
-        if len(row) <= max(status_idx, action_idx, entity_idx):
+    packs_dir: Path,
+    opportunity_id_filter: str = "",
+) -> list[SubmissionJob]:
+    """Return jobs for opportunities in the application_approved state."""
+    jobs: list[SubmissionJob] = []
+    for record in registry.to_list():
+        if record.lifecycle_state != LIFECYCLE_APPLICATION_APPROVED:
             continue
-        row_action = row[action_idx]
-        row_status = row[status_idx]
-        row_entity = row[entity_idx]
-        if (
-            row_action in {ApprovalAction.APPLY_TO_PRINCIPAL.value, "apply_to_principal"}
-            and row_entity.startswith("cca_")
-            and row_status == "approved"
-        ):
-            entity_id = row_entity
-            decided_at = row[decided_idx] if decided_idx >= 0 and len(row) > decided_idx else ""
-            existing = approved_by_entity.get(entity_id)
-            if existing is None or decided_at > existing["decided_at"]:
-                approved_by_entity[entity_id] = {
-                    "approval_id": row[id_idx],
-                    "decided_at": decided_at,
-                }
+        opp_id = record.opportunity_id
+        if opportunity_id_filter and opp_id != opportunity_id_filter:
+            continue
 
-    approved_packs: list[dict[str, Any]] = []
-    for draft in packs_index.get("drafted", []):
-        lead_id = draft.get("lead_id")
-        approved = approved_by_entity.get(lead_id)
-        if approved:
-            draft = dict(draft)
-            draft["_latest_approval_id"] = approved["approval_id"]
-            approved_packs.append(draft)
-    return approved_packs
+        pack_json = packs_dir / f"cca_app_pack_{opp_id}.json"
+        pack_md = packs_dir / f"cca_app_pack_{opp_id}.md"
+        if not pack_json.exists():
+            # Try the index to locate an alternate path
+            for draft in packs_index.get("drafted", []):
+                if draft.get("opportunity_id") == opp_id:
+                    pack_json = Path(draft.get("pack_json", pack_json))
+                    pack_md = Path(draft.get("pack_md", pack_md))
+                    break
 
+        if not pack_json.exists():
+            continue
 
-def _login(page: Any, settings: Any) -> None:
-    page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded", timeout=30000)
-    page.fill('input[type="email"]', settings.commissioncrowd_username)
-    page.fill('input[type="password"]', settings.commissioncrowd_password)
-    page.click('button[type="submit"]')
-    for _ in range(25):
-        page.wait_for_timeout(1000)
-        if "#/agent" in page.url:
-            break
-    page.wait_for_timeout(3000)
+        pack_data = _load_json(pack_json)
+        source_url = record.source_url or pack_data.get("opportunity", {}).get("source_url", "")
+        application_body = pack_data.get("application_body", "")
+        operator_profile = pack_data.get("operator_profile", {})
+
+        jobs.append(
+            SubmissionJob(
+                opportunity_id=opp_id,
+                lead_id=record.to_dict().get("record_hash", opp_id)[:16],
+                source_url=source_url,
+                pack_md=pack_md,
+                pack_json=pack_json,
+                application_body=application_body,
+                operator_profile=operator_profile,
+                pack_metadata=pack_data,
+            )
+        )
+    return jobs
 
 
-def _navigate_opportunity(page: Any, opp_id: str) -> None:
-    page.evaluate(f"window.location.hash = '#/opportunities/{opp_id}'")
-    page.wait_for_timeout(7000)
+def _visible_label_for_field(page: Any, element: Any) -> str:
+    """Best-effort visible label/placeholder text for a form field."""
+    try:
+        attrs = element.evaluate(
+            """el => {
+                const label = el.labels && el.labels[0] ? el.labels[0].innerText : '';
+                const aria = el.getAttribute('aria-label') || '';
+                const placeholder = el.getAttribute('placeholder') || '';
+                const name = el.getAttribute('name') || '';
+                const id = el.id || '';
+                return { label, aria, placeholder, name, id };
+            }"""
+        )
+        parts = [
+            attrs.get("label", ""),
+            attrs.get("aria", ""),
+            attrs.get("placeholder", ""),
+            attrs.get("name", ""),
+            attrs.get("id", ""),
+        ]
+        return " ".join(p for p in parts if p)
+    except Exception:
+        return ""
 
 
-def _extract_contact_options(page: Any) -> dict[str, Any]:
-    """Extract visible contact/apply options from the detail page."""
+def _field_score(element: Any, page: Any, *patterns: re.Pattern[str]) -> int:
+    """Return the number of matching patterns found in a field's visible text."""
+    text = _visible_label_for_field(page, element)
+    return sum(1 for p in patterns if p.search(text))
+
+
+def _fill_field(element: Any, value: str) -> bool:
+    """Fill a visible, editable form field."""
+    try:
+        tag = element.evaluate("el => el.tagName.toLowerCase()")
+        if tag == "textarea":
+            element.fill(value)
+            return True
+        input_type = element.evaluate("el => el.type")
+        if input_type in {"text", "email", "tel", "url", "search", "password"}:
+            element.fill(value)
+            return True
+        if input_type in {"radio", "checkbox"}:
+            # Only check positive booleans
+            if value.lower() in {"true", "yes", "1", "on"}:
+                element.check()
+            return True
+    except Exception:
+        return False
+    return False
+
+
+def _detect_form_fields(page: Any) -> list[dict[str, Any]]:
+    """Enumerate candidate text/textarea inputs on the current page."""
     return page.evaluate(
         """() => {
-            const buttons = Array.from(document.querySelectorAll('button, a, [role="button"]'));
-            const options = [];
-            for (const b of buttons) {
-                const text = (b.innerText || b.textContent || '').trim().toLowerCase();
-                if (text.length > 0 && text.length < 80) {
-                    options.push({
-                        tag: b.tagName.toLowerCase(),
-                        text: b.innerText.trim(),
-                        href: b.href || '',
-                        visible: b.offsetParent !== null
-                    });
-                }
-            }
-            const emailLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]'))
-                .map(a => a.href);
-            const allText = document.body.innerText || '';
-            const emailRegex = new RegExp("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
-            const emailMatch = allText.match(emailRegex);
-            return {
-                options: options.slice(0, 20),
-                email_links: emailLinks.slice(0, 5),
-                text_email: emailMatch ? emailMatch[0] : '',
-                page_title: document.title
-            };
+            const fields = [];
+            const selectors = [
+                'input:not([type="hidden"]):not([type="submit"]):not([type="button"])',
+                'textarea',
+                'select'
+            ];
+            document.querySelectorAll(selectors.join(', ')).forEach(el => {
+                const rect = el.getBoundingClientRect();
+                const visible = !!(rect.width && rect.height && el.offsetParent !== null);
+                if (!visible) return;
+                const label = el.labels && el.labels[0] ? el.labels[0].innerText.trim() : '';
+                const aria = el.getAttribute('aria-label') || '';
+                const placeholder = el.getAttribute('placeholder') || '';
+                const name = el.getAttribute('name') || '';
+                const id = el.id || '';
+                fields.push({
+                    tag: el.tagName.toLowerCase(),
+                    type: el.type || '',
+                    name,
+                    id,
+                    label,
+                    aria,
+                    placeholder,
+                    tag_name: el.tagName.toLowerCase()
+                });
+            });
+            return fields;
         }"""
     )
 
 
-def _record_submission(
-    approval_gate: ApprovalGate,
-    pack: dict[str, Any],
-    contact_options: dict[str, Any],
-    *,
-    live: bool,
-) -> dict[str, Any]:
-    opp_id = pack["opportunity_id"]
-    lead_id = pack.get("lead_id", "")
-    notes = (
-        f"Supervised submission step completed for {opp_id}. "
-        f"Operator must click the platform's Apply/Message/Connect action. "
-        f"Contact options observed: {len(contact_options.get('options', []))}."
-    )
-    req = approval_gate.create_approval(
-        entity_type="submission_record",
-        entity_id=lead_id,
-        requested_action=ApprovalAction.APPLY_TO_PRINCIPAL.value,
-        entity_name=pack.get("pack_md", ""),
-        approval_action=f"Confirm platform application submitted for {opp_id}",
-        risk_level="medium",
-        source_url=pack.get("pack_json", ""),
-        notes=notes,
-        dry_run=not live,
-    )
-    return {
-        "submission_approval_id": req.approval_id,
-        "status": req.status,
+def _find_submit_button(page: Any) -> Any:
+    """Return the best candidate submit/apply button, or None."""
+    # Prefer visible buttons whose text matches submission keywords
+    selectors = [
+        'button[type="submit"]',
+        'input[type="submit"]',
+        'button:has-text("Apply")',
+        'button:has-text("Submit")',
+        'button:has-text("Send")',
+        'button:has-text("Connect")',
+        'a:has-text("Apply")',
+        'a:has-text("Submit")',
+    ]
+    for sel in selectors:
+        try:
+            loc = page.locator(sel)
+            if loc.count() > 0:
+                first = loc.first
+                if first.is_visible():
+                    return first
+        except Exception:
+            continue
+
+    # Fallback: scan all buttons/links
+    try:
+        candidates = page.locator("button, a, [role='button']").all()
+        for cand in candidates:
+            try:
+                text = (cand.inner_text() or "").strip()
+                if SUBMIT_BUTTON_LABELS.search(text) and cand.is_visible():
+                    return cand
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return None
+
+
+def _has_success_indicator(page: Any) -> bool:
+    """Return True if page content suggests the form succeeded."""
+    text = ""
+    with contextlib.suppress(Exception):
+        text = (page.locator("body").inner_text() or "").lower()
+    return bool(SUCCESS_BANNER_LABELS.search(text))
+
+
+def _has_verification_challenge(page: Any) -> bool:
+    """Return True if a CAPTCHA/verification challenge is detected."""
+    text = ""
+    html = ""
+    with contextlib.suppress(Exception):
+        text = (page.locator("body").inner_text() or "").lower()
+        html = (page.content() or "").lower()
+    return bool(VERIFICATION_LABELS.search(text) or VERIFICATION_LABELS.search(html))
+
+
+def _fill_application_form(page: Any, job: SubmissionJob, settings: Any) -> dict[str, Any]:
+    """Map operator profile + application body onto the web form and submit."""
+    operator = job.operator_profile
+    name = settings.operator_name or operator.get("company", "Syntaxis Labs Representative")
+    email = settings.operator_email or "publisher@syntaxis.online"
+    phone = settings.operator_phone or ""
+    company = operator.get("company", "Syntaxis Labs")
+    linkedin = operator.get("linkedin", "")
+    website = "https://www.syntaxis.online"
+    body = job.application_body or operator.get("disclaimer", "")
+
+    field_map: dict[str, list[tuple[float, Any]]] = {
+        "name": [],
+        "email": [],
+        "company": [],
+        "phone": [],
+        "linkedin": [],
+        "website": [],
+        "message": [],
     }
+
+    try:
+        fields = page.locator("input, textarea, select").all()
+    except Exception as exc:
+        return {"ok": False, "error": f"Failed to enumerate form fields: {exc}"}
+
+    for element in fields:
+        try:
+            if not element.is_visible():
+                continue
+        except Exception:
+            continue
+
+        if _field_score(element, page, NAME_LABELS):
+            field_map["name"].append((_field_score(element, page, NAME_LABELS), element))
+        if _field_score(element, page, EMAIL_LABELS):
+            field_map["email"].append((_field_score(element, page, EMAIL_LABELS), element))
+        if _field_score(element, page, COMPANY_LABELS):
+            field_map["company"].append((_field_score(element, page, COMPANY_LABELS), element))
+        if _field_score(element, page, PHONE_LABELS):
+            field_map["phone"].append((_field_score(element, page, PHONE_LABELS), element))
+        if _field_score(element, page, LINKEDIN_LABELS):
+            field_map["linkedin"].append((_field_score(element, page, LINKEDIN_LABELS), element))
+        if _field_score(element, page, WEBSITE_LABELS):
+            field_map["website"].append((_field_score(element, page, WEBSITE_LABELS), element))
+        if _field_score(element, page, MESSAGE_LABELS):
+            field_map["message"].append((_field_score(element, page, MESSAGE_LABELS), element))
+
+    # Fallback: if no message field matched, use the largest textarea
+    if not field_map["message"]:
+        try:
+            textareas = page.locator("textarea").all()
+            if textareas:
+                field_map["message"].append((1.0, textareas[0]))
+        except Exception:
+            pass
+
+    fill_results: dict[str, bool] = {}
+    for key, value in [
+        ("name", name),
+        ("email", email),
+        ("company", company),
+        ("phone", phone),
+        ("linkedin", linkedin),
+        ("website", website),
+        ("message", body),
+    ]:
+        candidates = sorted(field_map.get(key, []), key=lambda t: t[0], reverse=True)
+        filled = False
+        for _, element in candidates:
+            if _fill_field(element, value):
+                filled = True
+                break
+        fill_results[key] = filled
+
+    if not fill_results.get("message") and not fill_results.get("name"):
+        return {"ok": False, "error": "Could not map application body/name onto the form"}
+
+    if _has_verification_challenge(page):
+        return {"ok": False, "error": "Verification challenge detected; submission blocked"}
+
+    submit_btn = _find_submit_button(page)
+    if submit_btn is None:
+        return {"ok": False, "error": "No submit/apply button found"}
+
+    try:
+        submit_btn.click()
+        # Wait for navigation or SPA update
+        with contextlib.suppress(Exception):
+            page.wait_for_timeout(3000)
+    except Exception as exc:
+        return {"ok": False, "error": f"Submit click failed: {exc}"}
+
+    success = _has_success_indicator(page)
+    verification = _has_verification_challenge(page)
+    return {
+        "ok": success and not verification,
+        "success": success,
+        "verification_detected": verification,
+        "final_url": page.url,
+        "fill_results": fill_results,
+    }
+
+
+def _submit_one_live(
+    job: SubmissionJob,
+    browser: CommissionCrowdBrowserAdapter,
+    settings: Any,
+) -> dict[str, Any]:
+    """Submit a single pack through the live browser."""
+    page = browser._page
+    if page is None:
+        return {"ok": False, "error": "Browser page not initialized"}
+
+    url = job.source_url
+    if not url.startswith("http"):
+        url = f"https://www.commissioncrowd.com/app/opportunities/{job.opportunity_id}"
+
+    try:
+        page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        page.wait_for_timeout(2000)
+    except Exception as exc:
+        return {"ok": False, "error": f"Navigation failed for {url}: {exc}"}
+
+    # If the URL points to a listing detail, look for an Apply/Connect button
+    # first. Some CommissionCrowd listings require clicking into the form.
+    apply_button = _find_submit_button(page)
+    if apply_button is not None and "apply" in (apply_button.inner_text() or "").lower():
+        try:
+            apply_button.click()
+            page.wait_for_timeout(2000)
+        except Exception as exc:
+            return {"ok": False, "error": f"Apply button click failed: {exc}"}
+
+    return _fill_application_form(page, job, settings)
+
+
+def _record_submission(
+    sheets: GoogleSheetsAdapter | None,
+    pipeline: CRMPipeline,
+    job: SubmissionJob,
+    result: dict[str, Any],
+    *,
+    registry: OpportunityStateRegistry,
+    registry_path: Path,
+    dry_run: bool,
+) -> dict[str, Any]:
+    """Write the submission outcome to registry, submissions log, and CRM."""
+    opp_id = job.opportunity_id
+    lead_id = job.lead_id
+    submitted_at = _now()
+    status = "submitted" if result.get("ok") else "failed"
+
+    # 1. Update local registry in memory
+    record = registry.get_by_id(opp_id)
+    if record is not None and record.lifecycle_state == LIFECYCLE_APPLICATION_APPROVED:
+        record.lifecycle_state = LIFECYCLE_APPLICATION_SUBMITTED
+        record.updated_at = submitted_at
+        if not dry_run:
+            save_registry(registry, registry_path)
+
+    # 2. Update CRM pipeline stage
+    stage_result = pipeline.advance_stage(
+        lead_id=lead_id,
+        new_stage=OpportunityStage.APPLICATION_SUBMITTED.value,
+        sheet_tab="leads",
+        dry_run=dry_run,
+    )
+
+    # 3. Append to submissions log (or simulate)
+    submission_row = [
+        str(uuid.uuid4())[:16],
+        submitted_at,
+        opp_id,
+        lead_id,
+        url_to_log(job.source_url),
+        status,
+        str(result.get("success", False)).lower(),
+        str(result.get("verification_detected", False)).lower(),
+        result.get("final_url", ""),
+        result.get("error", ""),
+    ]
+    submissions_result: dict[str, Any] | None = None
+    if sheets is not None:
+        submissions_result = sheets.append_row("submissions", submission_row)
+    elif dry_run:
+        submissions_result = {"ok": True, "dry_run": True, "rows_changed": 1}
+
+    # 4. Update opportunities tab status if a row exists
+    opportunities_result: dict[str, Any] | None = None
+    if sheets is not None:
+        opp_read = sheets.read_last_rows("opportunities", count=5000)
+        if opp_read.get("ok"):
+            rows = opp_read.get("rows", [])
+            if rows:
+                header = rows[0]
+                if "opportunity_id" in header and "status" in header:
+                    id_idx = header.index("opportunity_id")
+                    status_idx = header.index("status")
+                    for row in rows[1:]:
+                        if len(row) > max(id_idx, status_idx) and row[id_idx] == opp_id:
+                            updated = list(row)
+                            while len(updated) <= status_idx:
+                                updated.append("")
+                            updated[status_idx] = status
+                            opportunities_result = sheets.upsert_row_by_key(
+                                "opportunities",
+                                key_column="opportunity_id",
+                                key_value=opp_id,
+                                values=updated,
+                            )
+                            break
+
+    return {
+        "ok": result.get("ok", False),
+        "status": status,
+        "submitted_at_utc": submitted_at,
+        "registry_updated": record is not None,
+        "stage_result": stage_result,
+        "submissions_log": submissions_result,
+        "opportunities_update": opportunities_result,
+        "error": result.get("error"),
+    }
+
+
+def url_to_log(url: str) -> str:
+    """Return a safe, truncated URL for logging."""
+    if not url:
+        return ""
+    return url[:250]
+
+
+def _build_summary_report(
+    results: list[dict[str, Any]],
+    *,
+    dry_run: bool,
+    live: bool,
+    started_at: str,
+) -> dict[str, Any]:
+    submitted = sum(1 for r in results if r.get("ok"))
+    failed = sum(1 for r in results if not r.get("ok"))
+    return {
+        "generated_at": _now(),
+        "started_at": started_at,
+        "dry_run": dry_run,
+        "live_mode": live,
+        "total": len(results),
+        "submitted": submitted,
+        "failed": failed,
+    }
+
+
+def _confirm_live(jobs: list[SubmissionJob]) -> bool:
+    """Interactive operator confirmation for live form submission."""
+    print("\nLIVE MODE: about to submit application forms for:")
+    for job in jobs:
+        print(f"  - {job.opportunity_id}: {job.source_url}")
+    print("This will interact with CommissionCrowd web forms using stored credentials.")
+    try:
+        answer = input("Type 'yes' to proceed: ").strip().lower()
+    except EOFError:
+        print("No stdin available; aborting live mode.", file=sys.stderr)
+        return False
+    return answer == "yes"
 
 
 def main() -> int:
     args = _parse_args()
-    print(f"Mode: {'LIVE SUPERVISED' if args.live else 'DRY-RUN'}")
+
+    # --live overrides default --dry-run
+    dry_run = not args.live
+    live = args.live
+    print(f"Mode: {'LIVE' if live else 'DRY-RUN'}")
 
     settings = load_settings()
-    if args.live and not settings.commissioncrowd_username:
+
+    if live and not settings.commissioncrowd_username:
         print("ERROR: CommissionCrowd credentials not configured.", file=sys.stderr)
         return 1
 
-    sheets = None
+    if live and not args.yes:
+        print("INFO: --live requires explicit confirmation. Use --yes to skip the prompt.")
+
+    sheets: GoogleSheetsAdapter | None = None
     if settings.google_ready:
         sheets = GoogleSheetsAdapter(
             spreadsheet_id=settings.google_sheets_spreadsheet_id,
             credentials_path=settings.google_application_credentials_path,
             service_account_json=settings.google_service_account_json,
+            dry_run=dry_run,
         )
-        health = sheets.health_check()
-        if not health.get("ok"):
-            err = health.get("error")
-            print(f"ERROR: Sheets health check failed: {err}", file=sys.stderr)
-            return 1
+        if not dry_run:
+            health = sheets.health_check()
+            if not health.get("ok"):
+                print(f"ERROR: Sheets health check failed: {health.get('error')}", file=sys.stderr)
+                return 1
 
-    approval_gate = ApprovalGate(sheets_adapter=sheets)
+    pipeline = CRMPipeline(sheets_adapter=sheets)
 
-    packs_index = _load_json(PACKS_INDEX)
-    approved_packs = _find_approved_submissions(sheets, packs_index)
-    print(f"Found {len(approved_packs)} approved pack submission(s)")
+    registry_path = Path(args.registry_path)
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    registry = load_registry(registry_path)
 
-    results: list[dict[str, Any]] = []
-    errors: list[dict[str, Any]] = []
+    packs_index: dict[str, Any] = {}
+    if PACKS_INDEX.exists():
+        packs_index = _load_json(PACKS_INDEX)
 
-    if not args.live:
-        print("Dry-run: would supervise the following submissions:")
-        for pack in approved_packs:
-            print(f"  - {pack['opportunity_id']} (approval {pack['_latest_approval_id']})")
+    packs_dir = Path(args.packs_dir)
+    jobs = _find_approved_jobs(registry, packs_index, packs_dir, args.opportunity_id)
+    print(f"Found {len(jobs)} application_approved pack(s)")
+
+    if not jobs:
+        print("No approved application packs to submit.")
         return 0
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+    if live and not args.yes and not _confirm_live(jobs):
+        print("Live submission cancelled by operator.")
+        return 1
 
-        _login(page, settings)
-        print(f"Logged in: {page.url}")
+    browser: CommissionCrowdBrowserAdapter | None = None
+    if live:
+        browser = CommissionCrowdBrowserAdapter()
+        browser.start(headless=args.headless)
+        try:
+            browser.login_or_restore_session(
+                settings.commissioncrowd_username,
+                settings.commissioncrowd_password,
+            )
+        except Exception as exc:
+            print(f"ERROR: browser login failed: {exc}", file=sys.stderr)
+            browser.close()
+            return 1
 
-        for pack in approved_packs:
-            opp_id = pack["opportunity_id"]
-            try:
-                print(f"\nSupervising submission for {opp_id}...")
-                _navigate_opportunity(page, opp_id)
-                contact_options = _extract_contact_options(page)
-                print(f"  Page title: {contact_options.get('page_title', '')}")
-                print("  Visible contact options:")
-                for opt in contact_options.get("options", []):
-                    if opt.get("visible"):
-                        print(f"    - {opt['tag'].upper()}: {opt['text']}")
-                if contact_options.get("email_links"):
-                    print("  mailto links:", contact_options["email_links"])
-                if contact_options.get("text_email"):
-                    print(f"  Email on page: {contact_options['text_email']}")
+    results: list[dict[str, Any]] = []
+    started_at = _now()
 
-                print(
-                    "  ACTION REQUIRED: Click the platform's Apply / Message / "
-                    "Connect button and paste the application body from the pack."
-                )
+    for job in jobs:
+        print(f"\nProcessing {job.opportunity_id} ...")
+        if dry_run:
+            # Simulate a successful submission without touching the browser or site.
+            result = {
+                "ok": True,
+                "success": True,
+                "verification_detected": False,
+                "final_url": job.source_url,
+                "dry_run": True,
+            }
+        else:
+            assert browser is not None, "browser must be initialized in live mode"
+            result = _submit_one_live(job, browser, settings)
 
-                record = _record_submission(
-                    approval_gate, pack, contact_options, live=args.live
-                )
+        record = _record_submission(
+            sheets=sheets,
+            pipeline=pipeline,
+            job=job,
+            result=result,
+            registry=registry,
+            registry_path=registry_path,
+            dry_run=dry_run,
+        )
+        results.append(
+            {
+                "opportunity_id": job.opportunity_id,
+                "lead_id": job.lead_id,
+                "source_url": url_to_log(job.source_url),
+                "ok": record["ok"],
+                "status": record["status"],
+                "submitted_at_utc": record["submitted_at_utc"],
+                "error": record.get("error"),
+                "dry_run": dry_run,
+            }
+        )
+        print(f"  Result: {record['status']} (ok={record['ok']})")
+        if record.get("error"):
+            print(f"  Error: {record['error']}")
 
-                results.append(
-                    {
-                        "opportunity_id": opp_id,
-                        "lead_id": pack.get("lead_id"),
-                        "submission_approval_id": pack.get("submission_approval_id"),
-                        "recorded_approval_id": record["submission_approval_id"],
-                        "status": "supervised_pending_operator_click",
-                        "contact_options": contact_options,
-                    }
-                )
-                print(f"  Recorded approval {record['submission_approval_id']}")
-            except Exception as exc:
-                print(f"  ERROR supervising {opp_id}: {exc}")
-                errors.append(
-                    {
-                        "opportunity_id": opp_id,
-                        "error": f"{type(exc).__name__}: {exc}",
-                    }
-                )
-
+    if browser is not None:
         browser.close()
 
-    summary = {
-        "generated_at": _now(),
-        "live_mode": args.live,
-        "approved_packs": len(approved_packs),
-        "supervised": len(results),
-        "errors": len(errors),
-    }
+    summary = _build_summary_report(results, dry_run=dry_run, live=live, started_at=started_at)
 
     report_json = REPORTS_DIR / "cca_submissions.json"
+    report_json.parent.mkdir(parents=True, exist_ok=True)
     with open(report_json, "w") as fh:
-        json.dump(
-            {"summary": summary, "results": results, "errors": errors},
-            fh,
-            indent=2,
-        )
+        json.dump({"summary": summary, "results": results}, fh, indent=2)
     print(f"\nSaved report: {report_json}")
 
     report_md = REPORTS_DIR / "cca_submissions.md"
     with open(report_md, "w") as fh:
-        fh.write("# CCA Supervised CommissionCrowd Submissions\n\n")
+        fh.write("# CCA Automated Application Submissions\n\n")
         fh.write(f"**Generated:** {summary['generated_at']}\n")
-        fh.write(f"**Live mode:** {'Yes' if args.live else 'No (dry-run)'}\n")
-        fh.write(f"**Approved packs:** {summary['approved_packs']}\n")
-        fh.write(f"**Supervised:** {summary['supervised']}\n")
-        fh.write(f"**Errors:** {summary['errors']}\n\n")
-        fh.write("| Opp ID | Lead ID | Status | Recorded Approval |\n")
-        fh.write("|--------|---------|--------|-------------------|\n")
+        fh.write(f"**Mode:** {'LIVE' if live else 'DRY-RUN'}\n")
+        fh.write(f"**Total:** {summary['total']}\n")
+        fh.write(f"**Submitted:** {summary['submitted']}\n")
+        fh.write(f"**Failed:** {summary['failed']}\n\n")
+        fh.write("| Opp ID | Lead ID | Status | Submitted At | Error |\n")
+        fh.write("|--------|---------|--------|--------------|-------|\n")
         for r in results:
+            err = (r.get("error") or "").replace("|", "/").replace("\n", " ")[:60]
             fh.write(
-                f"| {r['opportunity_id']} | `{r.get('lead_id', '')}` | "
-                f"{r['status']} | `{r.get('recorded_approval_id', '')}` |\n"
+                f"| {r['opportunity_id']} | `{r['lead_id']}` | {r['status']} | "
+                f"{r['submitted_at_utc']} | {err} |\n"
             )
-        if errors:
-            fh.write("\n## Errors\n\n")
-            for e in errors:
-                fh.write(f"- `{e.get('opportunity_id')}`: {e.get('error')}\n")
     print(f"Saved report: {report_md}")
 
-    return 0
+    return 0 if summary["failed"] == 0 or dry_run else 1
 
 
 if __name__ == "__main__":

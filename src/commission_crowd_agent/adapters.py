@@ -565,6 +565,18 @@ class GoogleSheetsAdapter:
             "status",
             "notes",
         ],
+        "submissions": [
+            "submission_id",
+            "submitted_at_utc",
+            "opportunity_id",
+            "lead_id",
+            "source_url",
+            "status",
+            "success",
+            "verification_detected",
+            "final_url",
+            "notes",
+        ],
         "outreach_log": [
             "outreach_id",
             "created_at_utc",
