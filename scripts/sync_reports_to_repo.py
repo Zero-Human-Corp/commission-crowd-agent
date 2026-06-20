@@ -152,7 +152,15 @@ def main() -> int:
     obsidian_dir = repo_obsidian.parent
     symlink_target = Path("../reports")
 
-    if repo_obsidian.exists(follow_symlinks=False):
+    def _obsidian_reports_exists() -> bool:
+        # Python 3.11 compatible lstat-based existence check
+        try:
+            repo_obsidian.lstat()
+            return True
+        except FileNotFoundError:
+            return False
+
+    if _obsidian_reports_exists():
         if repo_obsidian.is_symlink():
             target = repo_obsidian.readlink()
             if target != symlink_target:
