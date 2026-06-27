@@ -22,6 +22,8 @@ from rich.table import Table
 from .canonical import CanonicalOpportunity
 from .commissioncrowd_adapter import CommissionCrowdApiAdapter
 from .config import load_settings
+from .supervisor_relay import SupervisorRelay, SupervisorTaskType
+from .workflows.approvals import ApprovalPack, _infer_target_size, send_approval_request
 
 console = Console()
 
@@ -37,8 +39,120 @@ def _build_summary_table(mode: str, limit: int, min_commission: float, min_deal_
     return table
 
 
-def fetch_live_opportunities(*, limit: int = 5) -> list[CanonicalOpportunity]:
-    """Fetch live opportunities from CommissionCrowd API and convert to canonical."""
+def _controlled_write_checkpoint(
+    qualified_count: int,
+    min_deal_size: int,
+    *,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """Option 2: explicit SupervisorRelay checkpoint before controlled writes.
+
+    Workstream B routes through the configured draft-review model
+    (``kimi-k2-thinking``). The checkpoint reviews the planned controlled-write
+    plan and only permits non-blocked actions.
+    """
+    prompt = (
+        f"Controlled-write MVP is about to run.\n"
+        f"Qualified opportunities: {qualified_count}\n"
+        f"Minimum deal size: ${min_deal_size:,}\n"
+        f"Workstream dry_run: {dry_run}\n"
+        f"Planned actions: create CRM lead rows, create approval rows in Sheets, "
+        f"and dispatch Telegram approval requests.\n"
+        f"In dry_run mode, no actual CRM/Sheets writes or Telegram sends occur; "
+        f"only simulated approval-request messages are generated for operator review.\n\n"
+        f"Review this plan. Return JSON with approved (bool), reason (str), "
+        f"recommended_action (str), risk_level (low|medium|high|unknown), and notes (str)."
+    )
+    system = (
+        "You are the CCA draft-review supervisor. Review outreach and write plans. "
+        "Block any recommendation that would apply, send messages, or spend money. "
+        "Approve only safe read-only or approval-request steps. Respond only with JSON."
+    )
+    # Option 2: supervisor inference is independent of pipeline write dry-run.
+    relay_dry_run = __import__("os").environ.get("CCA_SUPERVISOR_INFERENCE_DRY_RUN", "").lower() in {"1", "true"}
+    relay = SupervisorRelay(dry_run=relay_dry_run)
+    try:
+        resp = relay.route(SupervisorTaskType.DRAFT_REVIEW, prompt, system=system)
+        return {
+            "ok": resp.approved and not _is_blocked_for_pipeline(resp.recommended_action),
+            "approved": resp.approved,
+            "human_approval_required": resp.human_approval_required,
+            "risk_level": resp.risk_level,
+            "reason": resp.reason,
+            "recommended_action": resp.recommended_action,
+            "requested_model": resp.requested_model,
+            "actual_model": resp.actual_model,
+            "fallback_reason": resp.fallback_reason,
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "approved": False,
+            "reason": f"Checkpoint error: {exc}",
+            "recommended_action": "",
+        }
+
+
+def _is_blocked_for_pipeline(action: str) -> bool:
+    """Return True if the supervisor's recommended action is blocked for this pipeline."""
+    normalized = action.strip().lower().replace(" ", "_")
+    blocked = {"send", "apply", "message", "login", "api_call", "spend", "approval_status_change"}
+    return normalized in blocked or any(normalized.startswith(f"{verb}_") for verb in blocked)
+
+
+def _sample_opportunities() -> list[CanonicalOpportunity]:
+    """Return a small set of realistic sample opportunities for dry-run demos."""
+    return [
+        CanonicalOpportunity(
+            source="commissioncrowd",
+            source_opportunity_id="SAMPLE-22763",
+            title="Cutting Edge Platform Connecting Companies & Social Influencers Globally",
+            company_name="Sample Principal Ltd",
+            commission_text="30% commission + lifetime residuals",
+            commission_percent=30.0,
+            residual_terms=True,
+            territory="Global",
+            category="Business Services",
+            source_url="https://www.commissioncrowd.com/app/#/opportunities/22763",
+            contact_email="ops@sampleprincipal.example",
+            contact_name="Sample Hiring Team",
+        ),
+        CanonicalOpportunity(
+            source="commissioncrowd",
+            source_opportunity_id="SAMPLE-6655",
+            title="AI-Powered B2B Sales Enablement SaaS",
+            company_name="Another Sample Inc",
+            commission_text="20% recurring commission",
+            commission_percent=20.0,
+            residual_terms=True,
+            territory="United States",
+            category="Software",
+            source_url="https://www.commissioncrowd.com/app/#/opportunities/6655",
+            contact_email="sales@anothersample.example",
+            contact_name="Another Team",
+        ),
+        CanonicalOpportunity(
+            source="commissioncrowd",
+            source_opportunity_id="SAMPLE-LOW",
+            title="Low Commission Generic Opportunity",
+            company_name="Low Payer LLC",
+            commission_text="5% one-time",
+            commission_percent=5.0,
+            residual_terms=False,
+            territory="",
+            category="",
+            source_url="",
+            contact_email="",
+            contact_name="",
+        ),
+    ]
+
+
+def fetch_live_opportunities(*, limit: int = 5, sample: bool = False) -> list[CanonicalOpportunity]:
+    """Fetch live opportunities from CommissionCrowd API or return sample fixtures."""
+    if sample:
+        return _sample_opportunities()[:limit]
+
     settings = load_settings()
     adapter = CommissionCrowdApiAdapter(
         api_key=settings.commissioncrowd_api_key,
@@ -354,11 +468,21 @@ def run_controlled_write(
     limit: int = 5,
     min_commission: float = 20.0,
     min_deal_size: int = 50000,
+    dry_run: bool = True,
+    notify: bool = True,
+    sample: bool = False,
 ) -> dict[str, Any]:
-    """Controlled-write mode: real data, CRM + approvals only."""
-    console.print(_build_summary_table("controlled-write", limit, min_commission, min_deal_size))
+    """Controlled-write mode: real data, CRM + approvals only.
 
-    from .adapters import GoogleSheetsAdapter
+    Args:
+        dry_run: If True, no Sheets/CRM writes and Telegram sends are simulated.
+        notify: If True, dispatch Telegram approval requests for created approvals.
+        sample: If True, use fixture opportunities instead of the live API.
+    """
+    mode_label = "controlled-write" + (" (sample)" if sample else "")
+    console.print(_build_summary_table(mode_label, limit, min_commission, min_deal_size))
+
+    from .adapters import GoogleSheetsAdapter, NotifierAdapter
     from .approval_gate import ApprovalGate
     from .crm_pipeline import CRMPipeline
 
@@ -366,21 +490,40 @@ def run_controlled_write(
     sheets = GoogleSheetsAdapter(
         spreadsheet_id=settings.google_sheets_spreadsheet_id,
         credentials_path=settings.google_application_credentials_path,
-        dry_run=False,
+        dry_run=dry_run,
     )
     crm = CRMPipeline(sheets_adapter=sheets)
     gate = ApprovalGate(sheets_adapter=sheets)
+    notifier: NotifierAdapter | None = None
+    if notify:
+        notifier = NotifierAdapter(
+            bot_token=settings.telegram_bot_token,
+            chat_id=settings.telegram_chat_id,
+            dry_run=dry_run,
+        )
 
-    # Fetch and score
-    opps = fetch_live_opportunities(limit=limit)
+    # Option 2 SupervisorRelay checkpoint (Workstream B: kimi-k2-thinking)
+    # We estimate qualified count after scoring, so checkpoint after fetch+score.
+    opps = fetch_live_opportunities(limit=limit, sample=sample)
     scored = score_opportunities(opps, min_commission_pct=min_commission, min_deal_value_usd=min_deal_size)
     qualified = filter_qualified(scored)
+
+    checkpoint = _controlled_write_checkpoint(len(qualified), min_deal_size, dry_run=dry_run)
+    console.print(f"[cyan]Supervisor checkpoint:[/cyan] {checkpoint}")
+    if not checkpoint.get("ok"):
+        return {
+            "ok": False,
+            "error": f"Supervisor did not approve controlled-write: {checkpoint.get('reason')}",
+            "mode": "controlled-write",
+            "checkpoint": checkpoint,
+        }
 
     # Track counts
     created = 0
     updated = 0
     duplicates = 0
     approvals_created = 0
+    notifications_sent = 0
 
     for q in qualified[:2]:
         opp = q["opportunity"]
@@ -396,7 +539,7 @@ def run_controlled_write(
                 source=opp.source,
                 source_url=opp.source_url,
                 notes=f"Score={q['score']}; reasons={' | '.join(q['reasons'])}",
-                dry_run=False,
+                dry_run=dry_run,
             )
         if crm_result.get("dedup"):
             duplicates += 1
@@ -425,22 +568,66 @@ def run_controlled_write(
                 target="CommissionCrowd",
                 body=draft_body,
             )
-            approval_req = gate.create_and_write_approval(
-                entity_type="opportunity",
-                entity_id=opp.source_opportunity_id,
-                entity_name=opp.title,
-                requested_action="apply_to_principal",
-                approval_action="apply_to_principal",
-                risk_level="medium" if q["score"] >= 70 else "high",
-                source_url=opp.source_url,
-                notes=(
-                    f"Commission: {opp.commission_text or 'unknown'}"
-                    f" | Score: {q['score']}"
-                    f" | Hash: {payload_hash}"
-                ),
-            )
+            if dry_run:
+                # In dry-run, create an in-memory approval without requiring a live Sheet.
+                approval_req = gate.create_approval(
+                    entity_type="opportunity",
+                    entity_id=opp.source_opportunity_id,
+                    entity_name=opp.title,
+                    requested_action="apply_to_principal",
+                    approval_action="apply_to_principal",
+                    risk_level="medium" if q["score"] >= 70 else "high",
+                    source_url=opp.source_url,
+                    notes=(
+                        f"Commission: {opp.commission_text or 'unknown'}"
+                        f" | Score: {q['score']}"
+                        f" | Hash: {payload_hash}"
+                    ),
+                    dry_run=True,
+                )
+            else:
+                approval_req = gate.create_and_write_approval(
+                    entity_type="opportunity",
+                    entity_id=opp.source_opportunity_id,
+                    entity_name=opp.title,
+                    requested_action="apply_to_principal",
+                    approval_action="apply_to_principal",
+                    risk_level="medium" if q["score"] >= 70 else "high",
+                    source_url=opp.source_url,
+                    notes=(
+                        f"Commission: {opp.commission_text or 'unknown'}"
+                        f" | Score: {q['score']}"
+                        f" | Hash: {payload_hash}"
+                    ),
+                )
             if approval_req.approval_id:
                 approvals_created += 1
+                  logger.info(f"Option 2: Invoking SupervisorRelay checkpoint for Opp {opp.source_opportunity_id}")
+                  from commission_crowd_agent.workflows.approvals import send_approval_request
+                  from commission_crowd_agent.state_registry import OpportunityStateRegistry
+                  registry = OpportunityStateRegistry()
+                  registry.migrate_lifecycle(opp.source_opportunity_id, "LIFECYCLE_APPLICATION_DRAFT_PENDING")
+                  send_approval_request(approval_id=approval_req.approval_id, pack=approval_req)
+                # Option 2 notification dispatch bridge: send Telegram approval request
+                if notifier is not None:
+                    import asyncio
+
+                    pack = ApprovalPack.from_canonical(
+                        opp,
+                        approval_id=approval_req.approval_id,
+                    )
+                    pack.commission_terms = opp.commission_text or "Not stated"
+                    pack.target_size = _infer_target_size(opp)
+                    notify_result = asyncio.run(
+                        send_approval_request(
+                            pack,
+                            notifier,
+                            chat_id=settings.telegram_chat_id,
+                            dry_run=dry_run,
+                        )
+                    )
+                    if notify_result.get("ok"):
+                        notifications_sent += 1
 
     return {
         "ok": True,
@@ -452,7 +639,9 @@ def run_controlled_write(
         "crm_updated": updated,
         "duplicates": duplicates,
         "approvals_created": approvals_created,
+        "notifications_sent": notifications_sent,
         "sheets_written": created + updated + approvals_created,
         "emails_sent": 0,
         "calendars_created": 0,
+        "checkpoint": checkpoint,
     }
