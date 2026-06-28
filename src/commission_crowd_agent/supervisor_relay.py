@@ -362,11 +362,13 @@ class SupervisorRelay:
 
         if self.dry_run:
             return SupervisorResponse(
-                approved=True,
+                approved=False,
                 reason="Dry-run mode — no inference performed.",
                 recommended_action="",
-                risk_level="low",
-                notes="Dry-run supervisor response: read-only workstream may proceed without live inference.",
+                risk_level="unknown",
+                notes="Dry-run supervisor response: no inference was run, so the gate fails "
+                "closed (approved=False). Callers must not treat a dry-run relay "
+                "response as a real approval.",
                 requested_model=requested_model,
                 actual_model=requested_model,
                 fallback_reason=None,

@@ -127,6 +127,22 @@ class TestParseSingleUrl:
 
 
 class TestIngestSourcesDryRun:
+    @pytest.fixture(autouse=True)
+    def _stub_fetch_html(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Make every test hermetic: never hit the network for source HTML.
+
+        Several tests in this class previously made a real ``httpx.get`` to the
+        source URL without mocking ``_fetch_html``, so they only passed when the
+        external host happened to be reachable. Returning minimal HTML forces
+        the extraction fallback path (source-page-as-lead) deterministically,
+        matching the existing ``test_limit_capped_at_hard_max`` pattern.
+        """
+        monkeypatch.setattr(
+            OperatorSourceIngester,
+            "_fetch_html",
+            lambda self, url: "<html></body></html>",
+        )
+
     def test_no_sources_returns_safe(self) -> None:
         ingester = OperatorSourceIngester()
         result = ingester.ingest_sources([], limit=3, dry_run=True)

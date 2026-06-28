@@ -10,12 +10,16 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from typing import Any
 
 from .approval_gate import ApprovalGate
 from .config import CcaSettings, load_settings
-from .form_shadow_validator import FormShadowValidator, OperatorInterventionRequired, ShadowValidationResult
+from .form_shadow_validator import (
+    FormShadowValidator,
+    OperatorInterventionRequired,
+    ShadowValidationResult,
+)
+from .mvp_pipeline import generate_application_draft
 from .state_registry import (
     LIFECYCLE_APPLICATION_APPROVED,
     LIFECYCLE_APPLICATION_SUBMITTED,
@@ -28,6 +32,7 @@ from .supervisor_relay import (
     SupervisorResponse,
     SupervisorTaskType,
 )
+from .workflows.approvals import migrate_lifecycle_state
 
 DEFAULT_ACTION = "apply_to_principal"
 
@@ -101,6 +106,7 @@ class FormSubmissionEngine:
           - lifecycle state is ``application_approved``
           - daily volume limit has not been reached
           - no recent successful/dry-run audit record implies idempotency concern
+          - supervisor relay is enabled (the live checkpoint runs in submit_application)
         """
         reasons: list[str] = []
         registry = self._get_registry()
@@ -117,13 +123,16 @@ class FormSubmissionEngine:
         if current_state != LIFECYCLE_APPLICATION_APPROVED:
             reasons.append(f"Lifecycle state is '{current_state}', expected 'application_approved'")
 
+        if not self.supervisor.enabled:
+            reasons.append("Supervisor relay is not enabled (SUPERVISOR_MODE != local)")
+
         daily_limit = self.settings.cca_daily_volume_limit
         daily_count = self.audit.count_today(DEFAULT_ACTION)
         if daily_count >= daily_limit:
             reasons.append(f"Daily volume limit reached ({daily_count}/{daily_limit})")
 
         # Build a representative payload hash for idempotency pre-check.
-        payload = self._build_payload(record.to_dict())
+        payload, _draft = self._build_payload(record)
         payload_hash = hash_payload(payload)
         existing = self.audit.has_submission(opportunity_id, DEFAULT_ACTION, payload_hash)
         if existing is not None:
@@ -141,25 +150,65 @@ class FormSubmissionEngine:
             idempotent_record_id=existing.audit_id if existing else None,
         )
 
-    def _build_payload(self, record: dict[str, Any]) -> dict[str, Any]:
-        """Build a minimal application payload from a registry record.
+    def _build_payload(self, record: Any) -> tuple[dict[str, Any], dict[str, str]]:
+        """Build the application payload and draft from a registry record.
 
-        This is a skeleton implementation. Future milestones will pull the
-        pre-approved draft text from mvp_pipeline or the approvals Sheet.
+        Uses :func:`mvp_pipeline.generate_application_draft` when the record can
+        be converted to a :class:`CanonicalOpportunity`; otherwise falls back to
+        a minimal identity-only payload.  Returns ``(payload, draft)`` so callers
+        can audit the draft text alongside the hashed payload.
         """
-        return {
-            "opportunity_id": record.get("opportunity_id", ""),
-            "principal_name": record.get("principal_name", ""),
-            "title": record.get("title", ""),
-            "source_url": record.get("source_url", ""),
+        record_dict = record.to_dict() if hasattr(record, "to_dict") else dict(record)
+        canonical = getattr(record, "to_canonical_opportunity", lambda: None)()
+
+        draft: dict[str, str] = {}
+        if canonical is not None:
+            try:
+                draft = generate_application_draft(canonical, self.settings)
+            except Exception:  # noqa: BLE001 - draft generation must not crash the engine
+                draft = {}
+
+        if not draft:
+            fallback_title = record_dict.get("title", "")
+            draft = {
+                "subject": (
+                    f"Independent Sales Representative Application — {fallback_title}"
+                ),
+                "body": "",
+            }
+
+        # Payload is a flat map of form fields the engine intends to submit.
+        # The draft text is included as ``subject``/``body`` so the shadow
+        # validator can verify the rendered form accepts it; the draft dict is
+        # also returned separately so it can be audited alongside the hash.
+        payload: dict[str, Any] = {
+            "opportunity_id": record_dict.get("opportunity_id", ""),
+            "principal_name": record_dict.get("principal_name", ""),
+            "title": record_dict.get("title", ""),
+            "source_url": record_dict.get("source_url", ""),
+            "subject": draft.get("subject", ""),
+            "body": draft.get("body", ""),
             "action": DEFAULT_ACTION,
-            "submitted_at": datetime.now(timezone.utc).isoformat(),
+        }
+        return payload, draft
+
+    def _build_field_mapping(self, draft: dict[str, str]) -> dict[str, dict[str, str]]:
+        """Return a best-effort form field mapping for the application draft."""
+        return {
+            "subject": {"selector": 'input[name="subject"]', "type": "text"},
+            "body": {"selector": 'textarea[name="body"]', "type": "textarea"},
+            "opportunity_id": {"selector": 'input[name="opportunity_id"]', "type": "text"},
+            "principal_name": {"selector": 'input[name="principal_name"]', "type": "text"},
+            "title": {"selector": 'input[name="title"]', "type": "text"},
+            "source_url": {"selector": 'input[name="source_url"]', "type": "url"},
+            "action": {"selector": 'input[name="action"]', "type": "hidden"},
         }
 
-    def _compute_form_url(self, record: dict[str, Any]) -> str:
+    def _compute_form_url(self, record: Any) -> str:
         """Resolve the application form URL for an opportunity."""
-        source_url = record.get("source_url", "")
-        opportunity_id = record.get("opportunity_id", "")
+        record_dict = record.to_dict() if hasattr(record, "to_dict") else dict(record)
+        source_url: str = str(record_dict.get("source_url", "") or "")
+        opportunity_id: str = str(record_dict.get("opportunity_id", "") or "")
         if source_url and "commissioncrowd.com" in source_url:
             return source_url
         return f"https://www.commissioncrowd.com/opportunities/{opportunity_id}/apply"
@@ -281,27 +330,26 @@ class FormSubmissionEngine:
             self._write_audit(result, status="aborted")
             return result
 
-        # 2. Approval gate
+        # 2. Approval gate — fail closed before any page mutation.
         if not self.gate.is_approved(approval_id):
             result.error = f"Approval {approval_id} is not approved"
             self._write_audit(result, status="aborted")
             return result
 
-        payload = self._build_payload(record.to_dict())
+        payload, draft = self._build_payload(record)
         payload_hash = hash_payload(payload)
 
-        # 3. Supervisor checkpoint
+        # 3. Supervisor checkpoint — submission plan review (DRAFT_REVIEW per spec §6.1).
         supervisor_checkpoint: SupervisorResponse | None = None
         try:
             prompt = self._supervisor_prompt(opportunity_id, payload)
             supervisor_checkpoint = self.supervisor.route(
-                SupervisorTaskType.CODE_REVIEW, prompt
+                SupervisorTaskType.DRAFT_REVIEW, prompt
             )
             result.supervisor_checkpoint = self._checkpoint_to_dict(supervisor_checkpoint)
             if not result.supervisor_checkpoint.get("ok"):
-                result.error = (
-                    f"Supervisor checkpoint not ok: {result.supervisor_checkpoint.get('reason', '')}"
-                )
+                cp_reason = result.supervisor_checkpoint.get("reason", "")
+                result.error = f"Supervisor checkpoint not ok: {cp_reason}"
                 self._write_audit(result, status="aborted", payload_hash=payload_hash)
                 return result
         except SupervisorBlockedActionError as exc:
@@ -315,14 +363,18 @@ class FormSubmissionEngine:
             self._write_audit(result, status="aborted", payload_hash=payload_hash)
             return result
 
-        # 4. Shadow validation
-        form_url = self._compute_form_url(record.to_dict())
+        # 4. Shadow validation against the live or structural form shadow.
+        form_url = self._compute_form_url(record)
+        field_mapping = self._build_field_mapping(draft)
         try:
             shadow_result: ShadowValidationResult = self._shadow_validator.validate(
                 form_url,
                 payload,
                 payload_hash,
-                expected_opportunity_id=opportunity_id,
+                field_mapping,
+                opportunity_id=opportunity_id,
+                principal_name=record.principal_name,
+                dry_run=dry_run,
             )
             result.shadow_validation = shadow_result.to_dict()
             if not shadow_result.ok:
@@ -360,34 +412,47 @@ class FormSubmissionEngine:
             self._write_audit(result, status="aborted", payload_hash=payload_hash)
             return result
 
-        # 6. Fill form; 7. Click submit only when not dry-run
-        try:
-            fill_result = self._fill_form(payload, dry_run=dry_run)
-        except Exception as exc:
-            result.error = f"Form fill failed: {exc}"
-            self._write_audit(result, status="failed", payload_hash=payload_hash)
-            return result
+        # 6/7. Fill form and click submit only on a real (non-dry-run) run.
+        fill_result: dict[str, Any] = {}
+        if not dry_run:
+            try:
+                fill_result = self._fill_form(payload, dry_run=False)
+            except Exception as exc:
+                result.error = f"Form fill failed: {exc}"
+                self._write_audit(result, status="failed", payload_hash=payload_hash)
+                return result
 
-        # 8. Write audit record
+        # 8. Always append an audit record.
         status = "dry_run" if dry_run else "success"
         audit_record = self._write_audit(
             result,
             status=status,
             payload_hash=payload_hash,
-            extra={"fill_result": fill_result},
+            extra={"fill_result": fill_result, "draft": draft} if not dry_run else {"draft": draft},
         )
         result.audit_id = audit_record.audit_id
         result.ok = True
 
-        # 9. Migrate lifecycle state on real submission success only
+        # 9. Migrate lifecycle state only on a real successful submission.
         if not dry_run:
-            record.lifecycle_state = LIFECYCLE_APPLICATION_SUBMITTED
-            record.updated_at = datetime.now(timezone.utc).isoformat()
-            record.add_provenance(
-                source="form_submission_engine",
-                route="submit_application",
+            migration = migrate_lifecycle_state(
+                registry,
+                opportunity_id,
+                LIFECYCLE_APPLICATION_SUBMITTED,
+                from_states={LIFECYCLE_APPLICATION_APPROVED},
             )
-            result.state_migrated = True
+            if not migration.get("ok"):
+                # State guard refused the transition — surface but keep audit success.
+                result.error = (
+                    f"State migration failed: {migration.get('error', 'unknown')}"
+                )
+                result.state_migrated = False
+            else:
+                record.add_provenance(
+                    source="form_submission_engine",
+                    route="submit_application",
+                )
+                result.state_migrated = True
 
         return result
 
