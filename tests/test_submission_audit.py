@@ -10,6 +10,7 @@ Covers:
 from __future__ import annotations
 
 import tempfile
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,9 +24,9 @@ from commission_crowd_agent.submission_audit import (
 
 
 @pytest.fixture
-def audit_module() -> SubmissionAuditModule:
+def audit_module() -> Iterator[SubmissionAuditModule]:
     with tempfile.TemporaryDirectory() as tmp:
-        return SubmissionAuditModule(audit_path=Path(tmp) / "audit.jsonl")
+        yield SubmissionAuditModule(audit_path=Path(tmp) / "audit.jsonl")
 
 
 class TestHashPayload:

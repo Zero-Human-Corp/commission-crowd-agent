@@ -10,10 +10,9 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
-
 
 DEFAULT_REGISTRY_PATH: Path = Path("/home/ubuntu/hermes-control/reports/cca_report_registry.json")
 
@@ -40,7 +39,7 @@ class CommissionReport:
     raw_fingerprint: str = ""
     report_hash: str = ""
     provenance: dict[str, Any] = field(default_factory=dict)
-    fetched_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     requires_review: bool = False
 
     def __post_init__(self) -> None:
@@ -53,9 +52,12 @@ def compute_report_hash(report: CommissionReport) -> str:
     """Return a stable SHA-256 hash over the identifying fields of a report.
 
     The hash deliberately excludes monetary amounts, ``report_id``,
-    ``fetched_at``, ``provenance`` timestamps, and ``requires_review`` so that
-    two logically identical reports collide and can be deduplicated, while
-    amount changes surface as ``amount_mismatch`` conflicts.
+    ``fetched_at``, ``provenance`` timestamps, ``raw_fingerprint`` and
+    ``requires_review`` so that two logically identical reports collide and can
+    be deduplicated, while amount changes surface as ``amount_mismatch``
+    conflicts.  ``raw_fingerprint`` is excluded because two scrapes of the same
+    row may produce slightly different raw cell strings while still describing
+    the same underlying report.
     """
     payload: dict[str, Any] = {
         "opportunity_id": report.opportunity_id,
@@ -66,7 +68,6 @@ def compute_report_hash(report: CommissionReport) -> str:
         "currency": report.currency,
         "status": report.status,
         "source_url": report.source_url,
-        "raw_fingerprint": report.raw_fingerprint,
     }
     canonical = json.dumps(payload, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -122,7 +123,7 @@ class ReportRegistry:
         """
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
-            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "saved_at": datetime.now(UTC).isoformat(),
             "path": str(self.path),
             "count": len(self._reports),
             "reports": [_report_to_dict(r) for r in self._reports.values()],
@@ -240,11 +241,10 @@ class ReportRegistry:
     ) -> list[Conflict]:
         conflicts: list[Conflict] = []
 
-        if existing_report is not None:
-            if (
-                existing_report.gross_amount != report.gross_amount
-                or existing_report.net_amount != report.net_amount
-            ):
+        if existing_report is not None and (
+            existing_report.gross_amount != report.gross_amount
+            or existing_report.net_amount != report.net_amount
+        ):
                 conflicts.append(
                     Conflict(
                         conflict_type="amount_mismatch",
@@ -286,16 +286,19 @@ class ReportRegistry:
                         )
                     )
 
-        if known_opportunity_ids is not None and report.opportunity_id:
-            if report.opportunity_id not in known_opportunity_ids:
-                conflicts.append(
-                    Conflict(
-                        conflict_type="orphan_report",
-                        report_hash=report.report_hash,
-                        report_id=report.report_id,
-                        details={"opportunity_id": report.opportunity_id},
-                    )
+        if (
+            known_opportunity_ids is not None
+            and report.opportunity_id
+            and report.opportunity_id not in known_opportunity_ids
+        ):
+            conflicts.append(
+                Conflict(
+                    conflict_type="orphan_report",
+                    report_hash=report.report_hash,
+                    report_id=report.report_id,
+                    details={"opportunity_id": report.opportunity_id},
                 )
+            )
 
         return conflicts
 
@@ -322,6 +325,46 @@ class ReportRegistry:
             "requires_review": sum(1 for r in self._reports.values() if r.requires_review),
         }
 
+    # ------------------------------------------------------------------
+    # Pydantic schema bridge (additive, Sprint 3 §4.2)
+    # ------------------------------------------------------------------
+
+    def add_report_schema(
+        self,
+        schema: Any,
+        *,
+        known_opportunity_ids: set[str] | None = None,
+        source: str = "report_registry",
+        route: str = "schema_bridge",
+    ) -> dict[str, Any]:
+        """Add a report supplied as a Pydantic ``CommissionReportSchema``.
+
+        Converts the schema to a :class:`CommissionReport` via
+        :func:`schema_to_report`, appends a registry-ingestion provenance entry
+        produced by the provenance engine (:func:`build_provenance`), and
+        delegates to :meth:`add_report`.  Existing ``add_report`` behaviour is
+        unchanged.
+        """
+        from .models.report_schema import build_provenance, schema_to_report
+
+        report = schema_to_report(schema)
+        # Record that the row passed through the schema bridge.  Stored under
+        # the ``_entries`` key so the round-trip stays lossless.
+        entries: list[dict[str, Any]] = list(report.provenance.get("_entries", []))
+        entries.append(build_provenance(source=source, route=route).model_dump(mode="json"))
+        report.provenance = {"_entries": entries}
+        return self.add_report(report, known_opportunity_ids=known_opportunity_ids)
+
+    def to_schemas(self) -> list[Any]:
+        """Return every stored report as a ``CommissionReportSchema``.
+
+        The conversion is lossless: ``schema_to_report(report_to_schema(r))``
+        preserves ``report_hash``, monetary amounts, and provenance entries.
+        """
+        from .models.report_schema import report_to_schema
+
+        return [report_to_schema(report) for report in self._reports.values()]
+
 
 # ------------------------------------------------------------------
 # Helpers
@@ -342,7 +385,7 @@ def _date_from_value(value: Any) -> date | None:
 def _datetime_from_value(value: Any) -> datetime:
     """Parse a datetime from ISO format string, datetime object, or None."""
     if value is None:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
     if isinstance(value, datetime):
         return value
     if isinstance(value, str):
