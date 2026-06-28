@@ -47,6 +47,41 @@ class CommissionReport:
         if not self.report_hash:
             self.report_hash = compute_report_hash(self)
 
+    def add_provenance(
+        self,
+        source: str,
+        route: str,
+        retrieved_at: str = "",
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        """Append a provenance entry using the schema engine.
+
+        Entries are stored under the ``_entries`` key so that the dataclass
+        remains serialisable and the Pydantic round-trip is lossless.
+        """
+        from .models.report_schema import ReportProvenanceEntry
+
+        entries: list[dict[str, Any]] = list(self.provenance.get("_entries", []))
+        entry = ReportProvenanceEntry(
+            source=source,
+            route=route,
+            retrieved_at=retrieved_at or datetime.now(UTC).isoformat(),
+            details=details or {},
+        )
+        entries.append(entry.model_dump(mode="json"))
+        self.provenance = {"_entries": entries}
+
+    def to_pydantic(self) -> Any:
+        """Convert this dataclass to a typed ``CommissionReportSchema``."""
+        from .models.report_schema import report_to_schema
+        return report_to_schema(self)
+
+    @classmethod
+    def from_pydantic(cls, schema: Any) -> CommissionReport:
+        """Convert a ``CommissionReportSchema`` back to a dataclass."""
+        from .models.report_schema import schema_to_report
+        return schema_to_report(schema)
+
 
 def compute_report_hash(report: CommissionReport) -> str:
     """Return a stable SHA-256 hash over the identifying fields of a report.

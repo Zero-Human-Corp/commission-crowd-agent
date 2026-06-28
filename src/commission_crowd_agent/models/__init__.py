@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from .report_schema import (
     CommissionReportSchema,
+    ReportMetadataEngine,
     ReportProvenanceEntry,
+    ReportRegistrySnapshot,
     ReportStatus,
     ReportType,
     build_provenance,
@@ -16,7 +18,9 @@ from .report_schema import (
 
 __all__ = [
     "CommissionReportSchema",
+    "ReportMetadataEngine",
     "ReportProvenanceEntry",
+    "ReportRegistrySnapshot",
     "ReportStatus",
     "ReportType",
     "build_provenance",

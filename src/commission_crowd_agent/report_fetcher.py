@@ -11,6 +11,8 @@ configured, and wraps the network fetch in exponential backoff.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import time
 import uuid
@@ -33,6 +35,8 @@ DEFAULT_TRACKING_TAB: str = "reports_tracking"
 MAX_BACKOFF_SECONDS: float = 60.0
 _BACKOFF_BASE_SECONDS: float = 1.0
 _MAX_RETRY_ATTEMPTS: int = 4
+
+_T = TypeVar("_T")
 
 # Tracking row schema for the reports-tracking Sheet tab.  Order matters and
 # is documented here for operators; the values list in ``_append_tracking_row``
@@ -66,6 +70,7 @@ class CommissionReportFetcher:
         *,
         registry: ReportRegistry | None = None,
         tracking_tab: str = DEFAULT_TRACKING_TAB,
+        sheets_adapter: GoogleSheetsAdapter | None = None,
     ) -> None:
         self.settings = settings or load_settings()
         self.browser = browser
@@ -73,6 +78,7 @@ class CommissionReportFetcher:
         self.registry = registry or ReportRegistry()
         self.dry_run = True
         self.tracking_tab = tracking_tab
+        self._sheets_adapter = sheets_adapter
 
     # ------------------------------------------------------------------
     # Public API
@@ -113,6 +119,18 @@ class CommissionReportFetcher:
 
         raw_items, fetch_errors = self._fetch_via_browser_with_retry(limit=limit)
         errors.extend(fetch_errors)
+
+        # Volume bound: fail closed when the available raw count exceeds the
+        # requested limit so reports are never silently dropped past the ceiling.
+        if len(raw_items) > limit:
+            return self._bounded_error(
+                limit=limit,
+                dry_run=False,
+                reason=f"item count {len(raw_items)} exceeding limit {limit}",
+            )
+
+        # Row-level deduplication across overlapping browser/API pages.
+        raw_items = self._dedupe_items(raw_items)
         fetched = len(raw_items)
 
         for item in raw_items:
@@ -316,7 +334,10 @@ class CommissionReportFetcher:
             except Exception as exc:  # noqa: BLE001
                 logger.debug("api.list_opportunities failed: %s", exc)
 
-        return items[:limit]
+        # NOTE: no truncation here — the caller enforces the volume bound and
+        # fails closed when the raw available count exceeds ``limit``, rather
+        # than silently dropping reports past the ceiling.
+        return items
 
     def _fetch_via_browser_with_retry(
         self, *, limit: int
@@ -397,6 +418,37 @@ class CommissionReportFetcher:
             errors.append(f"{label}: {last_exc}")
         return None
 
+    def _dedupe_items(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Remove raw items that describe the same logical report row.
+
+        The deduplication key covers opportunity, report type, period, source
+        URL, and a hash of the raw fingerprint so that overlapping pages do not
+        produce duplicate registry entries.
+        """
+        seen: set[str] = set()
+        unique: list[dict[str, Any]] = []
+        for item in items:
+            key_payload = json.dumps(
+                {
+                    "opportunity_id": str(item.get("opportunity_id") or item.get("id") or ""),
+                    "report_type": str(item.get("report_type", "")),
+                    "period_start": str(item.get("period_start", "")),
+                    "period_end": str(item.get("period_end", "")),
+                    "source_url": str(item.get("source_url", "")),
+                    "raw_fingerprint": str(
+                        item.get("raw_fingerprint")
+                        or json.dumps(item, sort_keys=True, default=str)
+                    ),
+                },
+                sort_keys=True,
+                default=str,
+            )
+            key = hashlib.sha256(key_payload.encode("utf-8")).hexdigest()
+            if key not in seen:
+                seen.add(key)
+                unique.append(item)
+        return unique
+
     def _item_to_report(
         self, item: dict[str, Any], provenance: dict[str, Any]
     ) -> CommissionReport:
@@ -468,19 +520,20 @@ class CommissionReportFetcher:
         or when the append fails.  Never raises — the fetch result is already
         authoritative.
         """
-        if not self.settings.google_ready:
-            logger.debug("Sheets tracking skipped: google_ready is False")
-            return
-        spreadsheet_id = self.settings.google_sheets_spreadsheet_id
-        if not spreadsheet_id:
-            logger.debug("Sheets tracking skipped: no spreadsheet_id configured")
-            return
-
-        adapter = GoogleSheetsAdapter(
-            spreadsheet_id=spreadsheet_id,
-            credentials_path=self.settings.google_application_credentials_path,
-            service_account_json=self.settings.google_service_account_json,
-        )
+        adapter = self._sheets_adapter
+        if adapter is None:
+            if not self.settings.google_ready:
+                logger.debug("Sheets tracking skipped: google_ready is False")
+                return
+            spreadsheet_id = self.settings.google_sheets_spreadsheet_id
+            if not spreadsheet_id:
+                logger.debug("Sheets tracking skipped: no spreadsheet_id configured")
+                return
+            adapter = GoogleSheetsAdapter(
+                spreadsheet_id=spreadsheet_id,
+                credentials_path=self.settings.google_application_credentials_path,
+                service_account_json=self.settings.google_service_account_json,
+            )
         values = [
             datetime.now(UTC).isoformat(),
             str(provenance.get("method", "")),
@@ -525,10 +578,6 @@ class CommissionReportFetcher:
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
-
-# Type variable for the retry helper.  Declared at module scope so mypy can
-# infer the generic return type of ``_with_retry``.
-_T = TypeVar("_T")
 
 
 def _parse_date(value: Any) -> date | None:

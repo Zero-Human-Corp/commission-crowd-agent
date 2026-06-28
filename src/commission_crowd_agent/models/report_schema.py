@@ -335,9 +335,95 @@ def schema_to_report(schema: CommissionReportSchema) -> CommissionReport:
     return report
 
 
+
+# ---------------------------------------------------------------------------
+# Registry snapshot + metadata engine
+# ---------------------------------------------------------------------------
+
+
+class ReportRegistrySnapshot(BaseModel):
+    """Serialisable snapshot of an entire ``ReportRegistry``.
+
+    Mirrors the JSON structure written by ``ReportRegistry.save()`` and is the
+    typed interchange format for downstream analytics or operator dashboards.
+    """
+
+    saved_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    path: str = ""
+    count: int = 0
+    reports: list[CommissionReportSchema] = Field(default_factory=list)
+    conflicts: list[Any] = Field(default_factory=list)
+
+
+class ReportMetadataEngine:
+    """Validate and enrich report metadata, including provenance and lineage hashes."""
+
+    @staticmethod
+    def validate_provenance(
+        provenance: list[dict[str, Any]] | dict[str, Any] | None,
+    ) -> list[ReportProvenanceEntry]:
+        """Normalise provenance data into a list of typed entries.
+
+        Accepts legacy flat dictionaries, already-typed entries, or raw lists.
+        """
+        if provenance is None:
+            return []
+        if isinstance(provenance, dict):
+            provenance = [provenance]
+        entries: list[ReportProvenanceEntry] = []
+        for item in provenance:
+            if isinstance(item, ReportProvenanceEntry):
+                entries.append(item)
+            elif isinstance(item, dict):
+                entries.append(ReportProvenanceEntry(**item))
+            else:
+                entries.append(ReportProvenanceEntry(source=str(item), route="unknown"))
+        return entries
+
+    @staticmethod
+    def compute_report_hash(report: CommissionReportSchema | dict[str, Any]) -> str:
+        """Compute the canonical deduplication hash for a schema or raw dict."""
+        if isinstance(report, CommissionReportSchema):
+            return compute_schema_hash(report)
+        # Raw dict path for callers without a schema instance.
+        data = dict(report)
+        period_start = data.get("period_start")
+        period_end = data.get("period_end")
+        payload: dict[str, Any] = {
+            "opportunity_id": str(data.get("opportunity_id", "")),
+            "principal_name": str(data.get("principal_name", "")),
+            "report_type": _enum_value(data.get("report_type", "")),
+            "period_start": (
+                period_start.isoformat()
+                if isinstance(period_start, date)
+                else str(period_start or "")
+            ),
+            "period_end": (
+                period_end.isoformat()
+                if isinstance(period_end, date)
+                else str(period_end or "")
+            ),
+            "currency": str(data.get("currency", "USD")),
+            "status": _enum_value(data.get("status", "pending")),
+            "source_url": str(data.get("source_url", "")),
+            "raw_fingerprint": str(data.get("raw_fingerprint", "")),
+        }
+        canonical = json.dumps(
+            payload, sort_keys=True, ensure_ascii=True, separators=(",", ":")
+        )
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def snapshot_from_dict(data: dict[str, Any]) -> ReportRegistrySnapshot:
+        """Rebuild a typed registry snapshot from a raw dictionary."""
+        return ReportRegistrySnapshot(**data)
+
+
 __all__ = [
     "CommissionReportSchema",
+    "ReportMetadataEngine",
     "ReportProvenanceEntry",
+    "ReportRegistrySnapshot",
     "ReportStatus",
     "ReportType",
     "build_provenance",

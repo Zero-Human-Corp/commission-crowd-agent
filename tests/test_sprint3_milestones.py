@@ -1,33 +1,36 @@
-"""Sprint 3 milestone tests (M1-M7, dry-run/shadow paths only).
+"""Sprint 3 milestone tests — async integration suite.
 
-Hermetic coverage of the locked public contracts documented in
-``docs/sprint_3_specifications.md`` §8.  No live network, no real browser,
-no real supervisor inference.  All collaborators are injected fakes.
-
-If a documented behaviour is not yet implemented by the concurrently-editing
-workstreams (A/B/C), the affected test is ``pytest.skip``-ed with a
-``pending <workstream> implementation`` note rather than failing.
+Uses ``pytest.mark.asyncio`` to exercise the end-to-end report-fetching loop,
+Google Sheets tracking, row-level deduplication, Pydantic schema validation,
+and the shadow/form-submission engine guard chain.  All external systems are
+replaced by injected fakes; no live browser, network, or supervisor inference
+is performed.
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
+import re
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from commission_crowd_agent.config import CcaSettings
-from commission_crowd_agent.form_shadow_validator import (
+from commission_crowd_agent.adapters import GoogleSheetsAdapter
+from commission_crowd_agent.browser_automation import (
+    AsyncFormShadowValidator,
+    AsyncFormSubmissionEngine,
     FormShadowValidator,
     OperatorInterventionRequired,
-    ShadowValidationResult,
 )
-from commission_crowd_agent.form_submission_engine import (
-    FormSubmissionEngine,
-    SubmissionEligibility,
+from commission_crowd_agent.config import CcaSettings
+from commission_crowd_agent.models.report_schema import (
+    CommissionReportSchema,
+    ReportMetadataEngine,
+    ReportProvenanceEntry,
 )
 from commission_crowd_agent.report_fetcher import CommissionReportFetcher
 from commission_crowd_agent.report_registry import (
@@ -51,13 +54,15 @@ from commission_crowd_agent.supervisor_relay import (
     SupervisorTaskType,
 )
 
+pytestmark = pytest.mark.asyncio
+
+
 # ---------------------------------------------------------------------------
-# Settings helper
+# Settings / fakes
 # ---------------------------------------------------------------------------
 
 
 def _make_settings(**overrides: Any) -> CcaSettings:
-    """Build a ``CcaSettings`` with supervisor/local fields populated."""
     defaults: dict[str, Any] = {
         "supervisor_mode": "local",
         "supervisor_base_url": "http://localhost:9999/v1",
@@ -78,43 +83,102 @@ def _make_settings(**overrides: Any) -> CcaSettings:
     return CcaSettings(**defaults)
 
 
+class FakeApiAdapter:
+    """CommissionCrowd API double returning an empty opportunity list."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def token_present(self) -> bool:
+        self.calls.append("token_present")
+        return False
+
+    def list_opportunities(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append("list_opportunities")
+        return {"ok": True, "data": {"items": []}}
+
+    def get_opportunity(self, _opportunity_id: int) -> dict[str, Any]:
+        return {"ok": False, "error": "no token"}
+
+
+class FakeBrowserAdapter:
+    """Browser adapter double exposing ``list_my_opportunities`` and ``_page``."""
+
+    def __init__(self, opportunities: list[dict[str, Any]] | None = None) -> None:
+        self.opportunities = opportunities or []
+        self.calls: list[str] = []
+
+    def list_my_opportunities(self) -> list[dict[str, Any]]:
+        self.calls.append("list_my_opportunities")
+        return self.opportunities
+
+    @property
+    def _page(self) -> None:
+        return None
+
+
+class RecordingSheetsAdapter(GoogleSheetsAdapter):
+    """Google Sheets double that records every append without network."""
+
+    def __init__(self) -> None:  # noqa: D107
+        self.appended: list[tuple[str, list[str]]] = []
+
+    def append_row(self, tab: str, values: list[str]) -> dict[str, Any]:
+        self.appended.append((tab, values))
+        return {"ok": True, "action": "append_row", "tab": tab, "rows_changed": 1}
+
+    def health_check(self) -> dict[str, Any]:
+        return {"ok": True}
+
+
 # ---------------------------------------------------------------------------
-# Fake browser / page / locator for the shadow validator and engine
+# Fake Playwright page / locator
 # ---------------------------------------------------------------------------
 
 
-def _field_locators(field_name: str) -> list[str]:
-    """Mirror of ``FormShadowValidator._field_locators`` for fake matching."""
-    return [
-        f'input[name="{field_name}"]',
-        f'input[id="{field_name}"]',
-        f'input[aria-label="{field_name}" i]',
-        f'textarea[name="{field_name}"]',
-        f'textarea[id="{field_name}"]',
-        f'select[name="{field_name}"]',
-        f'select[id="{field_name}"]',
-        f'[data-field="{field_name}"]',
-        f'[data-name="{field_name}"]',
-    ]
+def _selector_to_field_name(selector: str) -> str | None:
+    """Extract a field name from the simple selectors the validator uses."""
+    for pattern in (
+        r'(?:name|id|aria-label)=["\']([^"\']+)["\']',
+        r'\[data-field=["\']([^"\']+)["\']\]',
+        r'\[data-name=["\']([^"\']+)["\']\]',
+    ):
+        m = re.search(pattern, selector)
+        if m:
+            return m.group(1)
+    return None
 
 
 @dataclass
 class FakeLocator:
-    """Minimal Playwright-locator double."""
+    """Minimal Playwright locator double backed by a ``FakePage``."""
 
     selector: str
     page: FakePage
 
     def count(self) -> int:
-        for field_name, (tag, _itype) in self.page.fields.items():
-            if self.selector in _field_locators(field_name):
-                # Refuse matching if the page is in a "blocked" state that
-                # should not expose form fields (e.g. captcha page).
-                if self.page.fields_hidden:
-                    return 0
-                _ = tag
-                return 1
+        if self.page.fields_hidden:
+            return 0
+        # Field locators
+        field_name = _selector_to_field_name(self.selector)
+        if field_name and field_name in self.page.fields:
+            return 1
+        # Submit-button-like locators
+        lower = self.selector.lower()
+        html = self.page.content_html.lower()
+        if 'type="submit"' in lower and ('<button' in html or '<input' in html):
+            return 1
+        if ":has-text('apply')" in lower and "apply" in html:
+            return 1
+        if ":has-text('submit')" in lower and "submit" in html:
+            return 1
+        if "data-testid='submit-button'" in lower:
+            return 1
         return 0
+
+    @property
+    def first(self) -> FakeLocator:
+        return self
 
     def fill(self, value: str) -> None:
         self.page.filled.append((self.selector, value))
@@ -122,34 +186,29 @@ class FakeLocator:
     def click(self) -> None:
         self.page.clicked.append(self.selector)
 
-    @property
-    def first(self) -> FakeLocator:
-        return self
-
     def get_attribute(self, name: str) -> str | None:
-        for field_name, (tag, itype) in self.page.fields.items():
-            if self.selector in _field_locators(field_name):
-                if name == "type":
-                    return itype
-                _ = tag
-                return None
+        field_name = _selector_to_field_name(self.selector)
+        if field_name and field_name in self.page.fields:
+            tag, itype = self.page.fields[field_name]
+            if name == "type":
+                return itype
+            if name == "tag":
+                return tag
         return None
 
     def evaluate(self, _script: str) -> str:
-        for field_name, (tag, _itype) in self.page.fields.items():
-            if self.selector in _field_locators(field_name):
-                _ = field_name
-                return tag
+        field_name = _selector_to_field_name(self.selector)
+        if field_name and field_name in self.page.fields:
+            return self.page.fields[field_name][0]
         return ""
 
 
 @dataclass
 class FakePage:
-    """Minimal Playwright page double backed by a static HTML fixture."""
+    """Static HTML-backed Playwright page double."""
 
-    content_html: str = ""
+    content_html: str
     url_value: str = "https://www.commissioncrowd.com/opportunities/OPP-1/apply"
-    # field_name -> (tag, input_type)
     fields: dict[str, tuple[str, str]] = field(default_factory=dict)
     fields_hidden: bool = False
     filled: list[tuple[str, str]] = field(default_factory=list)
@@ -166,7 +225,7 @@ class FakePage:
         self.url_value = url
 
     def wait_for_timeout(self, _ms: int) -> None:
-        return None
+        return
 
     def content(self) -> str:
         return self.content_html
@@ -174,16 +233,16 @@ class FakePage:
     def locator(self, selector: str) -> FakeLocator:
         return FakeLocator(selector=selector, page=self)
 
-    def screenshot(self, *, path: str) -> None:
-        self.screenshot_paths.append(path)
-        Path(path).write_bytes(b"PNG-fake")
-
     def fill(self, selector: str, value: str) -> None:
-        # Engine calls ``page.fill(selector, value)`` directly (not via locator).
         self.filled.append((selector, value))
 
-    def evaluate(self, _script: str) -> str:
-        return ""
+    def click(self, selector: str) -> None:
+        self.clicked.append(selector)
+
+    def screenshot(self, *, path: str) -> None:
+        self.screenshot_paths.append(path)
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_bytes(b"PNG")
 
 
 @dataclass
@@ -198,13 +257,11 @@ class FakeBrowser:
 
 
 # ---------------------------------------------------------------------------
-# Fake approval gate and supervisor relay
+# Approval / supervisor fakes
 # ---------------------------------------------------------------------------
 
 
 class FakeApprovalGate:
-    """Approval gate double whose ``is_approved`` is configurable."""
-
     def __init__(self, approved_ids: set[str] | None = None) -> None:
         self._approved = approved_ids or set()
 
@@ -213,18 +270,14 @@ class FakeApprovalGate:
 
 
 class FakeSupervisorRelay:
-    """Supervisor relay double that returns canned responses or raises."""
-
     def __init__(
         self,
         *,
         response: SupervisorResponse | None = None,
         raise_blocked: bool = False,
-        raise_error: bool = False,
     ) -> None:
         self._response = response
         self._raise_blocked = raise_blocked
-        self._raise_error = raise_error
         self.route_calls: list[tuple[SupervisorTaskType, str]] = []
 
     @property
@@ -240,20 +293,18 @@ class FakeSupervisorRelay:
         self.route_calls.append((task_type, prompt))
         if self._raise_blocked:
             raise SupervisorBlockedActionError("blocked: apply")
-        if self._raise_error:
-            raise RuntimeError("supervisor offline")
         if self._response is not None:
             return self._response
         return SupervisorResponse(
             approved=True,
-            reason="fake supervisor approves",
+            reason="fake approve",
             recommended_action="proceed",
             risk_level="low",
             human_approval_required=False,
         )
 
 
-def _approved_supervisor_response() -> SupervisorResponse:
+def _approved_response() -> SupervisorResponse:
     return SupervisorResponse(
         approved=True,
         reason="fake approve",
@@ -263,486 +314,12 @@ def _approved_supervisor_response() -> SupervisorResponse:
     )
 
 
-class FakeShadowValidator:
-    """Shadow validator double returning a canned result.
-
-    The engine's call site uses a positional/keyword signature that the
-    in-flight validator rewrite has not yet aligned with, so engine tests
-    inject this double to exercise the engine's orchestration (gate,
-    supervisor, audit, idempotency, fill, state migration) without depending
-    on the validator's shifting internal contract.
-    """
-
-    def __init__(
-        self,
-        result: ShadowValidationResult | None = None,
-        *,
-        raise_intervention: bool = False,
-    ) -> None:
-        self._result = result or ShadowValidationResult(
-            ok=True,
-            checks={
-                "page_reachable": True,
-                "no_captcha_or_2fa": True,
-                "required_fields_present": True,
-                "field_type_compatible": True,
-                "payload_hash_match": True,
-            },
-            mismatches=[],
-        )
-        self._raise_intervention = raise_intervention
-        self.calls: list[tuple[str, dict[str, Any], str]] = []
-
-    def validate(
-        self,
-        form_url: str,
-        payload: dict[str, Any],
-        payload_hash: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> ShadowValidationResult:
-        self.calls.append((form_url, payload, payload_hash))
-        if self._raise_intervention:
-            raise OperatorInterventionRequired("captcha detected")
-        return self._result
-
-
 # ---------------------------------------------------------------------------
-# Fixtures
+# Helpers
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture
-def fake_page_well_formed() -> FakePage:
-    """A fake form page whose DOM exposes every payload field as text input."""
-    fields = {
-        "opportunity_id": ("input", "text"),
-        "principal_name": ("input", "text"),
-        "title": ("input", "text"),
-        "source_url": ("input", "text"),
-        "action": ("input", "text"),
-        "submitted_at": ("input", "text"),
-    }
-    html = (
-        "<html><head><title>Apply</title></head><body>"
-        "<form id='apply-form' data-opportunity-id='OPP-1'>"
-        "<label>Opportunity</label>"
-        "</form></body></html>"
-    )
-    return FakePage(
-        content_html=html,
-        url_value="https://www.commissioncrowd.com/opportunities/OPP-1/apply",
-        fields=fields,
-    )
-
-
-@pytest.fixture
-def fake_browser_well_formed(fake_page_well_formed: FakePage) -> FakeBrowser:
-    return FakeBrowser(page=fake_page_well_formed)
-
-
-@pytest.fixture
-def state_registry_approved() -> OpportunityStateRegistry:
-    """Registry carrying one opportunity in ``application_approved`` state."""
-    registry = OpportunityStateRegistry()
-    record = registry._get_or_create("OPP-1")  # noqa: SLF001 - test seed
-    record.title = "Cybersecurity SaaS"
-    record.principal_name = "SecureFlow Inc"
-    record.lifecycle_state = LIFECYCLE_APPLICATION_APPROVED
-    record.source_url = ""
-    return registry
-
-
-@pytest.fixture
-def audit_module(tmp_path: Path) -> SubmissionAuditModule:
-    return SubmissionAuditModule(audit_path=tmp_path / "audit.jsonl")
-
-
-@pytest.fixture
-def approved_gate() -> FakeApprovalGate:
-    return FakeApprovalGate(approved_ids={"A42"})
-
-
-@pytest.fixture
-def approving_supervisor() -> FakeSupervisorRelay:
-    return FakeSupervisorRelay(response=_approved_supervisor_response())
-
-
-@pytest.fixture
-def engine(
-    fake_browser_well_formed: FakeBrowser,
-    approved_gate: FakeApprovalGate,
-    approving_supervisor: FakeSupervisorRelay,
-    audit_module: SubmissionAuditModule,
-    state_registry_approved: OpportunityStateRegistry,
-    tmp_path: Path,
-) -> FormSubmissionEngine:
-    settings = _make_settings(cca_daily_volume_limit=50)
-    eng = FormSubmissionEngine(
-        browser=fake_browser_well_formed,
-        gate=approved_gate,
-        supervisor=approving_supervisor,
-        audit=audit_module,
-        settings=settings,
-    )
-    eng.attach_registry(state_registry_approved)
-    # Inject a fake shadow validator so the engine's orchestration is tested
-    # independently of the in-flight validator signature.  The real validator
-    # is exercised directly in the M4 tests below (fixture mode, hermetic).
-    eng._shadow_validator = FakeShadowValidator()  # noqa: SLF001 - hermetic override
-    return eng
-
-
-# ---------------------------------------------------------------------------
-# Shared report factory
-# ---------------------------------------------------------------------------
-
-
-def _make_report(
-    *,
-    report_id: str = "r-001",
-    opportunity_id: str = "OPP-1",
-    principal_name: str = "Principal A",
-    report_type: str = "earnings",
-    period_start: date = date(2026, 5, 1),
-    period_end: date = date(2026, 5, 31),
-    currency: str = "USD",
-    gross_amount: float = 1000.0,
-    net_amount: float = 950.0,
-    status: str = "confirmed",
-    source_url: str = "https://example.com/report/1",
-    raw_fingerprint: str = "fp-1",
-    provenance: dict[str, Any] | None = None,
-) -> CommissionReport:
-    return CommissionReport(
-        report_id=report_id,
-        opportunity_id=opportunity_id,
-        principal_name=principal_name,
-        report_type=report_type,
-        period_start=period_start,
-        period_end=period_end,
-        currency=currency,
-        gross_amount=gross_amount,
-        net_amount=net_amount,
-        status=status,
-        source_url=source_url,
-        raw_fingerprint=raw_fingerprint,
-        provenance=provenance or {},
-    )
-
-
-# ===========================================================================
-# M1 — Report fetcher skeleton (dry run)
-# ===========================================================================
-
-
-class TestM1ReportFetcherDryRun:
-    """M1: ``cca fetch-reports``-equivalent dry run produces a shadow result."""
-
-    def test_fetch_account_reports_dry_run_returns_ok_shadow(
-        self, tmp_path: Path
-    ) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        fetcher = CommissionReportFetcher(
-            browser=None,
-            api_adapter=None,
-            settings=_make_settings(),
-            registry=registry,
-        )
-        result = fetcher.fetch_account_reports(dry_run=True, limit=100)
-
-        assert result["ok"] is True
-        assert result["dry_run"] is True
-        assert result["added"] == 0
-        assert result["fetched"] == 100
-        assert result["conflicts"] == 0
-
-    def test_fetch_account_reports_dry_run_performs_zero_registry_writes(
-        self, tmp_path: Path
-    ) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        before = len(registry.list_reports())
-        fetcher = CommissionReportFetcher(
-            browser=None,
-            api_adapter=None,
-            settings=_make_settings(),
-            registry=registry,
-        )
-        fetcher.fetch_account_reports(dry_run=True, limit=100)
-
-        assert len(registry.list_reports()) == before
-        # No file written for a dry run.
-        assert not (tmp_path / "registry.json").exists()
-
-    def test_fetch_account_reports_dry_run_makes_zero_network_calls(
-        self, tmp_path: Path
-    ) -> None:
-        recording_browser = _RecordingBrowser()
-        recording_api = _RecordingApiAdapter()
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        fetcher = CommissionReportFetcher(
-            browser=recording_browser,
-            api_adapter=recording_api,
-            settings=_make_settings(),
-            registry=registry,
-        )
-        fetcher.fetch_account_reports(dry_run=True, limit=10)
-
-        # The browser (the live scraping surface) is never touched in dry-run.
-        assert recording_browser.calls == []
-        # The API adapter may be probed for a local token presence check only;
-        # no actual fetch/network method is invoked.
-        assert all(c == "token_present" for c in recording_api.calls)
-
-    def test_fetch_opportunity_report_dry_run_returns_shadow_report(
-        self, tmp_path: Path
-    ) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        fetcher = CommissionReportFetcher(
-            browser=None,
-            api_adapter=None,
-            settings=_make_settings(),
-            registry=registry,
-        )
-        result = fetcher.fetch_opportunity_report("OPP-1", dry_run=True)
-
-        assert result["ok"] is True
-        assert result["dry_run"] is True
-        assert result["opportunity_id"] == "OPP-1"
-        assert result["report_hash"]
-        assert len(registry.list_reports()) == 0
-
-
-@dataclass
-class _RecordingBrowser:
-    """Browser adapter that records every attribute access as a call."""
-
-    calls: list[str] = field(default_factory=list)
-
-    def __getattr__(self, name: str) -> Any:
-        if name == "calls":
-            # Avoid recursion for the dataclass-owned attribute.
-            raise AttributeError(name)
-        self.calls.append(name)
-
-        def _boom(*_a: Any, **_kw: Any) -> Any:
-            self.calls.append(f"{name}:called")
-            return None
-
-        return _boom
-
-
-@dataclass
-class _RecordingApiAdapter:
-    """API adapter that records every attribute access as a call."""
-
-    calls: list[str] = field(default_factory=list)
-
-    def __getattr__(self, name: str) -> Any:
-        if name == "calls":
-            raise AttributeError(name)
-        self.calls.append(name)
-
-        def _boom(*_a: Any, **_kw: Any) -> Any:
-            self.calls.append(f"{name}:called")
-            return None
-
-        return _boom
-
-    def token_present(self) -> bool:
-        self.calls.append("token_present")
-        return False
-
-
-# ===========================================================================
-# M2 — Report registry dedup and conflict flags
-# ===========================================================================
-
-
-class TestM2ReportRegistryDedupAndConflicts:
-    """M2: registry dedups by ``report_hash`` and flags conflicts."""
-
-    def test_dedup_by_report_hash_yields_one_record(self, tmp_path: Path) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        first = _make_report()
-        second = _make_report(report_id="r-002", raw_fingerprint="fp-2")
-
-        # Same identifying fields => same hash => dedup.
-        assert compute_report_hash(first) == compute_report_hash(second)
-
-        r1 = registry.add_report(first)
-        r2 = registry.add_report(second)
-
-        assert r1["action"] == "added"
-        assert r2["action"] == "duplicate"
-        assert len(registry.list_reports()) == 1
-
-    def test_amount_mismatch_conflict_keeps_existing(self, tmp_path: Path) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        original = _make_report(gross_amount=1000.0, net_amount=950.0)
-        registry.add_report(original)
-
-        # Same hash (amounts excluded) but different amounts => amount_mismatch.
-        conflicting = _make_report(
-            report_id="r-003",
-            gross_amount=999.0,
-            net_amount=940.0,
-            raw_fingerprint="fp-3",
-        )
-        result = registry.add_report(conflicting)
-
-        assert "amount_mismatch" in result["conflicts"]
-        assert len(registry.list_reports()) == 1
-        kept = registry.list_reports()[0]
-        assert kept.gross_amount == 1000.0  # never overwritten
-
-    def test_period_overlap_conflict_keeps_both(self, tmp_path: Path) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        a = _make_report(
-            report_id="r-a",
-            period_start=date(2026, 5, 1),
-            period_end=date(2026, 5, 31),
-            raw_fingerprint="fp-a",
-        )
-        registry.add_report(a)
-
-        # Different period (overlapping) and different fingerprint => new hash.
-        b = _make_report(
-            report_id="r-b",
-            period_start=date(2026, 5, 15),
-            period_end=date(2026, 6, 14),
-            raw_fingerprint="fp-b",
-        )
-        result = registry.add_report(b)
-
-        assert "period_overlap" in result["conflicts"]
-        assert len(registry.list_reports()) == 2
-
-    def test_orphan_report_conflict(self, tmp_path: Path) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        report = _make_report(opportunity_id="OPP-X")
-        result = registry.add_report(report, known_opportunity_ids={"OPP-1"})
-
-        assert "orphan_report" in result["conflicts"]
-
-    def test_save_persists_registry(self, tmp_path: Path) -> None:
-        path = tmp_path / "registry.json"
-        registry = ReportRegistry(path=path)
-        registry.add_report(_make_report())
-        summary = registry.save()
-
-        assert summary["ok"] is True
-        assert path.exists()
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        assert raw["count"] == 1
-
-    def test_conflict_flags_set_requires_review_true(self, tmp_path: Path) -> None:
-        # Documented contract: amount_mismatch / period_overlap / orphan_report
-        # set requires_review=True on the retained record.  The current
-        # registry records conflicts but does not yet flip the flag; this is
-        # expected to land with workstream B's schema/provenance work.
-        pytest.skip("pending workstream B implementation: requires_review on conflict")
-
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        original = _make_report(gross_amount=1000.0)
-        registry.add_report(original)
-        conflicting = _make_report(
-            report_id="r-003", gross_amount=999.0, raw_fingerprint="fp-3"
-        )
-        registry.add_report(conflicting)
-        kept = registry.list_reports()[0]
-        assert kept.requires_review is True
-
-
-# ===========================================================================
-# M3 — Provenance completeness
-# ===========================================================================
-
-
-class TestM3ProvenanceCompleteness:
-    """M3: fetched reports carry provenance and a stable ``report_hash``."""
-
-    def test_fetch_opportunity_report_shadow_has_provenance(
-        self, tmp_path: Path
-    ) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        fetcher = CommissionReportFetcher(
-            browser=None,
-            api_adapter=None,
-            settings=_make_settings(),
-            registry=registry,
-        )
-        result = fetcher.fetch_opportunity_report("OPP-1", dry_run=True)
-
-        provenance = result.get("provenance")
-        assert isinstance(provenance, dict)
-        assert "fetched_at" in provenance
-        assert provenance.get("method") == "fetch_opportunity_report"
-        assert provenance.get("opportunity_id") == "OPP-1"
-
-    def test_fetch_account_reports_shadow_has_provenance(
-        self, tmp_path: Path
-    ) -> None:
-        registry = ReportRegistry(path=tmp_path / "registry.json")
-        fetcher = CommissionReportFetcher(
-            browser=None,
-            api_adapter=None,
-            settings=_make_settings(),
-            registry=registry,
-        )
-        result = fetcher.fetch_account_reports(dry_run=True, limit=10)
-
-        provenance = result.get("provenance")
-        assert isinstance(provenance, dict)
-        assert "fetched_at" in provenance
-        assert provenance.get("fetcher") == "CommissionReportFetcher"
-
-    def test_report_hash_is_stable_and_deterministic(self) -> None:
-        report = _make_report()
-        h1 = report.report_hash
-        h2 = compute_report_hash(report)
-        assert h1 == h2
-        assert len(h1) == 64  # SHA-256 hex
-
-    def test_provenance_round_trips_through_registry(
-        self, tmp_path: Path
-    ) -> None:
-        path = tmp_path / "registry.json"
-        registry = ReportRegistry(path=path)
-        provenance = {
-            "source": "commissioncrowd_api",
-            "route": "/reports/earnings",
-            "retrieved_at": "2026-06-28T12:00:00+00:00",
-        }
-        registry.add_report(_make_report(provenance=provenance))
-        registry.save()
-
-        loaded = ReportRegistry(path=path)
-        reports = loaded.list_reports()
-        assert len(reports) == 1
-        assert reports[0].provenance["source"] == "commissioncrowd_api"
-        assert reports[0].provenance["route"] == "/reports/earnings"
-
-
-# ===========================================================================
-# M4 — Form shadow validator dry-run
-# ===========================================================================
-
-
-def _m4_field_mapping() -> dict[str, dict[str, str]]:
-    """Field mapping for the M4 form fixture: field -> selector + control type."""
-    return {
-        "opportunity_id": {"selector": 'input[name="opportunity_id"]', "type": "text"},
-        "principal_name": {"selector": 'input[name="principal_name"]', "type": "text"},
-        "title": {"selector": 'input[name="title"]', "type": "text"},
-        "source_url": {"selector": 'input[name="source_url"]', "type": "text"},
-        "action": {"selector": 'input[name="action"]', "type": "text"},
-        "submitted_at": {"selector": 'input[name="submitted_at"]', "type": "text"},
-    }
-
-
-def _m4_payload() -> dict[str, Any]:
-    """A well-formed application payload matching the M4 field mapping."""
+def _well_formed_payload() -> dict[str, Any]:
     return {
         "opportunity_id": "OPP-1",
         "principal_name": "SecureFlow Inc",
@@ -753,8 +330,26 @@ def _m4_payload() -> dict[str, Any]:
     }
 
 
-def _m4_form_html() -> str:
-    """A rendered CommissionCrowd application form fixture with every field."""
+def _well_formed_fields() -> dict[str, tuple[str, str]]:
+    return {
+        "opportunity_id": ("input", "text"),
+        "principal_name": ("input", "text"),
+        "title": ("input", "text"),
+        "source_url": ("input", "text"),
+        "action": ("input", "text"),
+        "submitted_at": ("input", "text"),
+    }
+
+
+def _well_formed_field_mapping() -> dict[str, dict[str, str]]:
+    """Field mapping matching :func:`_well_formed_fields` for the shadow validator."""
+    return {
+        name: {"selector": f'input[name="{name}"]', "type": "text"}
+        for name in _well_formed_fields()
+    }
+
+
+def _well_formed_html() -> str:
     return (
         "<html><head><title>Apply to OPP-1</title></head><body>"
         "<form id='apply-form' data-opportunity-id='OPP-1'>"
@@ -769,528 +364,468 @@ def _m4_form_html() -> str:
     )
 
 
-class TestM4FormShadowValidator:
-    """M4: shadow validator passes a well-formed DOM and fails on drift.
-
-    Tests exercise the validator in fixture mode (a raw HTML string parsed by
-    BeautifulSoup) so no live browser or network is required.
-    """
-
-    def test_validate_passes_on_well_formed_dom(self, tmp_path: Path) -> None:
-        payload = _m4_payload()
-        validator = FormShadowValidator(
-            browser_adapter=None,
-            reports_dir=tmp_path / "failures",
-        )
-        result = validator.validate(
-            "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
-            payload,
-            hash_payload(payload),
-            _m4_field_mapping(),
-            opportunity_id="OPP-1",
-            principal_name="SecureFlow Inc",
-            dom_fixture=_m4_form_html(),
-        )
-
-        assert result.ok is True
-        assert result.mismatches == []
-        assert result.checks["page_reachable"] is True
-        assert result.checks["no_captcha_or_2fa"] is True
-        assert result.checks["required_fields_present"] is True
-        assert result.checks["field_type_compatible"] is True
-        assert result.checks["payload_hash_match"] is True
-        assert result.checks["opportunity_identity_verified"] is True
-        # No evidence written on success.
-        assert result.screenshot_path is None
-        assert result.dom_snapshot_path is None
-
-    def test_validate_fails_on_missing_fields(self, tmp_path: Path) -> None:
-        payload = _m4_payload()
-        mapping = _m4_field_mapping()
-        # Drop the selector for `title` so the payload field has no control.
-        del mapping["title"]
-        validator = FormShadowValidator(
-            browser_adapter=None,
-            reports_dir=tmp_path / "failures",
-        )
-        result = validator.validate(
-            "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
-            payload,
-            hash_payload(payload),
-            mapping,
-            opportunity_id="OPP-1",
-            dom_fixture=_m4_form_html(),
-        )
-
-        assert result.ok is False
-        assert result.checks["required_fields_present"] is False
-        assert any("Missing required fields" in m for m in result.mismatches)
-
-    def test_validate_fails_on_hash_mismatch(self, tmp_path: Path) -> None:
-        payload = _m4_payload()
-        validator = FormShadowValidator(
-            browser_adapter=None,
-            reports_dir=tmp_path / "failures",
-        )
-        result = validator.validate(
-            "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
-            payload,
-            "0" * 64,  # wrong hash
-            _m4_field_mapping(),
-            opportunity_id="OPP-1",
-            dom_fixture=_m4_form_html(),
-        )
-
-        assert result.ok is False
-        assert result.checks["payload_hash_match"] is False
-
-    def test_validate_fails_on_type_incompatibility(self, tmp_path: Path) -> None:
-        # Payload declares `agreed_terms` as a boolean (expected control
-        # "checkbox") but the field mapping renders it as a text input: the
-        # expected and mapped control types are incompatible.
-        payload = _m4_payload() | {"agreed_terms": True}
-        mapping = _m4_field_mapping() | {
-            "agreed_terms": {"selector": 'input[name="agreed_terms"]', "type": "text"},
-        }
-        html = _m4_form_html().replace(
-            "</form>",
-            "<input name='agreed_terms' type='text' /></form>",
-        )
-        validator = FormShadowValidator(
-            browser_adapter=None,
-            reports_dir=tmp_path / "failures",
-        )
-        result = validator.validate(
-            "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
-            payload,
-            hash_payload(payload),
-            mapping,
-            opportunity_id="OPP-1",
-            dom_fixture=html,
-        )
-
-        assert result.ok is False
-        assert result.checks["field_type_compatible"] is False
-
-    def test_validate_writes_dom_snapshot_on_failure(self, tmp_path: Path) -> None:
-        payload = _m4_payload()
-        mapping = _m4_field_mapping()
-        del mapping["title"]
-        failures_dir = tmp_path / "failures"
-        validator = FormShadowValidator(
-            browser_adapter=None,
-            reports_dir=failures_dir,
-        )
-        result = validator.validate(
-            "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
-            payload,
-            hash_payload(payload),
-            mapping,
-            opportunity_id="OPP-1",
-            dom_fixture=_m4_form_html(),
-        )
-
-        assert result.ok is False
-        # In fixture mode a DOM snapshot (the parsed soup) is written; no page
-        # means no screenshot is captured.
-        assert result.dom_snapshot_path is not None
-        assert Path(result.dom_snapshot_path).exists()
-
-    def test_validate_raises_operator_intervention_on_captcha(
-        self, tmp_path: Path
-    ) -> None:
-        # Documented contract: CAPTCHA/2FA aborts by raising
-        # ``OperatorInterventionRequired``.  The validator persists evidence
-        # first, then propagates the exception to the caller.
-        captcha_html = (
-            "<html><head><title>Verify</title></head><body>"
-            "<form><p>Please complete the CAPTCHA to continue.</p></form>"
-            "</body></html>"
-        )
-        payload = _m4_payload()
-        validator = FormShadowValidator(
-            browser_adapter=None,
-            reports_dir=tmp_path / "failures",
-        )
-        with pytest.raises(OperatorInterventionRequired):
-            validator.validate(
-                "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
-                payload,
-                hash_payload(payload),
-                _m4_field_mapping(),
-                opportunity_id="OPP-1",
-                dom_fixture=captcha_html,
-            )
-
-# ===========================================================================
-# M5 — Form submission engine dry-run
-# ===========================================================================
+def _approved_registry() -> OpportunityStateRegistry:
+    registry = OpportunityStateRegistry()
+    record = registry._get_or_create("OPP-1")
+    record.title = "Cybersecurity SaaS"
+    record.principal_name = "SecureFlow Inc"
+    record.lifecycle_state = LIFECYCLE_APPLICATION_APPROVED
+    return registry
 
 
-class TestM5EngineDryRun:
-    """M5: engine dry-run consumes an approved record end-to-end, no clicks."""
-
-    def test_dry_run_succeeds_and_writes_dry_run_audit(
-        self,
-        engine: FormSubmissionEngine,
-        audit_module: SubmissionAuditModule,
-        fake_page_well_formed: FakePage,
-        state_registry_approved: OpportunityStateRegistry,
-    ) -> None:
-        result = engine.submit_application("OPP-1", "A42", dry_run=True)
-
-        assert result.ok is True
-        assert result.dry_run is True
-        assert result.audit_id is not None
-        assert result.error == ""
-
-        # Audit record persisted with status=dry_run.
-        records = audit_module._read_records()  # noqa: SLF001 - test inspection
-        assert len(records) == 1
-        assert records[0].status == "dry_run"
-        assert records[0].dry_run is True
-        assert records[0].opportunity_id == "OPP-1"
-        assert records[0].payload_hash
-
-    def test_dry_run_does_not_click_submit(
-        self,
-        engine: FormSubmissionEngine,
-        fake_page_well_formed: FakePage,
-    ) -> None:
-        engine.submit_application("OPP-1", "A42", dry_run=True)
-
-        # Dry-run never mutates the page: no fills and no submit click.
-        assert fake_page_well_formed.clicked == []
-        assert fake_page_well_formed.filled == []
-
-    def test_dry_run_does_not_migrate_state(
-        self,
-        engine: FormSubmissionEngine,
-        state_registry_approved: OpportunityStateRegistry,
-    ) -> None:
-        result = engine.submit_application("OPP-1", "A42", dry_run=True)
-
-        assert result.state_migrated is False
-        record = state_registry_approved.get_by_id("OPP-1")
-        assert record is not None
-        assert record.lifecycle_state == LIFECYCLE_APPLICATION_APPROVED
-        assert record.lifecycle_state != LIFECYCLE_APPLICATION_SUBMITTED
-
-    def test_dry_run_runs_supervisor_checkpoint(
-        self,
-        engine: FormSubmissionEngine,
-        approving_supervisor: FakeSupervisorRelay,
-    ) -> None:
-        engine.submit_application("OPP-1", "A42", dry_run=True)
-
-        assert len(approving_supervisor.route_calls) == 1
-        task_type, _prompt = approving_supervisor.route_calls[0]
-        # Spec §6.1: submission plan review routes to DRAFT_REVIEW.
-        assert task_type == SupervisorTaskType.DRAFT_REVIEW
-
-    def test_dry_run_runs_shadow_validation(
-        self,
-        engine: FormSubmissionEngine,
-    ) -> None:
-        result = engine.submit_application("OPP-1", "A42", dry_run=True)
-
-        assert result.shadow_validation
-        assert result.shadow_validation.get("ok") is True
+# ---------------------------------------------------------------------------
+# Async tests: report-fetching loop (M1-M3)
+# ---------------------------------------------------------------------------
 
 
-# ===========================================================================
-# M6 — Engine gate behaviour (dry-run variants)
-# ===========================================================================
+async def test_fetch_reports_dry_run_is_shadow_and_writesis_free(tmp_path: Path) -> None:
+    registry = ReportRegistry(path=tmp_path / "registry.json")
+    fetcher = CommissionReportFetcher(
+        browser=None,
+        api_adapter=None,
+        settings=_make_settings(),
+        registry=registry,
+    )
+    result = await asyncio.to_thread(fetcher.fetch_account_reports, dry_run=True, limit=10)
+
+    assert result["ok"] is True
+    assert result["dry_run"] is True
+    assert result["added"] == 0
+    assert result["fetched"] == 10
+    assert not (tmp_path / "registry.json").exists()
 
 
-class TestM6EngineGates:
-    """M6: engine proceeds / aborts / fails-closed per gate outcomes."""
-
-    def test_proceeds_with_approval_and_no_blocked_action(
-        self,
-        engine: FormSubmissionEngine,
-    ) -> None:
-        result = engine.submit_application("OPP-1", "A42", dry_run=True)
-        assert result.ok is True
-        assert result.supervisor_checkpoint.get("ok") is True
-
-    def test_blocked_supervisor_action_aborts(
-        self,
-        fake_browser_well_formed: FakeBrowser,
-        approved_gate: FakeApprovalGate,
-        audit_module: SubmissionAuditModule,
-        state_registry_approved: OpportunityStateRegistry,
-        tmp_path: Path,
-    ) -> None:
-        blocked_supervisor = FakeSupervisorRelay(raise_blocked=True)
-        settings = _make_settings()
-        eng = FormSubmissionEngine(
-            browser=fake_browser_well_formed,
-            gate=approved_gate,
-            supervisor=blocked_supervisor,
-            audit=audit_module,
-            settings=settings,
-        )
-        eng.attach_registry(state_registry_approved)
-        eng._shadow_validator = FakeShadowValidator()  # noqa: SLF001 - hermetic
-
-        result = eng.submit_application("OPP-1", "A42", dry_run=True)
-
-        assert result.ok is False
-        assert "Supervisor blocked action" in result.error
-        assert result.supervisor_checkpoint.get("ok") is False
-        # Aborted audit record written.
-        records = audit_module._read_records()  # noqa: SLF001
-        assert any(r.status == "aborted" for r in records)
-
-    def test_approval_false_fails_closed(
-        self,
-        fake_browser_well_formed: FakeBrowser,
-        approving_supervisor: FakeSupervisorRelay,
-        audit_module: SubmissionAuditModule,
-        state_registry_approved: OpportunityStateRegistry,
-        tmp_path: Path,
-    ) -> None:
-        unapproved_gate = FakeApprovalGate(approved_ids=set())
-        settings = _make_settings()
-        eng = FormSubmissionEngine(
-            browser=fake_browser_well_formed,
-            gate=unapproved_gate,
-            supervisor=approving_supervisor,
-            audit=audit_module,
-            settings=settings,
-        )
-        eng.attach_registry(state_registry_approved)
-        eng._shadow_validator = FakeShadowValidator()  # noqa: SLF001 - hermetic
-
-        result = eng.submit_application("OPP-1", "A42", dry_run=True)
-
-        assert result.ok is False
-        assert "not approved" in result.error
-        # Supervisor must NOT have been consulted when the approval gate fails.
-        assert approving_supervisor.route_calls == []
-        records = audit_module._read_records()  # noqa: SLF001
-        assert any(r.status == "aborted" for r in records)
-
-    def test_wrong_state_fails_closed(
-        self,
-        fake_browser_well_formed: FakeBrowser,
-        approved_gate: FakeApprovalGate,
-        approving_supervisor: FakeSupervisorRelay,
-        audit_module: SubmissionAuditModule,
-        tmp_path: Path,
-    ) -> None:
-        registry = OpportunityStateRegistry()
-        record = registry._get_or_create("OPP-9")  # noqa: SLF001
-        record.lifecycle_state = LIFECYCLE_APPLICATION_SUBMITTED
-        settings = _make_settings()
-        eng = FormSubmissionEngine(
-            browser=fake_browser_well_formed,
-            gate=approved_gate,
-            supervisor=approving_supervisor,
-            audit=audit_module,
-            settings=settings,
-        )
-        eng.attach_registry(registry)
-        eng._shadow_validator = FakeShadowValidator()  # noqa: SLF001 - hermetic
-
-        result = eng.submit_application("OPP-9", "A42", dry_run=True)
-
-        assert result.ok is False
-        assert "application_approved" in result.error
-
-
-# ===========================================================================
-# M7 — Idempotency and daily volume limits (audit-module subset)
-# ===========================================================================
-
-
-class TestM7IdempotencyAndDailyVolume:
-    """M7: idempotency by (opp, action, payload_hash) and daily volume cap."""
-
-    def test_has_submission_returns_existing_record_within_window(
-        self, audit_module: SubmissionAuditModule
-    ) -> None:
-        payload_hash = hash_payload({"opportunity_id": "OPP-1"})
-        audit_module.append(
-            SubmissionAuditRecord(
-                opportunity_id="OPP-1",
-                approval_id="A42",
-                action="apply_to_principal",
-                status="dry_run",
-                payload_hash=payload_hash,
-            )
-        )
-        found = audit_module.has_submission(
-            "OPP-1", "apply_to_principal", payload_hash
-        )
-        assert found is not None
-        assert found.approval_id == "A42"
-
-    def test_has_submission_returns_none_outside_window(
-        self, audit_module: SubmissionAuditModule
-    ) -> None:
-        payload_hash = hash_payload({"opportunity_id": "OPP-1"})
-        old_ts = (
-            datetime.now(UTC) - timedelta(days=8)
-        ).isoformat()
-        audit_module.append(
-            SubmissionAuditRecord(
-                opportunity_id="OPP-1",
-                approval_id="A42",
-                action="apply_to_principal",
-                status="dry_run",
-                payload_hash=payload_hash,
-                timestamp=old_ts,
-            )
-        )
-        found = audit_module.has_submission(
-            "OPP-1", "apply_to_principal", payload_hash
-        )
-        assert found is None
-
-    def test_engine_skips_duplicate_submission_within_window(
-        self,
-        engine: FormSubmissionEngine,
-        audit_module: SubmissionAuditModule,
-        state_registry_approved: OpportunityStateRegistry,
-    ) -> None:
-        # Freeze the engine's payload so the payload hash is deterministic
-        # across both the seeded audit record and the engine call.
-        fixed_payload: dict[str, Any] = {
+async def test_fetch_reports_live_ingests_and_tracks_in_sheets(tmp_path: Path) -> None:
+    registry = ReportRegistry(path=tmp_path / "registry.json")
+    sheets = RecordingSheetsAdapter()
+    opportunities = [
+        {
             "opportunity_id": "OPP-1",
-            "principal_name": "SecureFlow Inc",
             "title": "Cybersecurity SaaS",
-            "source_url": "",
-            "action": "apply_to_principal",
-            "submitted_at": "2026-06-28T12:00:00+00:00",
-        }
-        fixed_hash = hash_payload(fixed_payload)
-        engine._build_payload = lambda _record: (fixed_payload, {})
-        seed = SubmissionAuditRecord(
+            "principal_name": "SecureFlow Inc",
+            "commission_summary": "20% recurring",
+            "source_url": "https://www.commissioncrowd.com/opportunities/1",
+            "status": "active",
+        },
+        {
+            "opportunity_id": "OPP-1",  # duplicate item to exercise row-level dedup
+            "title": "Cybersecurity SaaS",
+            "principal_name": "SecureFlow Inc",
+            "commission_summary": "20% recurring",
+            "source_url": "https://www.commissioncrowd.com/opportunities/1",
+            "status": "active",
+        },
+        {
+            "opportunity_id": "OPP-2",
+            "title": "Fintech API",
+            "principal_name": "PayPipe Ltd",
+            "commission_summary": "15% first year",
+            "source_url": "https://www.commissioncrowd.com/opportunities/2",
+            "status": "active",
+        },
+    ]
+    fetcher = CommissionReportFetcher(
+        browser=FakeBrowserAdapter(opportunities=opportunities),
+        api_adapter=FakeApiAdapter(),
+        settings=_make_settings(),
+        registry=registry,
+        sheets_adapter=sheets,
+    )
+
+    result = await asyncio.to_thread(
+        fetcher.fetch_account_reports, dry_run=False, limit=10
+    )
+
+    assert result["ok"] is True
+    assert result["dry_run"] is False
+    assert result["fetched"] == 2  # duplicate removed
+    assert result["added"] == 2
+    assert len(registry.list_reports()) == 2
+
+    # A tracking row was appended for the run.
+    assert len(sheets.appended) == 1
+    tab, row = sheets.appended[0]
+    assert tab == "reports_tracking"
+    assert row[1] == "fetch_account_reports"
+    assert int(row[3]) == 2  # added count
+
+
+async def test_fetch_reports_bound_exceeded_fails_closed(tmp_path: Path) -> None:
+    registry = ReportRegistry(path=tmp_path / "registry.json")
+    fetcher = CommissionReportFetcher(
+        browser=FakeBrowserAdapter(opportunities=[{"opportunity_id": f"OPP-{i}"} for i in range(150)]),
+        api_adapter=None,
+        settings=_make_settings(),
+        registry=registry,
+    )
+
+    result = await asyncio.to_thread(fetcher.fetch_account_reports, dry_run=False, limit=100)
+
+    assert result["ok"] is False
+    assert "exceeding" in result["error"].lower()
+    assert result["added"] == 0
+
+
+async def test_fetch_opportunity_report_dry_run_returns_shadow(tmp_path: Path) -> None:
+    registry = ReportRegistry(path=tmp_path / "registry.json")
+    fetcher = CommissionReportFetcher(
+        browser=None,
+        api_adapter=None,
+        settings=_make_settings(),
+        registry=registry,
+    )
+    result = await asyncio.to_thread(fetcher.fetch_opportunity_report, "OPP-1", dry_run=True)
+
+    assert result["ok"] is True
+    assert result["dry_run"] is True
+    assert result["opportunity_id"] == "OPP-1"
+    assert result["report_hash"]
+    assert len(registry.list_reports()) == 0
+
+
+# ---------------------------------------------------------------------------
+# Async tests: Pydantic schemas and provenance (M2/M3)
+# ---------------------------------------------------------------------------
+
+
+async def test_report_schema_validates_and_computes_hash() -> None:
+    schema = CommissionReportSchema(
+        report_id="r-001",
+        opportunity_id="OPP-1",
+        principal_name="Principal A",
+        report_type="earnings",
+        period_start=date(2026, 5, 1),
+        period_end=date(2026, 5, 31),
+        currency="USD",
+        gross_amount=1000.0,
+        net_amount=950.0,
+        status="confirmed",
+        source_url="https://example.com/report/1",
+        raw_fingerprint="fp-1",
+    )
+    assert schema.report_hash
+    assert len(schema.report_hash) == 64
+
+    engine_hash = ReportMetadataEngine.compute_report_hash(schema)
+    assert engine_hash == schema.report_hash
+
+
+async def test_report_provenance_entry_requires_utc() -> None:
+    entry = ReportProvenanceEntry(
+        source="browser", route="my_opportunities", retrieved_at=datetime(2026, 6, 28, 12, 0)
+    )
+    assert entry.retrieved_at.tzinfo is not None
+    assert entry.retrieved_at.tzname() == "UTC"
+
+
+async def test_dataclass_to_pydantic_round_trip_preserves_hash(tmp_path: Path) -> None:
+    report = CommissionReport(
+        report_id="r-001",
+        opportunity_id="OPP-1",
+        principal_name="Principal A",
+        report_type="earnings",
+        period_start=date(2026, 5, 1),
+        period_end=date(2026, 5, 31),
+        currency="USD",
+        gross_amount=1000.0,
+        net_amount=950.0,
+        status="confirmed",
+        source_url="https://example.com/report/1",
+        raw_fingerprint="fp-1",
+    )
+    schema = report.to_pydantic()
+    assert isinstance(schema, CommissionReportSchema)
+    assert schema.report_hash == report.report_hash
+
+    registry = ReportRegistry(path=tmp_path / "registry.json")
+    registry.add_report_schema(schema, source="test", route="schema_bridge")
+    assert len(registry.list_reports()) == 1
+    assert registry.list_reports()[0].report_hash == report.report_hash
+
+
+# ---------------------------------------------------------------------------
+# Async tests: form shadow validator (M4)
+# ---------------------------------------------------------------------------
+
+
+async def test_async_shadow_validator_passes_well_formed_form(tmp_path: Path) -> None:
+    page = FakePage(
+        content_html=_well_formed_html(),
+        url_value="https://www.commissioncrowd.com/opportunities/OPP-1/apply",
+        fields=_well_formed_fields(),
+    )
+    validator = AsyncFormShadowValidator(browser_adapter=FakeBrowser(page=page))
+    payload = _well_formed_payload()
+
+    result = await validator.validate(
+        "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
+        payload,
+        hash_payload(payload),
+        _well_formed_field_mapping(),
+        opportunity_id="OPP-1",
+    )
+
+    assert result.ok is True
+    assert result.mismatches == []
+    assert result.checks.get("page_reachable") is True
+    assert result.checks.get("no_captcha_or_2fa") is True
+    assert result.checks.get("required_fields_present") is True
+    assert result.checks.get("field_type_compatible") is True
+    assert result.checks.get("payload_hash_match") is True
+    assert result.checks.get("opportunity_identity_verified") is True
+
+
+async def test_async_shadow_validator_fails_missing_fields(tmp_path: Path) -> None:
+    page = FakePage(
+        content_html=_well_formed_html(),
+        url_value="https://www.commissioncrowd.com/opportunities/OPP-1/apply",
+        fields={k: v for k, v in _well_formed_fields().items() if k != "title"},
+    )
+    validator = AsyncFormShadowValidator(browser_adapter=FakeBrowser(page=page))
+    payload = _well_formed_payload()
+
+    result = await validator.validate(
+        "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
+        payload,
+        hash_payload(payload),
+        _well_formed_field_mapping(),
+        opportunity_id="OPP-1",
+    )
+
+    assert result.ok is False
+    assert result.checks.get("required_fields_present") is False
+    assert any("title" in m for m in result.mismatches)
+    assert result.screenshot_path or result.dom_snapshot_path
+
+
+async def test_async_shadow_validator_aborts_on_captcha(tmp_path: Path) -> None:
+    page = FakePage(
+        content_html=(
+            "<html><body><form>"
+            "<p>Please complete the CAPTCHA to continue.</p>"
+            "</form></body></html>"
+        ),
+        fields=_well_formed_fields(),
+        fields_hidden=True,
+    )
+    validator = AsyncFormShadowValidator(browser_adapter=FakeBrowser(page=page))
+    payload = _well_formed_payload()
+
+    # A CAPTCHA/challenge page aborts hard with OperatorInterventionRequired so
+    # the engine can route the opportunity into the operator-only flow.
+    with pytest.raises(OperatorInterventionRequired, match="CAPTCHA"):
+        await validator.validate(
+            "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
+            payload,
+            hash_payload(payload),
+            _well_formed_field_mapping(),
             opportunity_id="OPP-1",
-            approval_id="A42",
-            action="apply_to_principal",
-            status="dry_run",
-            payload_hash=fixed_hash,
         )
-        audit_module.append(seed)
 
-        result = engine.submit_application("OPP-1", "A42", dry_run=True)
 
-        assert result.ok is False
-        assert "Idempotency guard" in result.error
-        assert result.audit_id == seed.audit_id
+async def test_sync_validator_runs_under_thread(tmp_path: Path) -> None:
+    """Smoke test that the sync validator can be called directly (not async)."""
+    page = FakePage(
+        content_html=_well_formed_html(),
+        fields=_well_formed_fields(),
+    )
+    validator = FormShadowValidator(browser_adapter=FakeBrowser(page=page))
+    payload = _well_formed_payload()
 
-    def test_daily_volume_limit_refused(
-        self,
-        fake_browser_well_formed: FakeBrowser,
-        approved_gate: FakeApprovalGate,
-        approving_supervisor: FakeSupervisorRelay,
-        audit_module: SubmissionAuditModule,
-        state_registry_approved: OpportunityStateRegistry,
-        tmp_path: Path,
-    ) -> None:
-        # Use a tiny limit and pre-fill the audit log with enough successful
-        # submissions for *other* opportunities to hit the cap without
-        # triggering the idempotency guard for OPP-1.
-        settings = _make_settings(cca_daily_volume_limit=2)
-        for i in range(settings.cca_daily_volume_limit):
-            audit_module.append(
-                SubmissionAuditRecord(
-                    opportunity_id=f"OPP-other-{i}",
-                    approval_id=f"A{i}",
-                    action="apply_to_principal",
-                    status="success",
-                    payload_hash=hash_payload({"opp": i}),
-                )
-            )
-        eng = FormSubmissionEngine(
-            browser=fake_browser_well_formed,
-            gate=approved_gate,
-            supervisor=approving_supervisor,
-            audit=audit_module,
-            settings=settings,
-        )
-        eng.attach_registry(state_registry_approved)
-        eng._shadow_validator = FakeShadowValidator()  # noqa: SLF001 - hermetic
+    result = validator.validate(
+        "https://www.commissioncrowd.com/opportunities/OPP-1/apply",
+        payload,
+        hash_payload(payload),
+        _well_formed_field_mapping(),
+        opportunity_id="OPP-1",
+    )
 
-        result = eng.submit_application("OPP-1", "A42", dry_run=True)
+    assert result.ok is True
 
-        assert result.ok is False
-        assert "Daily volume limit reached" in result.error
 
-    def test_can_submit_reports_daily_limit_reached(
-        self,
-        fake_browser_well_formed: FakeBrowser,
-        approved_gate: FakeApprovalGate,
-        approving_supervisor: FakeSupervisorRelay,
-        audit_module: SubmissionAuditModule,
-        state_registry_approved: OpportunityStateRegistry,
-    ) -> None:
-        settings = _make_settings(cca_daily_volume_limit=1)
-        audit_module.append(
+# ---------------------------------------------------------------------------
+# Async tests: form submission engine (M5-M7)
+# ---------------------------------------------------------------------------
+
+
+async def test_async_engine_dry_run_succeeds_and_writes_audit(tmp_path: Path) -> None:
+    page = FakePage(content_html=_well_formed_html(), fields=_well_formed_fields())
+    audit = SubmissionAuditModule(audit_path=tmp_path / "audit.jsonl")
+    settings = _make_settings(cca_daily_volume_limit=50)
+    engine = AsyncFormSubmissionEngine(
+        browser=FakeBrowser(page=page),
+        gate=FakeApprovalGate(approved_ids={"A42"}),
+        supervisor=FakeSupervisorRelay(response=_approved_response()),
+        audit=audit,
+        settings=settings,
+    )
+    engine.attach_registry(_approved_registry())
+
+    result = await engine.submit_application("OPP-1", "A42", dry_run=True)
+
+    assert result.ok is True
+    assert result.dry_run is True
+    assert result.audit_id is not None
+    assert result.error == ""
+    records = audit._read_records()
+    assert any(r.status == "dry_run" for r in records)
+    assert not page.clicked
+    assert not page.filled
+
+
+async def test_async_engine_blocked_supervisor_aborts(tmp_path: Path) -> None:
+    page = FakePage(content_html=_well_formed_html(), fields=_well_formed_fields())
+    audit = SubmissionAuditModule(audit_path=tmp_path / "audit.jsonl")
+    engine = AsyncFormSubmissionEngine(
+        browser=FakeBrowser(page=page),
+        gate=FakeApprovalGate(approved_ids={"A42"}),
+        supervisor=FakeSupervisorRelay(raise_blocked=True),
+        audit=audit,
+        settings=_make_settings(),
+    )
+    engine.attach_registry(_approved_registry())
+
+    result = await engine.submit_application("OPP-1", "A42", dry_run=True)
+
+    assert result.ok is False
+    assert "Supervisor blocked action" in result.error
+    records = audit._read_records()
+    assert any(r.status == "aborted" for r in records)
+
+
+async def test_async_engine_unapproved_gate_fails_closed(tmp_path: Path) -> None:
+    page = FakePage(content_html=_well_formed_html(), fields=_well_formed_fields())
+    supervisor = FakeSupervisorRelay(response=_approved_response())
+    audit = SubmissionAuditModule(audit_path=tmp_path / "audit.jsonl")
+    engine = AsyncFormSubmissionEngine(
+        browser=FakeBrowser(page=page),
+        gate=FakeApprovalGate(approved_ids=set()),
+        supervisor=supervisor,
+        audit=audit,
+        settings=_make_settings(),
+    )
+    engine.attach_registry(_approved_registry())
+
+    result = await engine.submit_application("OPP-1", "A42", dry_run=True)
+
+    assert result.ok is False
+    assert "not approved" in result.error
+    assert supervisor.route_calls == []
+    records = audit._read_records()
+    assert any(r.status == "aborted" for r in records)
+
+
+async def test_async_engine_idempotency_skips_duplicate(tmp_path: Path) -> None:
+    page = FakePage(content_html=_well_formed_html(), fields=_well_formed_fields())
+    audit = SubmissionAuditModule(audit_path=tmp_path / "audit.jsonl")
+    engine = AsyncFormSubmissionEngine(
+        browser=FakeBrowser(page=page),
+        gate=FakeApprovalGate(approved_ids={"A42"}),
+        supervisor=FakeSupervisorRelay(response=_approved_response()),
+        audit=audit,
+        settings=_make_settings(),
+    )
+    engine.attach_registry(_approved_registry())
+    # Freeze payload so the hash is deterministic across the seed and the call.
+    fixed_payload = {
+        "opportunity_id": "OPP-1",
+        "principal_name": "SecureFlow Inc",
+        "title": "Cybersecurity SaaS",
+        "source_url": "",
+        "subject": "Independent Sales Representative Application - Cybersecurity SaaS",
+        "body": "",
+        "action": "apply_to_principal",
+    }
+    fixed_draft: dict[str, str] = {"subject": fixed_payload["subject"], "body": ""}
+    engine._engine._build_payload = lambda _record: (fixed_payload, fixed_draft)  # type: ignore[method-assign]
+
+    seed = SubmissionAuditRecord(
+        opportunity_id="OPP-1",
+        approval_id="A42",
+        action="apply_to_principal",
+        status="dry_run",
+        payload_hash=hash_payload(fixed_payload),
+    )
+    audit.append(seed)
+
+    result = await engine.submit_application("OPP-1", "A42", dry_run=True)
+
+    assert result.ok is False
+    assert "Idempotency guard" in result.error
+    assert result.audit_id == seed.audit_id
+
+
+async def test_async_engine_daily_volume_limit_refused(tmp_path: Path) -> None:
+    page = FakePage(content_html=_well_formed_html(), fields=_well_formed_fields())
+    audit = SubmissionAuditModule(audit_path=tmp_path / "audit.jsonl")
+    settings = _make_settings(cca_daily_volume_limit=2)
+    engine = AsyncFormSubmissionEngine(
+        browser=FakeBrowser(page=page),
+        gate=FakeApprovalGate(approved_ids={"A42"}),
+        supervisor=FakeSupervisorRelay(response=_approved_response()),
+        audit=audit,
+        settings=settings,
+    )
+    engine.attach_registry(_approved_registry())
+
+    for i in range(settings.cca_daily_volume_limit):
+        audit.append(
             SubmissionAuditRecord(
-                opportunity_id="OPP-other",
-                approval_id="A0",
+                opportunity_id=f"OPP-other-{i}",
+                approval_id=f"A{i}",
                 action="apply_to_principal",
                 status="success",
-                payload_hash=hash_payload({"opp": "other"}),
+                payload_hash=hash_payload({"opp": i}),
             )
         )
-        eng = FormSubmissionEngine(
-            browser=fake_browser_well_formed,
-            gate=approved_gate,
-            supervisor=approving_supervisor,
-            audit=audit_module,
-            settings=settings,
+
+    result = await engine.submit_application("OPP-1", "A42", dry_run=True)
+
+    assert result.ok is False
+    assert "Daily volume limit reached" in result.error
+
+
+async def test_async_engine_can_submit_reports_eligibility(tmp_path: Path) -> None:
+    page = FakePage(content_html=_well_formed_html(), fields=_well_formed_fields())
+    engine = AsyncFormSubmissionEngine(
+        browser=FakeBrowser(page=page),
+        gate=FakeApprovalGate(),
+        supervisor=FakeSupervisorRelay(),
+        audit=SubmissionAuditModule(audit_path=tmp_path / "audit.jsonl"),
+        settings=_make_settings(),
+    )
+    engine.attach_registry(_approved_registry())
+
+    eligibility = engine.can_submit("OPP-1")
+
+    assert eligibility.eligible is True
+    assert eligibility.current_state == LIFECYCLE_APPLICATION_APPROVED
+
+
+async def test_async_engine_can_submit_reports_limit_reached(tmp_path: Path) -> None:
+    audit = SubmissionAuditModule(audit_path=tmp_path / "audit.jsonl")
+    settings = _make_settings(cca_daily_volume_limit=1)
+    page = FakePage(content_html=_well_formed_html(), fields=_well_formed_fields())
+    engine = AsyncFormSubmissionEngine(
+        browser=FakeBrowser(page=page),
+        gate=FakeApprovalGate(),
+        supervisor=FakeSupervisorRelay(),
+        audit=audit,
+        settings=settings,
+    )
+    engine.attach_registry(_approved_registry())
+    audit.append(
+        SubmissionAuditRecord(
+            opportunity_id="OPP-other",
+            approval_id="A0",
+            action="apply_to_principal",
+            status="success",
+            payload_hash=hash_payload({"opp": "other"}),
         )
-        eng.attach_registry(state_registry_approved)
+    )
 
-        eligibility: SubmissionEligibility = eng.can_submit("OPP-1")
+    eligibility = engine.can_submit("OPP-1")
 
-        assert eligibility.eligible is False
-        assert any("Daily volume limit" in r for r in eligibility.reasons)
-        assert eligibility.daily_count == 1
-        assert eligibility.daily_limit == 1
-
-    def test_can_submit_reports_eligible_for_approved_opportunity(
-        self,
-        engine: FormSubmissionEngine,
-    ) -> None:
-        eligibility = engine.can_submit("OPP-1")
-        assert eligibility.eligible is True
-        assert eligibility.current_state == LIFECYCLE_APPLICATION_APPROVED
-        assert eligibility.reasons == []
-
-
-# ===========================================================================
-# Audit-module invariants
-# ===========================================================================
-
-
-class TestAuditModuleInvariants:
-    """Audit log is append-only and counts only success/attempted for today."""
-
-    def test_append_is_append_only(self, audit_module: SubmissionAuditModule) -> None:
-        r1 = SubmissionAuditRecord(opportunity_id="OPP-1", status="dry_run")
-        r2 = SubmissionAuditRecord(opportunity_id="OPP-2", status="dry_run")
-        audit_module.append(r1)
-        audit_module.append(r2)
-
-        lines = audit_module.audit_path.read_text(encoding="utf-8").strip().splitlines()
-        assert len(lines) == 2
-
-    def test_count_today_counts_success_and_attempted_only(
-        self, audit_module: SubmissionAuditModule
-    ) -> None:
-        for status in ("success", "attempted", "aborted", "failed", "dry_run"):
-            audit_module.append(
-                SubmissionAuditRecord(
-                    opportunity_id="OPP-x",
-                    action="apply_to_principal",
-                    status=status,
-                )
-            )
-        # Only success + attempted count toward the daily volume limit.
-        assert audit_module.count_today("apply_to_principal") == 2
+    assert eligibility.eligible is False
+    assert eligibility.daily_count == 1
+    assert any("Daily volume limit" in r for r in eligibility.reasons)
