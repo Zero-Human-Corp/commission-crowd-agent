@@ -509,5 +509,23 @@ class FormSubmissionEngine:
                 **record.supervisor_checkpoint,
                 "_engine_extra": extra,
             }
-        self.audit.append(record)
+        # Wave 3 Track A (H3, R1): wrap the audit append so an I/O failure
+        # (disk full, read-only FS, permission) degrades gracefully. The audit
+        # log is best-effort on abort paths — a block must still return
+        # SubmissionResult(ok=False) rather than propagate OSError out of every
+        # abort path (lines 323/332/344/350/367/372/377/399/404/409/419/426/436).
+        # The audit row is lost on failure; the result without the audit row
+        # is returned so the caller's ``return result`` still executes.
+        try:
+            self.audit.append(record)
+        except OSError as exc:
+            import logging
+
+            logging.getLogger(__name__).error(
+                "Audit write failed for opportunity %s (status=%s): %s — "
+                "returning result without audit row",
+                result.opportunity_id,
+                status,
+                exc,
+            )
         return record
