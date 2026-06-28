@@ -14,7 +14,10 @@ All modes print an execution summary before running.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from rich.console import Console
 from rich.table import Table
@@ -22,8 +25,23 @@ from rich.table import Table
 from .canonical import CanonicalOpportunity
 from .commissioncrowd_adapter import CommissionCrowdApiAdapter
 from .config import load_settings
+from .state_registry import (
+    LIFECYCLE_APPLICATION_DRAFT_PENDING,
+    LIFECYCLE_DISCOVERED,
+    LIFECYCLE_UNDER_REVIEW,
+    LIFECYCLE_UNKNOWN,
+    OpportunityStateRecord,
+)
 from .supervisor_relay import SupervisorRelay, SupervisorTaskType
-from .workflows.approvals import ApprovalPack, _infer_target_size, send_approval_request
+from .workflows.approvals import (
+    DEFAULT_REGISTRY_PATH,
+    ApprovalPack,
+    _infer_target_size,
+    load_registry,
+    migrate_lifecycle_state,
+    save_registry,
+    send_approval_request,
+)
 
 console = Console()
 
@@ -52,21 +70,30 @@ def _controlled_write_checkpoint(
     plan and only permits non-blocked actions.
     """
     prompt = (
-        f"Controlled-write MVP is about to run.\n"
+        f"Controlled-write MVP is about to run in {'dry-run' if dry_run else 'live'} mode.\n"
         f"Qualified opportunities: {qualified_count}\n"
-        f"Minimum deal size: ${min_deal_size:,}\n"
-        f"Workstream dry_run: {dry_run}\n"
-        f"Planned actions: create CRM lead rows, create approval rows in Sheets, "
-        f"and dispatch Telegram approval requests.\n"
-        f"In dry_run mode, no actual CRM/Sheets writes or Telegram sends occur; "
-        f"only simulated approval-request messages are generated for operator review.\n\n"
+        f"Minimum deal size: ${min_deal_size:,}\n\n"
+        f"This step only prepares operator approval requests for qualified commission-only "
+        f"sales-rep opportunities. No application is submitted to any principal; submission "
+        f"happens later only after explicit human approval via Telegram inline keyboard.\n\n"
+        f"Planned actions:\n"
+        f"- Create or update CRM lead rows for qualified opportunities.\n"
+        f"- Create pending approval rows in the approvals ledger.\n"
+        f"- Send inline-keyboard Telegram approval requests to the operator.\n\n"
+        f"In dry-run mode, no actual CRM/Sheets writes or Telegram sends occur; only "
+        f"simulated approval-request payloads are generated for operator review.\n\n"
         f"Review this plan. Return JSON with approved (bool), reason (str), "
-        f"recommended_action (str), risk_level (low|medium|high|unknown), and notes (str)."
+        f"recommended_action (str), risk_level (low|medium|high|unknown), and notes (str). "
+        f"If the plan is only preparing operator approval requests, set approved=true and "
+        f"recommended_action='approval_request'."
     )
     system = (
-        "You are the CCA draft-review supervisor. Review outreach and write plans. "
-        "Block any recommendation that would apply, send messages, or spend money. "
-        "Approve only safe read-only or approval-request steps. Respond only with JSON."
+        "You are the CCA draft-review supervisor. "
+        "Approve plans whose sole purpose is to prepare operator approval requests or "
+        "perform read-only review. Block plans that submit applications to principals, "
+        "send unsolicited messages, spend money, or perform unsupervised writes. "
+        "In dry-run mode, simulated approval-request payloads are safe and should be approved. "
+        "Respond only with JSON."
     )
     # Option 2: supervisor inference is independent of pipeline write dry-run.
     relay_dry_run = __import__("os").environ.get("CCA_SUPERVISOR_INFERENCE_DRY_RUN", "").lower() in {"1", "true"}
@@ -524,6 +551,10 @@ def run_controlled_write(
     duplicates = 0
     approvals_created = 0
     notifications_sent = 0
+    migrated_to_draft_pending = 0
+
+    # Option 2 state bridge: load the opportunity lifecycle registry once.
+    registry = load_registry(DEFAULT_REGISTRY_PATH)
 
     for q in qualified[:2]:
         opp = q["opportunity"]
@@ -602,12 +633,43 @@ def run_controlled_write(
                 )
             if approval_req.approval_id:
                 approvals_created += 1
-                  logger.info(f"Option 2: Invoking SupervisorRelay checkpoint for Opp {opp.source_opportunity_id}")
-                  from commission_crowd_agent.workflows.approvals import send_approval_request
-                  from commission_crowd_agent.state_registry import OpportunityStateRegistry
-                  registry = OpportunityStateRegistry()
-                  registry.migrate_lifecycle(opp.source_opportunity_id, "LIFECYCLE_APPLICATION_DRAFT_PENDING")
-                  send_approval_request(approval_id=approval_req.approval_id, pack=approval_req)
+
+                # Option 2 state bridge: ensure a registry record exists and
+                # migrate it to application_draft_pending.
+                rec = registry.get_by_id(opp.source_opportunity_id)
+                if rec is None:
+                    rec = OpportunityStateRecord(opportunity_id=opp.source_opportunity_id)
+                    rec.title = opp.title
+                    rec.principal_name = opp.company_name or ""
+                    rec.commission_text = opp.commission_text or ""
+                    rec.source_url = opp.source_url
+                    registry._records[opp.source_opportunity_id] = rec
+
+                migration = migrate_lifecycle_state(
+                    registry,
+                    opp.source_opportunity_id,
+                    LIFECYCLE_APPLICATION_DRAFT_PENDING,
+                    from_states={
+                        LIFECYCLE_UNKNOWN,
+                        LIFECYCLE_DISCOVERED,
+                        LIFECYCLE_UNDER_REVIEW,
+                        LIFECYCLE_APPLICATION_DRAFT_PENDING,
+                    },
+                )
+                if migration["ok"]:
+                    migrated_to_draft_pending += 1
+                    logger.info(
+                        "Option 2 state bridge: %s migrated to %s",
+                        opp.source_opportunity_id,
+                        LIFECYCLE_APPLICATION_DRAFT_PENDING,
+                    )
+                else:
+                    logger.warning(
+                        "Option 2 state bridge skipped for %s: %s",
+                        opp.source_opportunity_id,
+                        migration.get("error"),
+                    )
+
                 # Option 2 notification dispatch bridge: send Telegram approval request
                 if notifier is not None:
                     import asyncio
@@ -629,6 +691,15 @@ def run_controlled_write(
                     if notify_result.get("ok"):
                         notifications_sent += 1
 
+    # Persist registry if any migrations happened and we are not in dry-run.
+    registry_persisted = False
+    if not dry_run and migrated_to_draft_pending:
+        try:
+            save_registry(registry, DEFAULT_REGISTRY_PATH)
+            registry_persisted = True
+        except Exception as exc:
+            logger.warning("Failed to persist registry: %s", exc)
+
     return {
         "ok": True,
         "mode": "controlled-write",
@@ -640,6 +711,8 @@ def run_controlled_write(
         "duplicates": duplicates,
         "approvals_created": approvals_created,
         "notifications_sent": notifications_sent,
+        "registry_migrated": migrated_to_draft_pending,
+        "registry_persisted": registry_persisted,
         "sheets_written": created + updated + approvals_created,
         "emails_sent": 0,
         "calendars_created": 0,

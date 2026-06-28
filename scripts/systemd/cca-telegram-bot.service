@@ -1,0 +1,23 @@
+[Unit]
+Description=CCA Telegram Approval Daemon
+Documentation=https://github.com/Zero-Human-Corp/commission-crowd-agent/blob/master/docs/operations/telegram-daemon.md
+# Deployment metadata: Tailscale mesh node hosting this service.
+# Tailscale IPv4: 100.123.111.83
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/workspace/Zero-Human-Corp/commission-crowd-agent
+Environment="PYTHONPATH=/home/ubuntu/workspace/Zero-Human-Corp/commission-crowd-agent/src"
+ExecStart=/bin/bash /home/ubuntu/workspace/Zero-Human-Corp/commission-crowd-agent/scripts/daemon_launcher.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cca-telegram-bot
+
+[Install]
+WantedBy=multi-user.target
