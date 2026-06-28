@@ -76,6 +76,14 @@ class CcaSettings(BaseSettings):
         default="https://www.commissioncrowd.com/api",
         description="CommissionCrowd API base URL",
     )
+    commissioncrowd_insecure_skip_verify: bool = Field(
+        default=False,
+        description=(
+            "Opt-in TLS verification skip for the CommissionCrowd REST adapter. "
+            "Defaults to False (production-safe). Set True only to work around a "
+            "known expired certificate on the upstream API; never enable blindly."
+        ),
+    )
     cca_client_name: str = Field(default="", description="Default client name for runs")
     cca_daily_volume_limit: int = Field(default=50, ge=1)
     cca_log_level: str = Field(default="INFO")
@@ -173,6 +181,7 @@ _SHARED_KEY_MAP: dict[str, str] = {
     "commissioncrowd_username": "COMMISSIONCROWD_USERNAME",
     "commissioncrowd_password": "COMMISSIONCROWD_PASSWORD",
     "commissioncrowd_base_url": "COMMISSIONCROWD_BASE_URL",
+    "commissioncrowd_insecure_skip_verify": "COMMISSIONCROWD_INSECURE_SKIP_VERIFY",
     "cca_client_name": "CCA_CLIENT_NAME",
     "cca_daily_volume_limit": "CCA_DAILY_VOLUME_LIMIT",
     "cca_log_level": "CCA_LOG_LEVEL",

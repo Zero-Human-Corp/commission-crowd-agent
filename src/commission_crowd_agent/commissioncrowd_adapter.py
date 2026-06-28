@@ -90,11 +90,26 @@ class CommissionCrowdApiAdapter:
         *,
         dry_run: bool = False,
         settings: CcaSettings | None = None,
+        insecure_skip_verify: bool | None = None,
     ) -> None:
         self._explicit_key = api_key
         self.base_url = base_url or self.API_BASE
         self.dry_run = dry_run
         self._settings = settings
+        # Wave 3 Track A (H4, R2): TLS verification is on by default
+        # (production-safe). The prior unconditional verify=False was
+        # MITM-vulnerable on every live REST call. The opt-in
+        # commissioncrowd_insecure_skip_verify setting (config.py) is the only
+        # way to disable verification — used to work around a known expired
+        # upstream certificate. An explicit constructor arg wins over settings.
+        if insecure_skip_verify is not None:
+            self._insecure_skip_verify = insecure_skip_verify
+        elif settings is not None:
+            self._insecure_skip_verify = bool(
+                getattr(settings, "commissioncrowd_insecure_skip_verify", False)
+            )
+        else:
+            self._insecure_skip_verify = False
 
     @property
     def api_key(self) -> str:
@@ -134,8 +149,9 @@ class CommissionCrowdApiAdapter:
         """Make an authenticated HTTP request.
 
         Raises on persistent failure so callers can map to structured results.
-        NOTE: verify=False is set because CommissionCrowd's SSL certificate
-        has expired (2026-06-09).  Remove once they renew.
+        TLS verification is ON by default; it is disabled only when the
+        adapter was constructed with ``insecure_skip_verify=True`` or the
+        ``commissioncrowd_insecure_skip_verify`` setting is set (config.py).
 
         Auth header uses ``Token`` scheme (extracted from browser session)
         rather than ``Bearer`` because the public REST API expects that.
@@ -148,7 +164,7 @@ class CommissionCrowdApiAdapter:
             headers["Authorization"] = f"Token {raw}"
         with httpx.Client(
             timeout=self.TIMEOUT_SECONDS,
-            verify=False,
+            verify=not self._insecure_skip_verify,
             follow_redirects=True,
         ) as client:
             response = client.request(method, url, headers=headers)
