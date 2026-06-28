@@ -10,10 +10,9 @@ is performed.
 from __future__ import annotations
 
 import asyncio
-import json
 import re
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -36,11 +35,9 @@ from commission_crowd_agent.report_fetcher import CommissionReportFetcher
 from commission_crowd_agent.report_registry import (
     CommissionReport,
     ReportRegistry,
-    compute_report_hash,
 )
 from commission_crowd_agent.state_registry import (
     LIFECYCLE_APPLICATION_APPROVED,
-    LIFECYCLE_APPLICATION_SUBMITTED,
     OpportunityStateRegistry,
 )
 from commission_crowd_agent.submission_audit import (
