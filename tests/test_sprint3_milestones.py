@@ -25,6 +25,7 @@ from commission_crowd_agent.browser_automation import (
     FormShadowValidator,
     OperatorInterventionRequired,
 )
+from commission_crowd_agent.candidate_identity import IdentityVerificationResult
 from commission_crowd_agent.config import CcaSettings
 from commission_crowd_agent.models.report_schema import (
     CommissionReportSchema,
@@ -367,6 +368,11 @@ def _approved_registry() -> OpportunityStateRegistry:
     record.title = "Cybersecurity SaaS"
     record.principal_name = "SecureFlow Inc"
     record.lifecycle_state = LIFECYCLE_APPLICATION_APPROVED
+    # Production writes require explicit IDENTITY_VERIFIED + RECONCILED.
+    record.record_identity_verification(
+        IdentityVerificationResult.VERIFIED,
+        disposition="RECONCILED",
+    )
     return registry
 
 

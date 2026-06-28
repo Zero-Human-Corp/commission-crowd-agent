@@ -19,6 +19,7 @@ from .domain import OpportunityStage
 if TYPE_CHECKING:
     from .adapters import GoogleSheetsAdapter
     from .calendar_adapter import CalendarAdapter
+    from .state_registry import OpportunityStateRegistry
 
 # Opportunity stages in sales ops order (including closed_won / closed_lost)
 _PIPELINE_STAGES: list[str] = [
@@ -112,6 +113,59 @@ class CRMPipeline:
         self.sheets_adapter = sheets_adapter
         self._dry_run_cache: dict[str, list[dict[str, Any]]] = {"leads": []}
         self._idempotency = idempotency_store
+        self._state_registry: OpportunityStateRegistry | None = None
+
+    def attach_registry(self, registry: OpportunityStateRegistry) -> None:
+        """Wire the opportunity state registry used for identity-verified write gates."""
+        self._state_registry = registry
+
+    def _check_identity_gate(
+        self,
+        lead_id: str,
+        new_stage: str,
+        *,
+        action: str,
+    ) -> dict[str, Any] | None:
+        """Return a denied result dict when the identity gate blocks the write.
+
+        Returns ``None`` when the write may proceed. The gate applies only to
+        production (non-dry-run) transitions to ``application_submitted`` —
+        the CRM write that records an application was submitted to a principal.
+        Blocks (never default-allow) when no registry is wired or when the
+        candidate is not IDENTITY_VERIFIED + RECONCILED. The block is recorded
+        on the registry record's ``conflicts`` list so it is operator-auditable.
+        """
+        if new_stage != OpportunityStage.APPLICATION_SUBMITTED.value:
+            return None
+        registry = self._state_registry
+        if registry is None:
+            return {
+                "ok": False,
+                "action": action,
+                "error": (
+                    "Identity gate blocked: no state registry wired; cannot verify "
+                    "candidate identity for application_submitted write"
+                ),
+                "rows_changed": 0,
+            }
+        record = registry.get_by_id(lead_id)
+        # Imported here to avoid a circular import at module load time.
+        from .state_registry import evaluate_identity_gate
+
+        gate = evaluate_identity_gate(record)
+        if gate["allowed"]:
+            return None
+        if record is not None:
+            record.conflicts.append(
+                f"identity_gate_blocked:{gate['status'] or 'unverified'}:"
+                f"{gate['disposition'] or 'none'}"
+            )
+        return {
+            "ok": False,
+            "action": action,
+            "error": f"Identity gate blocked: {gate['reason']}",
+            "rows_changed": 0,
+        }
 
     def add_lead(
         self,
@@ -406,6 +460,16 @@ class CRMPipeline:
                 "dry_run": True,
                 "error": None,
             }
+
+        # Identity gate: production application_submitted CRM writes require
+        # explicit IDENTITY_VERIFIED + RECONCILED. Block (never default-allow)
+        # when the candidate has not been verified. Other stage transitions
+        # (sourcing, research, close) are not identity-sensitive.
+        gate_block = self._check_identity_gate(
+            lead_id, new_stage, action="update_stage"
+        )
+        if gate_block is not None:
+            return gate_block
 
         if self.sheets_adapter is None:
             return {

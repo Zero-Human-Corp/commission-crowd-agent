@@ -1,7 +1,7 @@
 # CCA MVP — Known Limitations
 
 **Status:** `MVP_IMPLEMENTATION_COMPLETE` — `DEPENDENCY_HEALTHY` — `NOT_READY_FOR_OPERATOR_DECISIONS` — `NOT_READY_FOR_PRODUCTION`  
-**Last updated:** 2026-06-12
+**Last updated:** 2026-06-28
 
 ## What works
 - Browser discovery code is complete and tested (reconciliation, scoring, approval gates)

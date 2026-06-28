@@ -24,6 +24,7 @@ from .state_registry import (
     LIFECYCLE_APPLICATION_APPROVED,
     LIFECYCLE_APPLICATION_SUBMITTED,
     OpportunityStateRegistry,
+    evaluate_identity_gate,
 )
 from .submission_audit import SubmissionAuditModule, SubmissionAuditRecord, hash_payload
 from .supervisor_relay import (
@@ -65,6 +66,7 @@ class SubmissionResult:
     shadow_validation: dict[str, Any] = field(default_factory=dict)
     error: str = ""
     operator_notified: bool = False
+    identity_gate: dict[str, Any] = field(default_factory=dict)
 
 
 class FormSubmissionEngine:
@@ -330,6 +332,18 @@ class FormSubmissionEngine:
             self._write_audit(result, status="aborted")
             return result
 
+        # 1b. Identity verification gate — production CRM writes / form
+        # submissions require explicit IDENTITY_VERIFIED + RECONCILED.
+        # Block (never default-allow) when verification has not been run or
+        # returns a non-verified status / blocked disposition. The block is
+        # recorded via the submission audit log so it is operator-reviewable.
+        identity_gate = evaluate_identity_gate(record)
+        result.identity_gate = identity_gate
+        if not identity_gate["allowed"]:
+            result.error = f"Identity gate blocked: {identity_gate['reason']}"
+            self._write_audit(result, status="aborted")
+            return result
+
         # 2. Approval gate — fail closed before any page mutation.
         if not self.gate.is_approved(approval_id):
             result.error = f"Approval {approval_id} is not approved"
@@ -488,6 +502,7 @@ class FormSubmissionEngine:
             error=result.error,
             operator_notified=result.operator_notified,
             dry_run=result.dry_run,
+            identity_gate=result.identity_gate,
         )
         if extra:
             record.supervisor_checkpoint = {

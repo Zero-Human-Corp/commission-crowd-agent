@@ -36,6 +36,7 @@ class SubmissionAuditRecord:
         error: Error message on failure or abort.
         operator_notified: Whether a Telegram confirmation was dispatched.
         dry_run: True if this was a simulated submission.
+        identity_gate: Identity verification gate decision (allowed/reason/status/disposition).
     """
 
     audit_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -50,6 +51,7 @@ class SubmissionAuditRecord:
     error: str = ""
     operator_notified: bool = False
     dry_run: bool = False
+    identity_gate: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise to a plain dict suitable for JSONL storage."""

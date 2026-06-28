@@ -102,7 +102,7 @@ See [Operator Runbook](docs/mvp-operator-runbook.md) for full recovery procedure
 - `scripts/` — Standalone mission scripts
   - `browser_discovery.py` / `v4` / `v5` / `v6.py` — Iterative discovery scripts
   - `reconcile_inventory.py` — CRM reconciliation
-- `tests/` — pytest suite (575 tests, all passing)
+- `tests/` — pytest suite (606 tests collected)
 - `scripts/dev_check.sh` — Runs ruff, mypy, pytest
 - `scripts/hooks/` — Hermes hook entrypoints (bash)
 - `data/runs/` — Transient workflow outputs (gitignored)
@@ -223,7 +223,7 @@ Full architecture: `docs/architecture.md`
 ## Tests
 
 ```bash
-pytest          # 575 passing
+pytest --co -q          # 606 tests collected
 ./scripts/dev_check.sh  # lint + type + tests
 ```
 
@@ -231,7 +231,7 @@ pytest          # 575 passing
 
 | Gate | Result |
 |------|--------|
-| Tests | 500 passed |
+| Tests | 606 tests collected |
 | Ruff (src + tests + reconcile_inventory.py) | Clean |
 | MyPy (state_registry + approval_gate) | Clean* |
 | Secret scan (changed files) | No secrets found |

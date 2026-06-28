@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 UTC = timezone.utc
 from typing import Any
 
+from .candidate_identity import IdentityVerificationResult
 from .canonical import CanonicalOpportunity
 
 # ── Lifecycle states ──────────────────────────────────────────────────
@@ -52,6 +53,22 @@ TERMINAL_STATES: set[str] = {
     LIFECYCLE_APPLICATION_SUBMITTED,
     LIFECYCLE_APPLICATION_APPROVED,
 }
+
+# ── Identity verification gate ─────────────────────────────────────────
+# Production CRM writes / form submissions require explicit identity
+# verification. A candidate proceeds only when ``identity_verification_status``
+# is ``IDENTITY_VERIFIED`` and ``identity_conflict_disposition`` is
+# ``RECONCILED``. Any other status (MISMATCH / EMPTY / UNREACHABLE), any
+# blocked disposition (QUARANTINED / STALE), or no verification at all
+# blocks the write — production writes never default-allow.
+IDENTITY_VERIFIED_STATUS = IdentityVerificationResult.VERIFIED
+IDENTITY_BLOCKED_STATUSES = {
+    IdentityVerificationResult.MISMATCH,
+    IdentityVerificationResult.EMPTY,
+    IdentityVerificationResult.UNREACHABLE,
+}
+IDENTITY_BLOCKED_DISPOSITIONS = {"QUARANTINED", "STALE"}
+IDENTITY_RECONCILED_DISPOSITION = "RECONCILED"
 
 # ── Source flags ──────────────────────────────────────────────────────
 SOURCE_MY_OPPORTUNITIES = "in_my_opportunities"
@@ -91,6 +108,11 @@ class OpportunityStateRecord:
     opportunity_id_missing: bool = False
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    # Identity verification gate state — empty until verify_candidate_identity()
+    # and flag_identity_conflict() have been run for this candidate.
+    identity_verification_status: str = ""
+    identity_conflict_disposition: str = ""
+    identity_verified_at: str = ""
 
     def is_terminal(self) -> bool:
         return self.lifecycle_state in TERMINAL_STATES
@@ -116,6 +138,25 @@ class OpportunityStateRecord:
                 "retrieved_at": retrieved_at or datetime.now(UTC).isoformat(),
             }
         )
+        self.updated_at = datetime.now(UTC).isoformat()
+
+    def record_identity_verification(
+        self,
+        status: str,
+        disposition: str = IDENTITY_RECONCILED_DISPOSITION,
+    ) -> None:
+        """Record the identity verification result for this candidate.
+
+        Production CRM writes / form submissions require
+        ``status == IDENTITY_VERIFIED`` and ``disposition == RECONCILED``;
+        any other combination blocks downstream writes. The status is
+        sourced from :func:`candidate_identity.verify_candidate_identity`
+        and the disposition from
+        :func:`candidate_identity.flag_identity_conflict`.
+        """
+        self.identity_verification_status = status
+        self.identity_conflict_disposition = disposition
+        self.identity_verified_at = datetime.now(UTC).isoformat()
         self.updated_at = datetime.now(UTC).isoformat()
 
     def record_hash(self) -> str:
@@ -174,6 +215,9 @@ class OpportunityStateRecord:
             "record_hash": self.record_hash(),
             "created_at": self.created_at,
             "updated_at": self.updated_at,
+            "identity_verification_status": self.identity_verification_status,
+            "identity_conflict_disposition": self.identity_conflict_disposition,
+            "identity_verified_at": self.identity_verified_at,
         }
 
 
@@ -373,3 +417,62 @@ class OpportunityStateRegistry:
         if opportunity_id not in self._records:
             self._records[opportunity_id] = OpportunityStateRecord(opportunity_id=opportunity_id)
         return self._records[opportunity_id]
+
+
+def evaluate_identity_gate(record: OpportunityStateRecord | None) -> dict[str, Any]:
+    """Return whether a candidate may proceed to a production CRM write / form submission.
+
+    Returns a dict with:
+        allowed: bool — True only when the candidate is IDENTITY_VERIFIED + RECONCILED.
+        reason: str — empty when allowed, otherwise a human-readable block reason.
+        status: str — the recorded identity verification status.
+        disposition: str — the recorded conflict disposition.
+
+    A candidate is blocked (never default-allowed) when:
+        - no record exists,
+        - identity verification has not been run (status empty),
+        - status is MISMATCH / EMPTY / UNREACHABLE,
+        - disposition is QUARANTINED or STALE,
+        - disposition is anything other than RECONCILED.
+    """
+    if record is None:
+        return {
+            "allowed": False,
+            "reason": "Opportunity not found in state registry",
+            "status": "",
+            "disposition": "",
+        }
+    status = record.identity_verification_status
+    disposition = record.identity_conflict_disposition
+    if status != IDENTITY_VERIFIED_STATUS:
+        if not status:
+            reason = "Identity verification has not been run for this candidate"
+        elif status in IDENTITY_BLOCKED_STATUSES:
+            reason = f"Identity verification status is '{status}' (not IDENTITY_VERIFIED)"
+        else:
+            reason = f"Identity verification status is '{status}' (not IDENTITY_VERIFIED)"
+        return {
+            "allowed": False,
+            "reason": reason,
+            "status": status,
+            "disposition": disposition,
+        }
+    if disposition != IDENTITY_RECONCILED_DISPOSITION:
+        if disposition in IDENTITY_BLOCKED_DISPOSITIONS:
+            reason = f"Identity conflict disposition is '{disposition}' (blocked)"
+        elif not disposition:
+            reason = "Identity conflict disposition has not been reconciled"
+        else:
+            reason = f"Identity conflict disposition is '{disposition}' (not RECONCILED)"
+        return {
+            "allowed": False,
+            "reason": reason,
+            "status": status,
+            "disposition": disposition,
+        }
+    return {
+        "allowed": True,
+        "reason": "",
+        "status": status,
+        "disposition": disposition,
+    }

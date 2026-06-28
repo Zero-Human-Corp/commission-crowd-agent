@@ -45,7 +45,7 @@
 | **T-032** | Create Operator Runbook | Medium | T-029 | **Done/Complete** | `docs/mvp-operator-runbook.md` and related runbooks. |
 | **T-033** | Export all workflows as JSON for backup | High | T-028 | **Superseded (n8n)** | Source code + Git is the backup. n8n instance is read-only reference. |
 | **T-034** | Run code-review-graph on final workflows | Medium | T-033 | **Backlog** | Optional; code is reviewed via PR + pytest. |
-| **T-035** | Onboard pilot client and run full system | High | T-029, T-032 | **Outstanding** | Blocked until identity/commercial verification gap is closed. |
+| **T-035** | Onboard pilot client and run full system | High | T-029, T-032 | **Outstanding (operator-gated)** | Operator action only — cannot be automated. The code-side identity gate (T-044) is now complete; pilot onboarding still requires a human operator to run the live browser verification + commercial checks on a real candidate. |
 | **T-036** | Refine prompts based on pilot feedback | Medium | T-035 | **Blocked** | Waiting for pilot data. |
 | **T-037** | Update all documentation | Medium | T-035 | **In Progress** | Refreshing stale docs to match Hermes/Python CLI reality. |
 | **T-038** | Build Hermes hook scripts under `scripts/hooks/` | High | T-002 | **Done/Complete** | Bash wrappers for `cca` CLI; `set -euo pipefail` + venv activation. |
@@ -54,7 +54,7 @@
 | **T-041** | Implement approval gate with integrity checks | High | T-040 | **Done/Complete** | `approval_gate.py`; gates all CRM writes and application submissions. |
 | **T-042** | Implement Telegram inline-keyboard approval daemon | High | T-003, T-041 | **Done/Complete** | Persistent callback worker + Playwright shadow validator. |
 | **T-043** | Implement controlled-write MVP / application submission engine | High | T-041, T-042 | **Done/Complete** | Automated application submission with operator approval gating. |
-| **T-044** | Candidate identity reconciliation and commercial verification | High | T-040 | **Outstanding** | Required before production CRM writes or applications. |
+| **T-044** | Candidate identity reconciliation and commercial verification | High | T-040 | **Done (code part)** | Identity gate wired into `FormSubmissionEngine.submit_application` and `CRMPipeline` `application_submitted` writes: only `IDENTITY_VERIFIED` + `RECONCILED` candidates proceed; MISMATCH/EMPTY/UNREACHABLE/QUARANTINED/STALE and unverified candidates are blocked and audited via `submission_audit` / `state_registry`. Live pilot onboarding (T-035) remains operator-gated. |
 
 ---
 
