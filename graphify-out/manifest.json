@@ -1,0 +1,1194 @@
+{
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/generate_application_packs.py": {
+    "mtime": 1782649142.2469308,
+    "hash": "4141478853bf83ad22f28665aaa8af77"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/vite.config.ts": {
+    "mtime": 1782649142.261931,
+    "hash": "aaa99499f3db5f5e3bfc922e29f705f8"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/eslint.config.js": {
+    "mtime": 1782649142.258931,
+    "hash": "b8893da386a89dfd3672dad848f4ec7e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/main.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "c0b03d6a24469b0504079fe252beb6c0"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/types/section.ts": {
+    "mtime": 1782649142.2609308,
+    "hash": "36a2cd1592a5a446591ecd48ab95c857"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/types/product.ts": {
+    "mtime": 1782649142.2609308,
+    "hash": "f36449883e1eabfcc8cfe66d7ec221fb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/lib/design-system-loader.ts": {
+    "mtime": 1782649142.2609308,
+    "hash": "a0565ee98b7d42bba8c11a7d824d9b0b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/lib/section-loader.ts": {
+    "mtime": 1782649142.2609308,
+    "hash": "62605182b47fb74d2b9cc3faec66543c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/lib/data-shape-loader.ts": {
+    "mtime": 1782649142.2609308,
+    "hash": "4600983cd1b78a1cdd68f97f3e89d531"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/lib/router.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "ab3179b1d63a9fe0e21099ce471a4bdf"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/lib/shell-loader.ts": {
+    "mtime": 1782649142.2609308,
+    "hash": "ec76394f2a6012eb2481bd9f8de813c4"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/lib/product-loader.ts": {
+    "mtime": 1782649142.2609308,
+    "hash": "4f12a101ecf443e6cc16db36314e2ec6"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/lib/utils.ts": {
+    "mtime": 1782649142.2609308,
+    "hash": "5a6fd53fdcf2be529e9cc0b718fde352"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/DataShapePage.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "12efa6b74901a4a5e9daad7b74343a8d"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ExportPage.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "5e8e5b3140e48e2eebc778493db7ec1d"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/SectionsPage.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "b320c410963fde3cda3fdde87257aa1e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/EmptyState.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "573f35f99723971d568650fd3ab64495"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/StepIndicator.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "1ddc2290f77dd12371b544ae624effd2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/DesignPage.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "a71515e5a8f2f7851058b416d1968b8e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/SectionsCard.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "01d1d433c8086fb94712890fc5d6c268"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ThemeToggle.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "36e757fec2b680dd79ef86746eea04cb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ShellDesignPage.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "5c3154e48bd40295d28d6099ff1a10f2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ShellCard.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "b2bfb69fc38d0e67762250b2f02519cb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/AppLayout.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "d228b3f58d6195ae1979637ddb6c841b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/SectionPage.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "52e84a9d05517766b04c2d41d6544bc4"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ProductOverviewCard.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "3014df8fba16314a9c0e3ed3a5da5515"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ProductPage.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "011f25882f952396bafd7f308d75c8ef"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ScreenDesignPage.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "72435dbe5aec7a6dfbf0a03513530539"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/DataCard.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "d0c8d72bdb4b2184601d54cbf60747d0"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/PhaseWarningBanner.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "0b02ab6066de1c4486e1d89af782cdfa"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/SpecCard.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "ee4a2c118235136d9aafb33da8729c61"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/NextPhaseButton.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "203b3136964783256080a9fca6190885"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ScreenDesignsCard.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "0785c0f0b2c98b985c8bf7d6e1764900"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/PhaseNav.tsx": {
+    "mtime": 1782649142.2599308,
+    "hash": "a3723562681bde90f4d04abe01398703"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/sheet.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "6945241f834cad4ca26b2b06a7c49a50"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/tabs.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "5411c951f095fdbc9c061509eddfd714"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/dropdown-menu.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "8a7f49b4f303577830fafaaaedb8c4f3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/input.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "6666f8369b53c79d39be8060dc6c4ce5"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/dialog.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "48a74bc4e6b2a9609c91582cae95730f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/collapsible.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "aba7f811cbbd9426403dfef39800d839"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/card.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "a6752f4d1da504c7f03196d90cde4b2c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/skeleton.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "ee5017bac14efeda715feaceb488382a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/label.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "710ce51843629f84766e78763b194c90"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/separator.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "07b35dc35f811b26a1ee3982582ba9fb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/avatar.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "19bc4411b724fb504c65550b61a453b1"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/button.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "22b799b3a86a4257b34e0eb35156fffb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/badge.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "7efa8abd36eee59f14998b447d169304"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/components/ui/table.tsx": {
+    "mtime": 1782649142.2609308,
+    "hash": "531bf830b5f3b399abe3fd453157cdb7"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/domain.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "d01c107cc8d4eb6ec45e5348c56efe08"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/autonomous_prospector.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "4e3fc06693d9079986997dcf13af3d78"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/canonical.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "183f4d81d549341547b5ff9f24809c6a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/supervisor_relay.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "9784f92c62d31d337005d01b19c6c328"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/crm_pipeline.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "e684a0ab917a7e72bd410cf9d3e6495f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/commissioncrowd_adapter.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "570561224c7d48e02fd63dcad801836d"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/adapters.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "1e96679f07ea81d3d17059e1e6add548"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/operator_source.py": {
+    "mtime": 1782649142.264931,
+    "hash": "e636d0f8f67af01116ccee546805eff2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/calendar_adapter.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "6ca88f2c2e6253bf8d6df97c4620b39b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/lead_ingestion.py": {
+    "mtime": 1782649142.264931,
+    "hash": "75f6f56480d339fd8663c23566fe6061"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/candidate_identity.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "aadaf3d7d4ebed67f85924c10bad98d3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/workflow_runner.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "3c2fa33a60f5de9ce3aa401c4aceea3e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/deeper_research.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "b986db1d2991555389b39d81e7206c1b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/browser_prospector.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "a7a23f971eea90efd7bf842099676d9e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/form_shadow_validator.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "26012524eb9d1fc8482a3216c606482a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/directory_extractor.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "318d7f4ec35c6369a24a7fa8ea1fc520"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/browser_adapter.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "df636ad9c1c0b66410fb252851053fbc"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/form_submission_engine.py": {
+    "mtime": 1782649142.264931,
+    "hash": "c8bdb51f705885af223f47548e556fba"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/config.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "f0ee19f3b84933e4530def2edd896a02"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/__init__.py": {
+    "mtime": 1782649142.261931,
+    "hash": "3f76e4aed437b29e6f207ed29d9a3700"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/report_fetcher.py": {
+    "mtime": 1782649142.265931,
+    "hash": "1f7a78c7972f54208b283eb489d4bf20"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/mvp_pipeline.py": {
+    "mtime": 1782649142.264931,
+    "hash": "60d2c3777657851d91d304514ec4f050"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/email_templates.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "eb8a2865da796851a4bf32655f4f5036"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/approval_gate.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "663937f36bc31dc079b19632ca6ca60a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/stub_detector.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "4407f35495aeb1ce2fe38e8ee21e341a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/cli.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "b1cfe1089617e7ef6afae8891029db4b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/discovery.py": {
+    "mtime": 1782649142.2639308,
+    "hash": "98793185b179ae75ca4a334e31690b94"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/sales_orchestrator.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "bde4b98f1a9682a0b45393c52b1a08e2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/report_registry.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "4cf7cf38f9cc69526e0d3f2ab0ea9aeb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/opportunity_seeker.py": {
+    "mtime": 1782649142.265931,
+    "hash": "5b346f2394b96477202278e47a1487f3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/lead_scoring.py": {
+    "mtime": 1782649142.264931,
+    "hash": "616bab0a1d42f166efa91a0fd9c99938"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/browser_automation.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "16377b6308b2ee04c53161ef5a574e0c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/cca_guardian.py": {
+    "mtime": 1782649142.2629309,
+    "hash": "ba372bba6633a9505b97609218bcd425"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/state_registry.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "fc59db2e55439f2220aed1c669ff1a15"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/mvp_reports.py": {
+    "mtime": 1782649142.264931,
+    "hash": "87be994dd6a64ff2ec97854c1b30f738"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/sales_ops.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "e655a184f689a4bf3a53651c97f3a519"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/submission_audit.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "7e4aead57292db8a413d44c9f7c90dac"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/models/__init__.py": {
+    "mtime": 1782649142.264931,
+    "hash": "56a639c83cddbacb552698855b90569f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/models/report_schema.py": {
+    "mtime": 1782649142.264931,
+    "hash": "9283495da005485ecf653c32b668c2e9"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/workflows/research_cycle.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "e2f0af1e370f34e9c3ba1c18b2cf7158"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/workflows/outreach.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "3d0e5a0802dc93bc80e30cf8a2f4d660"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/workflows/__init__.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "78d2df36163394da825909ded3cd4734"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/workflows/scoring.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "539fd5d0413493f7b6ceaf944d6aa274"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/src/commission_crowd_agent/workflows/approvals.py": {
+    "mtime": 1782649142.2669308,
+    "hash": "05ce54a97ace8c1b1e49f8cb7e10bac4"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_email_templates.py": {
+    "mtime": 1782649142.268931,
+    "hash": "148164f91bebde39f9433468c749bdb6"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_commissioncrowd_extractor.py": {
+    "mtime": 1782649142.268931,
+    "hash": "80b68f4db31c1ccc33bd0d8924343a76"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_canonical.py": {
+    "mtime": 1782649142.268931,
+    "hash": "5df7a7023242d497b7dcc26547ff8641"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_outreach_adapter.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "659277e4c362173a69d2f671a29efc9e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_deeper_research.py": {
+    "mtime": 1782649142.268931,
+    "hash": "07635f20c37b20570e3103740f9283ba"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_browser_discovery.py": {
+    "mtime": 1782649142.268931,
+    "hash": "518f5c97f4f09fbb8f2d5600065ba7f1"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_lead_scoring.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "f680f18d0ddaed3cbd0fd9c5b5b5be3f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_workflow_approvals.py": {
+    "mtime": 1782649142.270931,
+    "hash": "6cd88ba9f68ba4e741b44b5d13e1429e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_crm_pipeline.py": {
+    "mtime": 1782649142.268931,
+    "hash": "d9a27cdb91e3bca911aa8ccc7a07e891"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_mvp_pipeline.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "3162e4954bfda743117c61c734da387e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_directory_extractor.py": {
+    "mtime": 1782649142.268931,
+    "hash": "8a3943e131b421087105d9415655bf34"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_submission_audit.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "778e3d7b9b44f4222acc993bb9f13eb9"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_candidate_identity.py": {
+    "mtime": 1782649142.268931,
+    "hash": "d8aa20c648357591641d08a8e7802ca4"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_approval_gate.py": {
+    "mtime": 1782649142.268931,
+    "hash": "225ec1c8c701634f85d5f68da71e07cf"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_sprint3_milestones.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "b956cfa09c552d7001d8ff96eaf81b3c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_config.py": {
+    "mtime": 1782649142.268931,
+    "hash": "fe59381c0d3efb887b2f46bc9cd04c6d"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_google_sheets_adapter.py": {
+    "mtime": 1782649142.268931,
+    "hash": "8f07d1cd3ac9ec79d9e904dece6aef11"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_secrets.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "b61e7044ad23ced6717dc8f5f821f7f0"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_workflow_scoring.py": {
+    "mtime": 1782649142.270931,
+    "hash": "67a010c3ba0a229c52acf0c66575c8d5"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_lead_ingestion.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "32ac325a9ddee14430be50a91c803460"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_domain.py": {
+    "mtime": 1782649142.268931,
+    "hash": "7564048eb5d09ec50fa342737cfa619d"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_supervisor_relay.py": {
+    "mtime": 1782649142.270931,
+    "hash": "33db50e91e175b4ed484854880a06e8a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_operator_source.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "80bdbd8a4338d671d3c9a53cc2d6349c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_sales_ops.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "9dc282ae3fb65f4bba90f6a824fc8489"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_adapters.py": {
+    "mtime": 1782649142.268931,
+    "hash": "301a6be0a74c8df8dafe75616ea87b36"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_approval_decision_roundtrip.py": {
+    "mtime": 1782649142.268931,
+    "hash": "731dc12ad8244e7008776a6bf1642b2c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_report_registry.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "679d4f0d2235340319d2b224e4a19a12"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_reconciliation_and_invariants.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "34ff8ad7064a700a2ab8d7bd42e8e1e2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_autonomous_prospector.py": {
+    "mtime": 1782649142.268931,
+    "hash": "39b3b2d02c30815ffbc4e8e36a8635f7"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_live_shadow.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "d1fa07a79ce4c97d970a86c969da0967"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_google_sheets.py": {
+    "mtime": 1782649142.268931,
+    "hash": "b8c4beea201ccdda68cc8c2033abfd7b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_commissioncrowd_adapter.py": {
+    "mtime": 1782649142.268931,
+    "hash": "09a71ac1a83d306aef437ca7e37faff7"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_cca_guardian.py": {
+    "mtime": 1782649142.268931,
+    "hash": "880b306000d34bedfdb24eecfe1a9066"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_submit_application_packs.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "261b9314dff4dc24fbbd4c215d81bda7"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_stub_detector.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "eb72e9b320985a82955f8e002f717981"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_schema_guards.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "6778359b150e9d675f1e582073436029"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_calendar_adapter.py": {
+    "mtime": 1782649142.268931,
+    "hash": "a65b4f4ed72b1e102fdf30b42fb06ae9"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_supervisor_smoke.py": {
+    "mtime": 1782649142.270931,
+    "hash": "d45591dcd406279b7b49c7616dc489b2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_per_source_limits.py": {
+    "mtime": 1782649142.2699308,
+    "hash": "cf0fa95d30a844d8652fcd36420cb26f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/test_workflow_runner.py": {
+    "mtime": 1782649142.270931,
+    "hash": "880612a0197707b68497e02dd9365311"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/qualify_find_opportunities.py": {
+    "mtime": 1782649142.255931,
+    "hash": "d2a118c1785b3e17f2c4a04b7afe9ae8"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery_v5.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "32941b5b64ca77071142e35dbaba8b24"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diag_screenshots.py": {
+    "mtime": 1782649142.255931,
+    "hash": "b3c7731bab8f9e37e200137113d5b278"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/qualify_candidates.py": {
+    "mtime": 1782649142.255931,
+    "hash": "53cb01e47b15ac1c147b8697c4bccd1b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diagnose_applications_conversations.py": {
+    "mtime": 1782649142.255931,
+    "hash": "d85475ca9e40ae7baaddde26064e7245"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/playwright_shadow_validate.py": {
+    "mtime": 1782649142.255931,
+    "hash": "b38dcb8771f8bbec1f4cf5c552527341"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/research_candidates.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "b90eca72e473ddc0ab33ff623ec4abf2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery_v9.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "0928fb74bd6a3e085542fb837c154eb4"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/sync_google_sheet.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "75b5de78b49845b214d1746e1391ad3f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diag_conv.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "5bcbfea03462d7b81a8a15e8d9f9fb5e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/stage_crm_approvals.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "4feda16b49e4e3aab4c50b20ee821482"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/submit_application_packs.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "cb7ff4a9b0357d5f8dab227924404de3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/refresh_lifecycle_schema_specs.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "803a68a80d313cacdc78bed03297be54"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diagnose_v3.py": {
+    "mtime": 1782649142.255931,
+    "hash": "bdff4c1b30a0be41eee76d227bd1b601"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/sync_reports_to_repo.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "d548ba72d310fe75baaf0dc4575e61f4"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diagnose_v5.py": {
+    "mtime": 1782649142.255931,
+    "hash": "3a5ad7570bf5fa420ba4bfc86b7336e9"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diag_deep.py": {
+    "mtime": 1782649142.255931,
+    "hash": "a32d8173da91a62f780337fe16fd0cd2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery_v8.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "6d37bb3ac91cb9b80e60b55f27afb786"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery.py": {
+    "mtime": 1782649142.2539308,
+    "hash": "39d0ee9f6387c6037627721073399781"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diagnose_v4.py": {
+    "mtime": 1782649142.255931,
+    "hash": "4f1cb7a1db5cb2e396255bc9027a984b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/capture_opportunity_details.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "d7c10be23b33c99d946857228dbd3d88"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/telegram_approval_daemon.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "4c0f788a4f6867c92d260e7553401fb1"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery_v4.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "b745fc4bd0e503f3e6c0370593f048ca"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/run_cca_option2_workstreams.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "ca9c0df6af1554fbb9d789b68ff94813"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diagnose_v2.py": {
+    "mtime": 1782649142.255931,
+    "hash": "a1288b3494f4f6d92cc17d77539d4657"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery_v6.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "085c1a4d4367853a7ebb5545bdfb5251"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/draft_application_packs.py": {
+    "mtime": 1782649142.255931,
+    "hash": "39ee2a34592dd75e46564147e70040c6"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diag_find.py": {
+    "mtime": 1782649142.255931,
+    "hash": "a5bc72333c4612a65f35b3140f7bceb2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery_v7.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "8e7807e968b519c420669289bba2740e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/cca_identity_reconciliation_search_v1.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "8702ba767abebdabf7f0fe7cf3d75be6"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery_v10.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "8bd3effa65de8dc9b2189f758d68e6b5"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/reconcile_inventory.py": {
+    "mtime": 1782649142.2569308,
+    "hash": "99b319c6e9c632e707e6cd2760fd9524"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/browser_discovery_v11.py": {
+    "mtime": 1782649142.2549307,
+    "hash": "4eed9a3384fc72d4f661d20c3009ef5e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/diag_tables.py": {
+    "mtime": 1782649142.255931,
+    "hash": "e927e44dd1a249b7a33e5e9fad481a78"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/scripts/dry_run_crm_write.py": {
+    "mtime": 1782649142.255931,
+    "hash": "70815ed421b4de1e1b4a4874c5b486fe"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/README.md": {
+    "mtime": 1782649142.2439308,
+    "hash": "519a4cb82daf6747a5b92ff4a988cab2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/README.md": {
+    "mtime": 1782649142.2569308,
+    "hash": "77604a5f3f099e6d92e2992c7873a73c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/README.md": {
+    "mtime": 1782649142.2579308,
+    "hash": "843f85909f660ea8472ea94d6f0a48ef"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/agents.md": {
+    "mtime": 1782649142.2579308,
+    "hash": "30a8b0e9b853767dadb78a31d10f6a47"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/CHANGELOG.md": {
+    "mtime": 1782649142.2579308,
+    "hash": "557687f9a9ea04637da0dc5cc91989db"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/claude.md": {
+    "mtime": 1782649142.2579308,
+    "hash": "e1e46f295b62b89a2a4dedb04f205c11"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/index.html": {
+    "mtime": 1782649142.258931,
+    "hash": "d84f6abe01adf7061f3f0c45d89c2896"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/docs/codebase-implementation.md": {
+    "mtime": 1782649142.2579308,
+    "hash": "9dd12efb01d7906e61058eda414a070f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/docs/product-planning.md": {
+    "mtime": 1782649142.258931,
+    "hash": "d7e38d24b72c0fdb47c01e34057989cf"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/docs/getting-started.md": {
+    "mtime": 1782649142.258931,
+    "hash": "5c783db55dbe5d30c5cb10580ec8b3c3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/docs/design-section.md": {
+    "mtime": 1782649142.2579308,
+    "hash": "5cb0877974ca808dd82b45f302859b86"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/docs/usage.md": {
+    "mtime": 1782649142.258931,
+    "hash": "8340bdae058cf18791c5c4627cf4c9e7"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/docs/index.md": {
+    "mtime": 1782649142.258931,
+    "hash": "d5a238c309cf5bd6b7349803d6af126a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/docs/export.md": {
+    "mtime": 1782649142.258931,
+    "hash": "3a8802548e8e38b50ee4f7052dda8337"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/docs/requirements.md": {
+    "mtime": 1782649142.258931,
+    "hash": "96c79c43dd1fa8ffd021fcda2de16c35"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/supervisor-overall-goal.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "8fbcb9dbeb78bcb0a209f88e5e6714af"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/backend-structure.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "6601f0d3db4524f020fc3725ee757746"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/known-limitations.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "1d163c4b84d970ab4b1baeb9570762e5"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/commissioncrowd-browser-discovery.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "602c449c70c7b075ad9eb414579ce663"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/srs.md": {
+    "mtime": 1782649142.245931,
+    "hash": "902ff2fc62752022751f1567a4032cc1"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/workflow-rep-application-model.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "7e2a3b382683918353e634cf65ee9a6b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/implementation-plan.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "97a48bb1265c042fc76a7409d588934b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/shared-tools.md": {
+    "mtime": 1782649142.245931,
+    "hash": "1a44551e30326218e9fa1b8219618f73"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/prd.md": {
+    "mtime": 1782649142.245931,
+    "hash": "4de94a09e3638781e1cd7e28b54dd85b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/mvp-operator-runbook.md": {
+    "mtime": 1782649142.245931,
+    "hash": "12f9e751ef43efb80905a8bb86235be1"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/holdco-website-copy-plan.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "093a662f8e65204e8dee1cb3af777dbb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/sprint_3_specifications.md": {
+    "mtime": 1782649142.245931,
+    "hash": "772128a130a84cb90696b1c0f6743e93"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/job-description.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "089e2f8d48e519d92c0d7be38ff81ebf"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/product-description.md": {
+    "mtime": 1782649142.245931,
+    "hash": "1565be57247204dec356ab085331381c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/holdco-repo-mapping.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "4f83dec44868bb67a16829f9d47d900a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/architecture.md": {
+    "mtime": 1782649142.2439308,
+    "hash": "e7c7ddb68c103534af1dbd33a0f667de"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/target-audience.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "63d1cf4c710ca5ab896b72a34e33ea24"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/opportunity-lifecycle.md": {
+    "mtime": 1782649142.245931,
+    "hash": "7d87dc1c6d27eb4c54f041e5afd3c139"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/app-flow.md": {
+    "mtime": 1782649142.2439308,
+    "hash": "54fb5cf069e770c2cbcc01182d2bcae3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/frontend-guidelines.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "7ad4b2bcd9ddc14568f7d9e36f2836c7"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/manual-application-workflow.md": {
+    "mtime": 1782649142.245931,
+    "hash": "1fc94ef9ee7efa97deeb0e6d11a47d76"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/local_supervisor_model_routing.md": {
+    "mtime": 1782649142.245931,
+    "hash": "3b0a1cc862493436cf7feb01dd2677c0"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/holdco-architecture.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "64c5cacc3b4de21a845bae787ab1bbeb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/icon-only-navigation.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "b2d872506691b43c5e6cfea21cfee37e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/tech-stack.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "2f3e662a1927d69dd34c7393d035a588"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/cca_browser_discovery_mvp_final_report.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "f2e0938a1f97df702ebf4e4277851733"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/task-list.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "b18fea44ddda1b702f7abe3b9baf6313"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/cca_browser_discovery_mvp_release_candidate.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "77d758c3c4779d4b5c4e75addbefa238"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/security-guidelines.md": {
+    "mtime": 1782649142.245931,
+    "hash": "fbc082ad224af56080611f540b9a51df"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/operations/sprint_2_smoke_run.md": {
+    "mtime": 1782649142.245931,
+    "hash": "6e00f5463df719081d1e75bcce9baef2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/operations/workstream_c_run.md": {
+    "mtime": 1782649142.245931,
+    "hash": "db51d0ca2b1f2a6a6f12c155f1d29fa1"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/operations/telegram-daemon.md": {
+    "mtime": 1782649142.245931,
+    "hash": "4cf0956dc8c0dd44514de836b9628958"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/operations/workstream_d_run.md": {
+    "mtime": 1782649142.245931,
+    "hash": "187e834fd33e034e4144f9eb58d903b6"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/operations/option2_orchestrator_run.md": {
+    "mtime": 1782649142.245931,
+    "hash": "276d6b1526f360140e15c971bea138d8"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/operations/google-sheets.md": {
+    "mtime": 1782649142.245931,
+    "hash": "22bfece9035eb1459b3cf75bd5af0e9e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/decisions/ADR-001-replace-n8n-primary-workflows-with-hermes-hooks.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "089445049e3bf5a0882ecb5df5b7a581"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/docs/legacy/n8n/README.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "138409ea1c3c2bfd0e83589754da35f2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/fixtures/commissioncrowd/translation-localization.html": {
+    "mtime": 1782649142.267931,
+    "hash": "839c37d5091fbc1b78199b02e8c9e14c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/fixtures/commissioncrowd/banking.html": {
+    "mtime": 1782649142.267931,
+    "hash": "e1a3f86ea8f84e906e7384592ac8ef72"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/tests/fixtures/commissioncrowd/security-investigations.html": {
+    "mtime": 1782649142.267931,
+    "hash": "73c1098a608c492ffc9362ad6e6259d7"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/README.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "5829f508e21f168c4b2916db44964942"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_net_new_candidates.md": {
+    "mtime": 1782649142.2509308,
+    "hash": "228338136fbcc83ddeac4f82d5abf77a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "6d45177cd1033c8c79ccb2b5458a3131"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_qualified_candidates.md": {
+    "mtime": 1782649142.2529309,
+    "hash": "4a62575b40f826cc373ca113f3306ea3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_sheet_sync.md": {
+    "mtime": 1782649142.2529309,
+    "hash": "238278e5b74f98bc7251dece42f42b6f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_submissions.md": {
+    "mtime": 1782649142.2539308,
+    "hash": "c462f0b7ab718e561b1f4abaf5eedade"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_shortlist.md": {
+    "mtime": 1782649142.2539308,
+    "hash": "064b0860a2802e258fe1f7de38ba803d"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_crm_staging.md": {
+    "mtime": 1782649142.248931,
+    "hash": "57780a2a0ced51cb22cf242018061e28"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_opportunity_id_deduplication_v1.md": {
+    "mtime": 1782649142.2509308,
+    "hash": "6da5398273bfff0baf89cd27fa43199f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_detail_capture.md": {
+    "mtime": 1782649142.2499309,
+    "hash": "e90acf5223075b4fb73aeb910df6dfe4"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_web_research.md": {
+    "mtime": 1782649142.2539308,
+    "hash": "54545a4521a56e3b4182696ac271f0db"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_27755.md": {
+    "mtime": 1782649142.248931,
+    "hash": "736ee0a2ef8fdaae66a582eca297d40b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_25253.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "a7a53cec55c4b5b2435c523823ce9501"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_39292.md": {
+    "mtime": 1782649142.248931,
+    "hash": "4216126961a0e50251ede0f51a99df24"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_14618.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "6c8716b91e8d40797f34e91bcffbf616"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_36575.md": {
+    "mtime": 1782649142.248931,
+    "hash": "2b15bfd137d72cdff7f66c10316b223f"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_16296.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "4f3fa32d7c9e0e1b45cc441d460d2f09"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_18798.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "64dbb65447a00de069ae1d7c8b316313"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_15256.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "106188cb528ffd8c33c6744a5e604dbb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_22099.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "2d9460b91c95339e369646c79e77b201"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_17031.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "6c05954bd56c6fd42ebc85d954011f14"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_8958.md": {
+    "mtime": 1782649142.248931,
+    "hash": "6b28be2700349e019c942812afe22ce5"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_6655.md": {
+    "mtime": 1782649142.248931,
+    "hash": "690f8755c9de57ec281adbfaae777b5a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_11419.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "e06f2d839aa1b4a8ba4799af5a6ab417"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_22763.md": {
+    "mtime": 1782649142.2479308,
+    "hash": "032743b5f034ec3c94eb32a75f868123"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/reports/cca_application_packs/cca_app_pack_39452.md": {
+    "mtime": 1782649142.248931,
+    "hash": "af95a4e5399ffd5d5a1f00f1f19377ed"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/README.md": {
+    "mtime": 1782649142.261931,
+    "hash": "fb5ba2b95bc94b29b47085179c423867"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/commission-only-sales.html": {
+    "mtime": 1782649142.261931,
+    "hash": "e3571ec87c83acebc5b91138c2e06b3b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/contact.html": {
+    "mtime": 1782649142.261931,
+    "hash": "92bdc23196959b94a63dbad06a74394c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/opportunity-preferences.html": {
+    "mtime": 1782649142.261931,
+    "hash": "520be1b50a339549990a4140b76badbd"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/commissioncrowd-profile.html": {
+    "mtime": 1782649142.261931,
+    "hash": "66530b89ab5091f83759583d04fdb634"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/vendor-partnership.html": {
+    "mtime": 1782649142.261931,
+    "hash": "bcc3fd8d1c9865947db08ffc56b578e2"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/about.html": {
+    "mtime": 1782649142.261931,
+    "hash": "e46f697053040f6cafa8b9bb16574922"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/index.html": {
+    "mtime": 1782649142.261931,
+    "hash": "0cce18756153ed4ea303b20c047b3814"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/supervisor-overall-goal.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "8fbcb9dbeb78bcb0a209f88e5e6714af"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/backend-structure.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "6601f0d3db4524f020fc3725ee757746"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/README.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "bd7e5286469aac35719779ac7d5f9490"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/known-limitations.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "1d163c4b84d970ab4b1baeb9570762e5"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/commissioncrowd-browser-discovery.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "602c449c70c7b075ad9eb414579ce663"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/srs.md": {
+    "mtime": 1782649142.245931,
+    "hash": "902ff2fc62752022751f1567a4032cc1"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/workflow-rep-application-model.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "7e2a3b382683918353e634cf65ee9a6b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/implementation-plan.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "97a48bb1265c042fc76a7409d588934b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/shared-tools.md": {
+    "mtime": 1782649142.245931,
+    "hash": "1a44551e30326218e9fa1b8219618f73"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/prd.md": {
+    "mtime": 1782649142.245931,
+    "hash": "4de94a09e3638781e1cd7e28b54dd85b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/mvp-operator-runbook.md": {
+    "mtime": 1782649142.245931,
+    "hash": "12f9e751ef43efb80905a8bb86235be1"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/holdco-website-copy-plan.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "093a662f8e65204e8dee1cb3af777dbb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/job-description.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "089e2f8d48e519d92c0d7be38ff81ebf"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/product-description.md": {
+    "mtime": 1782649142.245931,
+    "hash": "1565be57247204dec356ab085331381c"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/holdco-repo-mapping.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "4f83dec44868bb67a16829f9d47d900a"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/architecture.md": {
+    "mtime": 1782649142.2439308,
+    "hash": "e7c7ddb68c103534af1dbd33a0f667de"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/target-audience.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "63d1cf4c710ca5ab896b72a34e33ea24"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/opportunity-lifecycle.md": {
+    "mtime": 1782649142.245931,
+    "hash": "7d87dc1c6d27eb4c54f041e5afd3c139"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/app-flow.md": {
+    "mtime": 1782649142.2439308,
+    "hash": "54fb5cf069e770c2cbcc01182d2bcae3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/frontend-guidelines.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "7ad4b2bcd9ddc14568f7d9e36f2836c7"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/manual-application-workflow.md": {
+    "mtime": 1782649142.245931,
+    "hash": "1fc94ef9ee7efa97deeb0e6d11a47d76"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/local_supervisor_model_routing.md": {
+    "mtime": 1782649142.245931,
+    "hash": "3b0a1cc862493436cf7feb01dd2677c0"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/holdco-architecture.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "64c5cacc3b4de21a845bae787ab1bbeb"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/icon-only-navigation.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "b2d872506691b43c5e6cfea21cfee37e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/tech-stack.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "2f3e662a1927d69dd34c7393d035a588"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/cca_browser_discovery_mvp_final_report.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "f2e0938a1f97df702ebf4e4277851733"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/task-list.md": {
+    "mtime": 1782649142.2469308,
+    "hash": "b18fea44ddda1b702f7abe3b9baf6313"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/cca_browser_discovery_mvp_release_candidate.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "77d758c3c4779d4b5c4e75addbefa238"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/security-guidelines.md": {
+    "mtime": 1782649142.245931,
+    "hash": "fbc082ad224af56080611f540b9a51df"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/operations/google-sheets.md": {
+    "mtime": 1782649142.245931,
+    "hash": "22bfece9035eb1459b3cf75bd5af0e9e"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/obsidian/decisions/ADR-001-replace-n8n-primary-workflows-with-hermes-hooks.md": {
+    "mtime": 1782649142.2449307,
+    "hash": "089445049e3bf5a0882ecb5df5b7a581"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/public/vite.svg": {
+    "mtime": 1782649142.2599308,
+    "hash": "8e3a10e157f75ada21ab742c022d5430"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/shared-tools/design-os/src/assets/react.svg": {
+    "mtime": 1782649142.2599308,
+    "hash": "f0402b67b6ce880f65666bb49e841696"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/icon-outreach.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "73562adc254b5eb3684f7ff241623a97"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/logo-placeholder.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "4a42611b77710d61b22d43aea2187754"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/agency-badge.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "29633d7d90669edde654e476b9ba95b3"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/photo-placeholder.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "813b2a4198c066225afea52b2cd59db9"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/icon-strategy.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "cded2172e24f2b4bc4718dfbce9d9937"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/partnership.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "df52eec9d8d7cda873fccf1eb1aaccd0"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/hero-pipeline.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "6eefc6025d3b9c5056f2e6161723a06b"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/icon-partner.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "fb613817bdc008a8bfd5c7c25c9f2761"
+  },
+  "/home/ubuntu/projects/zero-human-corp/commission-crowd-agent/sites/syntaxis-labs/assets/icon-demo.svg": {
+    "mtime": 1782649142.261931,
+    "hash": "0d604a708f8c7946dd15727811469109"
+  }
+}
