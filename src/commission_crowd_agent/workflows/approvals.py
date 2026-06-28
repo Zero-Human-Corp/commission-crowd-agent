@@ -185,6 +185,13 @@ def _record_from_dict(data: dict[str, Any]) -> OpportunityStateRecord:
     rec.opportunity_id_missing = data.get("opportunity_id_missing", False)
     rec.created_at = data.get("created_at", datetime.now(UTC).isoformat())
     rec.updated_at = data.get("updated_at", datetime.now(UTC).isoformat())
+    # Wave 3 Track A (H5): hydrate identity-gate fields so a reloaded record
+    # preserves verification state. Without these, _record_from_dict relied on
+    # dataclass defaults and a verified candidate read as "not verified" after
+    # reload — evaluate_identity_gate would then block a legitimate write.
+    rec.identity_verification_status = data.get("identity_verification_status", "")
+    rec.identity_conflict_disposition = data.get("identity_conflict_disposition", "")
+    rec.identity_verified_at = data.get("identity_verified_at", "")
     return rec
 
 

@@ -184,7 +184,17 @@ class OpportunityStateRecord:
                 category=self.category,
                 data_quality_flags=self.data_quality_flags,
             )
-        except Exception:
+        except (TypeError, ValueError) as exc:
+            # Wave 3 Track A (L2): narrow from a bare `except Exception` that
+            # silently degraded malformed records to None. Log so a malformed
+            # registry record is observable instead of silently dropping.
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "to_canonical_opportunity failed for %s: %s",
+                self.opportunity_id,
+                exc,
+            )
             return None
 
     def to_dict(self) -> dict[str, Any]:

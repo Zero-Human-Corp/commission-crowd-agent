@@ -46,6 +46,29 @@ def _build_settings_table() -> Table:
     return table
 
 
+def _build_sheets_adapter_or_raise(settings: CcaSettings) -> GoogleSheetsAdapter:
+    """Construct a real GoogleSheetsAdapter from settings (Wave 3 Track A H2).
+
+    Replaces the ``ApprovalGate(sheets_adapter=None)`` stub at the
+    ``submit-application`` wiring. Reads spreadsheet_id + credentials_path from
+    settings (GoogleSheetsAdapter constructor at adapters.py:595). Fails loudly
+    when the spreadsheet id is unset so an operator cannot accidentally submit
+    against an invisible approval gate.
+    """
+    if not settings.google_sheets_spreadsheet_id:
+        raise typer.BadParameter(
+            "google_sheets_spreadsheet_id is not configured. "
+            "Set GOOGLE_SHEETS_SPREADSHEET_ID before running submit-application; "
+            "the approval gate cannot read approval status without a real Sheet."
+        )
+    return GoogleSheetsAdapter(
+        spreadsheet_id=settings.google_sheets_spreadsheet_id,
+        credentials_path=settings.google_application_credentials_path,
+        service_account_json=settings.google_service_account_json,
+        dry_run=False,
+    )
+
+
 def _build_preflight_table() -> Table:
     """Return a preflight readiness table with shared-env checks.
 
@@ -1227,9 +1250,16 @@ def submit_application(
         browser = CommissionCrowdBrowserAdapter()
         browser.start()
 
+    # Wave 3 Track A (H2): wire a real GoogleSheetsAdapter from settings so
+    # submissions can pass the approval gate. With sheets_adapter=None the
+    # gate's read_approval_status returns "missing" (approval_gate.py:274) and
+    # is_approved is False (approval_gate.py:325), so every submission aborts
+    # at form_submission_engine.py:348-351. Construct-from-settings fails
+    # loudly when the spreadsheet id is unset rather than silently passing None.
+    sheets_adapter = _build_sheets_adapter_or_raise(settings)
     engine = FormSubmissionEngine(
         browser=browser,
-        gate=ApprovalGate(sheets_adapter=None),
+        gate=ApprovalGate(sheets_adapter=sheets_adapter),
         supervisor=supervisor,
         audit=audit,
         settings=settings,
@@ -1257,6 +1287,79 @@ def submit_application(
     if browser is not None:
         with contextlib.suppress(Exception):
             browser.stop()
+
+
+@app.command(name="verify-identity")
+def verify_identity(
+    opportunity_id: str = typer.Option(..., help="Discovered opportunity ID to verify"),
+    title_fragment: str = typer.Option("", help="Expected title fragment from discovery"),
+    vendor_fragment: str = typer.Option("", help="Expected vendor fragment from discovery"),
+    headless: bool = typer.Option(default=True, help="Run browser headless"),
+) -> None:
+    """Run the discovery->verify->record identity hop for one candidate.
+
+    Wave 3 Track A (H1). Loads the registry, starts a real browser session,
+    navigates to the opportunity detail page via the identity orchestrator
+    (verify_candidate_identity -> flag_identity_conflict ->
+    record_identity_verification), and prints the resulting identity-gate
+    decision. This is the runtime caller that previously did not exist —
+    ``evaluate_identity_gate`` now receives input that came from discovery
+    rather than a hand-stamped ID.
+
+    Hook-point rationale: the orchestrator is a free function over the
+    registry + page boundary, so it is also callable directly from
+    ``mvp_pipeline.run_controlled_write`` after discovery produces a registry
+    record and before any CRM write that gates on identity. The CLI command is
+    the operator-facing entry; the function is the pipeline-facing entry.
+    """
+    from .browser_adapter import CommissionCrowdBrowserAdapter
+    from .identity_orchestrator import verify_and_record_identity
+    from .workflows.approvals import load_registry
+
+    settings = load_settings()
+    registry = load_registry()
+    record = registry.get_by_id(opportunity_id)
+    if record is None:
+        console.print(
+            f"[red]❌ Opportunity {opportunity_id} not found in registry "
+            f"(run controlled-write first to discover and persist it).[/red]"
+        )
+        raise typer.Exit(1)
+
+    title_fragments = [title_fragment] if title_fragment else None
+    vendor_fragments = [vendor_fragment] if vendor_fragment else None
+
+    browser = CommissionCrowdBrowserAdapter()
+    try:
+        browser.start(headless=headless)
+        page = getattr(browser, "_page", None)
+        if page is None:
+            console.print("[red]❌ Browser started but no page available.[/red]")
+            raise typer.Exit(1)
+        result = verify_and_record_identity(
+            registry,
+            opportunity_id,
+            page,
+            expected_title_fragments=title_fragments,
+            expected_vendor_fragments=vendor_fragments,
+        )
+    finally:
+        with contextlib.suppress(Exception):
+            browser.stop()
+
+    status_icon = "✅" if result.get("identity_gate", {}).get("allowed") else "❌"
+    console.print(f"{status_icon} verify-identity")
+    console.print(f"   Opportunity: {opportunity_id}")
+    console.print(f"   Status: {result.get('status', '')}")
+    console.print(f"   Disposition: {result.get('disposition', '')}")
+    console.print(f"   Extracted title: {result.get('extracted_title') or '—'}")
+    console.print(f"   Extracted vendor: {result.get('extracted_vendor') or '—'}")
+    gate = result.get("identity_gate", {})
+    console.print(f"   Gate allowed: {gate.get('allowed')}")
+    if gate.get("reason"):
+        console.print(f"   [red]Gate reason: {gate['reason']}[/red]")
+    if result.get("ok"):
+        console.print("   [dim]Identity verification recorded on registry record.[/dim]")
 
 
 def main() -> None:

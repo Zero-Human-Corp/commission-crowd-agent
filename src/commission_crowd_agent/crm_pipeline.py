@@ -290,14 +290,41 @@ class CRMPipeline:
         Raises ValueError for invalid transitions; otherwise delegates to update_stage.
         """
         if dry_run:
+            # Identity gate: evaluated in dry-run too so dry-run/live parity
+            # holds — a dry-run application_submitted for an unverified
+            # candidate surfaces the same block the live write would (Track A
+            # L1 principle). Other stages are not identity-sensitive.
+            gate_block = self._check_identity_gate(
+                lead_id, new_stage, action="advance_stage"
+            )
+            if gate_block is not None:
+                gate_block["dry_run"] = True
+                gate_block["tab"] = sheet_tab
+                gate_block["lead_id"] = lead_id
+                gate_block["new_stage"] = new_stage
+                return gate_block
             # In dry-run mode, update the local cache and allow the transition
+            found_in_cache = False
             for rec in self._dry_run_cache.get("leads", []):
                 if rec.get("lead_id") == lead_id:
                     rec["status"] = new_stage
+                    found_in_cache = True
                     break
-            else:
-                # Not found in cache — silently succeed anyway
-                pass
+            if not found_in_cache:
+                # Wave 3 Track A (L1): a missing lead in dry-run must surface as
+                # ok:False so dry-run/live parity holds. Previously this branch
+                # silently returned ok:True, masking missing-data bugs that only
+                # surfaced on the live path.
+                return {
+                    "ok": False,
+                    "action": "advance_stage",
+                    "tab": sheet_tab,
+                    "rows_changed": 0,
+                    "lead_id": lead_id,
+                    "new_stage": new_stage,
+                    "dry_run": True,
+                    "error": f"{lead_id} not found in dry-run cache",
+                }
             return {
                 "ok": True,
                 "action": "advance_stage",
@@ -449,6 +476,20 @@ class CRMPipeline:
         dry_run: bool = True,
     ) -> dict[str, Any]:
         """Update the stage/status of a lead or opportunity by row key."""
+        # Identity gate: production application_submitted CRM writes require
+        # explicit IDENTITY_VERIFIED + RECONCILED. Block (never default-allow)
+        # when the candidate has not been verified. Other stage transitions
+        # (sourcing, research, close) are not identity-sensitive. The gate is
+        # evaluated BEFORE the dry_run early-return so dry-run/live parity
+        # holds — a dry-run application_submitted for an unverified candidate
+        # surfaces the same block the live write would (Track A L1 principle).
+        gate_block = self._check_identity_gate(
+            lead_id, new_stage, action="update_stage"
+        )
+        if gate_block is not None:
+            gate_block["dry_run"] = dry_run
+            return gate_block
+
         if dry_run:
             return {
                 "ok": True,
@@ -460,16 +501,6 @@ class CRMPipeline:
                 "dry_run": True,
                 "error": None,
             }
-
-        # Identity gate: production application_submitted CRM writes require
-        # explicit IDENTITY_VERIFIED + RECONCILED. Block (never default-allow)
-        # when the candidate has not been verified. Other stage transitions
-        # (sourcing, research, close) are not identity-sensitive.
-        gate_block = self._check_identity_gate(
-            lead_id, new_stage, action="update_stage"
-        )
-        if gate_block is not None:
-            return gate_block
 
         if self.sheets_adapter is None:
             return {
