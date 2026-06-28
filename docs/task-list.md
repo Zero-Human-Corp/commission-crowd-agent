@@ -39,7 +39,7 @@
 | **T-026** | Implement daily volume limit check | Medium | T-024 | **Done/Complete** | Config-driven daily limits enforced. |
 | **T-027** | Create reusable Error Handler sub-workflow | High | T-019 | **Superseded (n8n)** | Error handling implemented as Python functions + structured logging. |
 | **T-028** | Connect main workflows using sub-workflows | Medium | T-019, T-027 | **Superseded (n8n)** | `workflow_runner.py` orchestrates Python workflow modules. |
-| **T-029** | Perform end-to-end testing with sample data | High | T-018, T-025 | **Done/Complete** | 575 tests passing; dry-run path available for every write command. |
+| **T-029** | Perform end-to-end testing with sample data | High | T-018, T-025 | **Done/Complete** | 627 tests passing; dry-run path available for every write command. |
 | **T-030** | Test error scenarios and recovery paths | High | T-029 | **Done/Complete** | Error scenarios covered by pytest + dry-run validation. |
 | **T-031** | Improve workflow idempotency | Medium | T-029 | **Done/Complete** | Dry-run guards and registry deduplication. |
 | **T-032** | Create Operator Runbook | Medium | T-029 | **Done/Complete** | `docs/mvp-operator-runbook.md` and related runbooks. |
@@ -47,7 +47,7 @@
 | **T-034** | Run code-review-graph on final workflows | Medium | T-033 | **Backlog** | Optional; code is reviewed via PR + pytest. |
 | **T-035** | Onboard pilot client and run full system | High | T-029, T-032 | **Outstanding (operator-gated)** | Operator action only — cannot be automated. The code-side identity gate (T-044) is now complete; pilot onboarding still requires a human operator to run the live browser verification + commercial checks on a real candidate. |
 | **T-036** | Refine prompts based on pilot feedback | Medium | T-035 | **Blocked** | Waiting for pilot data. |
-| **T-037** | Update all documentation | Medium | T-035 | **In Progress** | Refreshing stale docs to match Hermes/Python CLI reality. |
+| **T-037** | Update all documentation | Medium | T-035 | **Done/Complete** | Docs refreshed to Wave-1 reality: README/SKILL/implementation-plan/known-limitations test counts synced to 627 collected; identity-gate (T-044) code-completion reflected; Phase-5 "outstanding" language corrected. T-035 pilot onboarding remains operator-gated. |
 | **T-038** | Build Hermes hook scripts under `scripts/hooks/` | High | T-002 | **Done/Complete** | Bash wrappers for `cca` CLI; `set -euo pipefail` + venv activation. |
 | **T-039** | Implement Playwright SPA browser adapter | High | T-002 | **Done/Complete** | `browser_adapter.py`; authenticated navigation confirmed. |
 | **T-040** | Implement opportunity lifecycle registry + reconciliation | High | T-039 | **Done/Complete** | `state_registry.py` + `reconcile_inventory.py`. |

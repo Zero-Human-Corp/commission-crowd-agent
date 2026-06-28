@@ -15,9 +15,9 @@ A TLS diagnostic on **2026-06-10** reported `app.commissioncrowd.com` as expired
 
 See `/home/ubuntu/hermes-control/reports/cca_external_dependency_blocker_2026-06-10.md` for the historical audit. That report's wrong-host conclusion is **superseded** by the findings documented here and in `cca_correct_app_base_url_v1.md`.
 
-## Current blocker: candidate identity and commercial-detail reconciliation
+## Current blocker: live candidate verification (identity gate is code-complete)
 
-Authenticated navigation is working. The remaining blocker is **commercial verification of shortlisted candidates**, not infrastructure. Prior runs identified 48 net-new Find Opportunities candidates and 5 shortlisted prospects, but none have verified commercial details. Candidate IDs and titles require deterministic reconciliation before any CRM write or approval.
+Authenticated navigation is working. The identity verification gate is now **wired in code** (T-044 complete): `FormSubmissionEngine.submit_application` and `CRMPipeline` `application_submitted` writes only proceed for `IDENTITY_VERIFIED` + `RECONCILED` candidates; MISMATCH/EMPTY/UNREACHABLE/QUARANTINED/STALE and unverified candidates are blocked and audited via `submission_audit` / `state_registry`. The remaining blocker is **operator-gated live verification of real shortlisted candidates**, not infrastructure or gate logic. Prior runs identified 48 net-new Find Opportunities candidates and 5 shortlisted prospects, but none have been live-verified by an operator. Candidate identity and commercial terms require a human operator to confirm on a real candidate before any CRM write or approval (T-035 pilot onboarding remains operator-gated).
 
 ## Path to full MVP validation
 1. Re-run `python3 scripts/browser_discovery_v6.py` and confirm real cards load
@@ -35,4 +35,4 @@ Authenticated navigation is working. The remaining blocker is **commercial verif
 - Icon-only top navigation (star, checkmark, calendar, people, document, chat, bell) requires visual confirmation or screenshot analysis because labels are absent from the accessibility tree
 
 ## Honest verdict
-The pipeline code is architecturally complete and safe. Authenticated navigation is possible. It is **not ready for production** because shortlisted candidates lack verified commercial details and deterministic identity reconciliation. No operator decision, CRM write, approval creation, or application submission can proceed until candidate identity and commercial terms are confirmed.
+The pipeline code is architecturally complete and safe. Authenticated navigation is possible. The identity verification gate is wired into all CRM writes and application submissions (T-044 code-complete). It is **not ready for production** because no shortlisted candidate has been live-verified by an operator yet — the deterministic gate logic exists, but the live verification + pilot onboarding (T-035) remain operator-gated. No operator decision, CRM write, approval creation, or application submission can proceed until a real candidate's identity and commercial terms are confirmed by an operator.

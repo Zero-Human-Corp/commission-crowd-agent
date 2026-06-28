@@ -2,7 +2,7 @@
 
 Headless AI-powered automation system for B2B lead research, personalised outreach, and pipeline management.
 
-**Current Status:** `MVP_IMPLEMENTATION_COMPLETE` — Browser Discovery MVP code is complete and tested. `DEPENDENCY_HEALTHY` — CommissionCrowd browser adapter uses the correct canonical URL `https://www.commissioncrowd.com` with valid Let's Encrypt certificate (expires Aug 19 2026). Authenticated dashboard navigation confirmed working 2026-06-12. Card-click detail capture remains blocked by candidate identity and commercial verification gaps, not infrastructure. `NOT_READY_FOR_OPERATOR_DECISIONS` — Current authenticated state shows no verified net-new candidates; prior shortlists are on hold until candidate identity and commercial details are verified. `NOT_READY_FOR_PRODUCTION` — Candidate identity reconciliation and commercial verification must be completed before any CRM write, approval, or application. See [Known Limitations](docs/known-limitations.md) and `/home/ubuntu/hermes-control/reports/cca_external_dependency_blocker_2026-06-10.md` (historical audit, superseded). Tests passing. Ruff clean. n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
+**Current Status:** `MVP_IMPLEMENTATION_COMPLETE` — Browser Discovery MVP code is complete and tested. `DEPENDENCY_HEALTHY` — CommissionCrowd browser adapter uses the correct canonical URL `https://www.commissioncrowd.com` with valid Let's Encrypt certificate (expires Aug 19 2026). Authenticated dashboard navigation confirmed working 2026-06-12. Card-click detail capture remains blocked by candidate identity and commercial verification gaps, not infrastructure. `NOT_READY_FOR_OPERATOR_DECISIONS` — Current authenticated state shows no verified net-new candidates; prior shortlists are on hold until candidate identity and commercial details are verified. `NOT_READY_FOR_PRODUCTION` — Identity verification gate is now wired into all CRM writes and application submissions (T-044 code-complete: only `IDENTITY_VERIFIED` + `RECONCILED` candidates proceed; MISMATCH/EMPTY/UNREACHABLE/QUARANTINED/STALE and unverified candidates are blocked and audited). Live candidate verification and pilot onboarding (T-035) remain operator-gated. See [Known Limitations](docs/known-limitations.md) and `/home/ubuntu/hermes-control/reports/cca_external_dependency_blocker_2026-06-10.md` (historical audit, superseded). Tests passing. Ruff clean. n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
 
 ---
 
@@ -102,7 +102,7 @@ See [Operator Runbook](docs/mvp-operator-runbook.md) for full recovery procedure
 - `scripts/` — Standalone mission scripts
   - `browser_discovery.py` / `v4` / `v5` / `v6.py` — Iterative discovery scripts
   - `reconcile_inventory.py` — CRM reconciliation
-- `tests/` — pytest suite (606 tests collected)
+- `tests/` — pytest suite (627 tests collected)
 - `scripts/dev_check.sh` — Runs ruff, mypy, pytest
 - `scripts/hooks/` — Hermes hook entrypoints (bash)
 - `data/runs/` — Transient workflow outputs (gitignored)
@@ -223,7 +223,7 @@ Full architecture: `docs/architecture.md`
 ## Tests
 
 ```bash
-pytest --co -q          # 606 tests collected
+pytest --co -q          # 627 tests collected
 ./scripts/dev_check.sh  # lint + type + tests
 ```
 
@@ -231,7 +231,7 @@ pytest --co -q          # 606 tests collected
 
 | Gate | Result |
 |------|--------|
-| Tests | 606 tests collected |
+| Tests | 627 tests collected |
 | Ruff (src + tests + reconcile_inventory.py) | Clean |
 | MyPy (state_registry + approval_gate) | Clean* |
 | Secret scan (changed files) | No secrets found |

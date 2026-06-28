@@ -40,8 +40,8 @@ The current system can:
 | 1     | Browser Discovery & Reconciliation  | Days 6–12    | Playwright SPA adapter + source-of-truth registry| Complete      |
 | 2     | Scoring & Approval Gate             | Days 13–17   | Rep-fit scoring + lifecycle state machine        | Complete      |
 | 3     | Telegram Approvals & Controlled-Write MVP | Days 18–22 | Inline-keyboard approvals + application submission engine | Complete |
-| 4     | Testing, Hardening & Documentation  | Days 23–27   | 575 tests, ruff clean, operator runbooks, ADRs   | Complete      |
-| 5     | Identity/Commercial Verification & Pilot | Days 28+ | Verified candidates + first live client use   | Outstanding   |
+| 4     | Testing, Hardening & Documentation  | Days 23–27   | 627 tests, ruff clean, operator runbooks, ADRs   | Complete      |
+| 5     | Identity/Commercial Verification & Pilot | Days 28+ | Verified candidates + first live client use   | In Progress (identity gate code-complete via T-044; pilot operator-gated)   |
 
 ---
 
@@ -161,7 +161,7 @@ The current system can:
 - Keep n8n instance as read-only reference; do not export new JSON workflows
 
 **Deliverables:**
-- Stable MVP with 575 passing tests
+- Stable MVP with 627 passing tests
 - Operator runbooks and ADRs
 - Ruff-clean, type-checked Python codebase
 - Refreshed documentation set
@@ -212,7 +212,7 @@ The current system can:
 | Browser Discovery Working | Day 12 | Playwright extracts authenticated CommissionCrowd state |
 | Reconciliation & Scoring Working | Day 17 | Registry identifies net-new, protected, scored candidates |
 | Approval Gate & Telegram Approvals | Day 22 | Operator can approve/submit via inline-keyboard with dry-run guards |
-| MVP Stable | Day 27 | 575 tests pass; ruff/mypy clean; runbooks finalized |
+| MVP Stable | Day 27 | 627 tests pass; ruff/mypy clean; runbooks finalized |
 | Pilot Ready | Day 30+ | Candidate identity/commercial verification gap closed; first client onboarded |
 
 ---
