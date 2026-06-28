@@ -1,0 +1,21 @@
+{
+  "ok": false,
+  "workstream": "C",
+  "task": "lifecycle_schema_refresh",
+  "scan_summary": {
+    "total_files": 32,
+    "files_with_matches": 16,
+    "total_matches": 110
+  },
+  "supervisor": {
+    "approved": false,
+    "reason": "Dry-run mode \u2014 no inference performed.",
+    "recommended_action": "",
+    "risk_level": "unknown",
+    "notes": "",
+    "issues": [],
+    "requested_model": "qwen3-coder-next",
+    "actual_model": "qwen3-coder-next",
+    "fallback_reason": null
+  }
+}

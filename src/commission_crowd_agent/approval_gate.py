@@ -17,7 +17,13 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import StrEnum
+try:
+    from enum import StrEnum
+except ImportError:  # pragma: no cover (Python < 3.11)
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        pass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:

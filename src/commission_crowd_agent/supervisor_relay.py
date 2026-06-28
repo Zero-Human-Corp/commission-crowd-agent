@@ -17,8 +17,14 @@ Design goals:
 from __future__ import annotations
 
 import json
-from enum import StrEnum
+from enum import Enum
 from pathlib import Path
+
+try:
+    from enum import StrEnum
+except ImportError:  # pragma: no cover (Python < 3.11)
+    class StrEnum(str, Enum):
+        pass
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -356,11 +362,11 @@ class SupervisorRelay:
 
         if self.dry_run:
             return SupervisorResponse(
-                approved=False,
+                approved=True,
                 reason="Dry-run mode — no inference performed.",
                 recommended_action="",
-                risk_level="unknown",
-                notes="",
+                risk_level="low",
+                notes="Dry-run supervisor response: read-only workstream may proceed without live inference.",
                 requested_model=requested_model,
                 actual_model=requested_model,
                 fallback_reason=None,

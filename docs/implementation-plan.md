@@ -1,170 +1,182 @@
-**Initial Implementation Plan**  
+**Implementation Plan (Refreshed)**  
 **CommissionCrowd Invisible Agent – MVP**
 
-**Version:** 1.0  
-**Date:** May 21, 2026  
-**Approach:** Spec-driven development using **AGENTOS** + **Hermes Agent**  
-**Primary LLM:** Kimi-k2.6 (Ollama.com Cloud)  
-**Core Tools:** n8n, Google Sheets, Telegram, Graphify, code-review-graph
+**Version:** 2.0  
+**Date:** June 27, 2026  
+**Approach:** Spec-driven development using **AGENTOS** + **Hermes Agent** + **Python CLI**  
+**Primary LLM:** Kimi-k2.6 / Kimi-k2.7 (Ollama.com Cloud)  
+**Core Tools:** Python 3.11, pytest, Playwright, Telegram, Google Sheets, Hermes hooks, ruff, mypy
+**Legacy Reference:** n8n remains available on OCI `:5678` but is **read-only/legacy only** (see ADR-001 and Section 9 below).
 
 ---
 
 ### 1. Overview
 
-This plan outlines a **30-day phased implementation** to build a functional MVP of the CommissionCrowd Invisible Agent. The approach is **spec-driven** and leverages AI agents (especially Hermes) heavily, since the operator has limited coding experience.
+This plan reflects the **actual implementation path taken** for the CommissionCrowd Agent MVP. The original 30-day plan assumed n8n as the primary engine; that has been superseded by a **Git-controlled, testable Python workflow layer** triggered by **Hermes hooks** (see `docs/decisions/ADR-001-replace-n8n-primary-workflows-with-hermes-hooks.md`).
 
-The goal is to deliver a working system that can:
-- Research leads and generate personalized email drafts
-- Allow review and approval via Google Sheets + Telegram
-- Send approved emails reliably
+The current system can:
+- Authenticate to CommissionCrowd via Playwright and extract live account state
+- Reconcile browser-discovered opportunities against the CRM
+- Score leads for rep-fit as an independent commission-only sales rep
+- Generate application-to-principal drafts
+- Gate every CRM write and application submission through an approval gate
+- Request and receive operator approvals via Telegram inline-keyboard callbacks
+- Submit applications automatically after approval (controlled-write MVP)
 
 **Development Philosophy:**
 - Follow **AGENTOS** for spec-driven development
-- Use **Graphify** for architecture visualization
-- Use **code-review-graph** for workflow quality checks
+- Use **Graphify** for architecture visualization (optional/backlog)
+- Use **code-review-graph** for workflow quality checks (optional/backlog)
 - Apply clean principles inspired by **GSTACK**
+- Prefer **testable Python code** over opaque n8n JSON workflows
 
 ---
 
 ### 2. High-Level Timeline
 
-| Phase | Focus                              | Duration     | Key Deliverable                          | Status     |
-|-------|------------------------------------|--------------|------------------------------------------|------------|
-| 0     | Foundation & Environment           | Days 1–3     | Working n8n on OCI + Project Scaffold    | Setup      |
-| 1     | Specifications & Architecture      | Days 4–7     | Complete specs + Visual diagrams         | Planning   |
-| 2     | Research & Draft Workflow          | Days 8–14    | Working Research + Draft automation      | Core Build |
-| 3     | Approval & Sending Workflow        | Days 15–20   | Full end-to-end flow (Approve → Send)    | Core Build |
-| 4     | Testing, Hardening & Polish        | Days 21–25   | Stable, documented MVP                   | Quality    |
-| 5     | Pilot & First Client Onboarding    | Days 26–30   | Ready for real client use                | Validation |
+| Phase | Focus                              | Duration     | Key Deliverable                                  | Status        |
+|-------|------------------------------------|--------------|--------------------------------------------------|---------------|
+| 0     | Foundation & Hermes Migration      | Days 1–5     | Git scaffold + Python CLI + Hermes hooks         | Complete      |
+| 1     | Browser Discovery & Reconciliation  | Days 6–12    | Playwright SPA adapter + source-of-truth registry| Complete      |
+| 2     | Scoring & Approval Gate             | Days 13–17   | Rep-fit scoring + lifecycle state machine        | Complete      |
+| 3     | Telegram Approvals & Controlled-Write MVP | Days 18–22 | Inline-keyboard approvals + application submission engine | Complete |
+| 4     | Testing, Hardening & Documentation  | Days 23–27   | 575 tests, ruff clean, operator runbooks, ADRs   | Complete      |
+| 5     | Identity/Commercial Verification & Pilot | Days 28+ | Verified candidates + first live client use   | Outstanding   |
 
 ---
 
 ### 3. Detailed Implementation Plan
 
-#### **Phase 0: Foundation & Environment Setup (Days 1–3)**
+#### **Phase 0: Foundation & Hermes Migration (Days 1–5)**
 
-**Objective:** Set up the development and runtime environment.
+**Objective:** Replace the n8n-first foundation with a Git-controlled Python runtime and Hermes hook layer.
 
 **Tasks:**
-- Provision Oracle Cloud Always Free Ampere instance
-- Install Docker and deploy n8n via Docker Compose
-- Enable Basic Auth on n8n
-- Create project folder structure on local machine + OCI
-- Set up version control (Git) for workflow exports
-- Create Telegram bot via @BotFather
+- Provision Oracle Cloud Always Free Ampere instance (existing; n8n kept as read-only reference)
+- Create project folder structure and Git repository
+- Set up Python 3.11 virtual environment, `pyproject.toml`, and dev tooling (ruff, mypy, pytest)
+- Create Telegram bot via @BotFather and configure it for Python/Hermes (not n8n)
 - Create initial Google Sheets templates (`Leads` + `Config`)
-- Configure n8n credentials (Google Sheets, Telegram, Ollama.com Cloud)
+- Implement Pydantic Settings + safe shared secrets loader (`/home/ubuntu/hermes-control/secrets/shared.env`)
+- Build Hermes hook scripts under `scripts/hooks/` that wrap the `cca` CLI
+- Document the n8n-to-Hermes decision in `docs/decisions/ADR-001-*.md`
 
 **Deliverables:**
-- Working n8n instance accessible via browser
 - Initialized project folder with recommended structure
-- All base credentials configured in n8n
+- `cca` CLI runnable with `--dry-run` flags
+- Hermes hooks able to trigger Python workflows
+- All base credentials loaded from shared secrets (no repo-local secrets)
 
-**Tools:** OCI Console, Docker, Git
+**Tools:** OCI Console, Git, Python 3.11, pip, Hermes Agent
 
 ---
 
-#### **Phase 1: Specifications & Architecture (Days 4–7)**
+#### **Phase 1: Browser Discovery & CRM Reconciliation (Days 6–12)**
 
-**Objective:** Create clear specifications before building.
+**Objective:** Extract live opportunity state from CommissionCrowd and reconcile it against the CRM to identify net-new, protected, and duplicate candidates.
 
 **Tasks:**
-- Use **AGENTOS** to formalize Product Requirements and User Stories
-- Refine the existing PRD and SRS documents
-- Create architecture diagrams using **Graphify**
-- Generate workflow dependency graphs using **code-review-graph**
-- Define exact column structure for Google Sheets
-- Write detailed system prompts for the three micro-agents (Researcher, Writer, Scorer)
-- Define status machine and approval rules
+- Build Playwright SPA browser adapter (`browser_adapter.py`) that handles icon-only navigation and dynamic loading
+- Authenticate to CommissionCrowd and capture dashboard state
+- Extract `My Opportunities`, `Applications`, `Messages`, `Invitations`, `Favourite Opportunities`, and `Find Opportunities`
+- Implement source-of-truth hierarchy (account state > CRM > API enrichment)
+- Build reconciliation script (`reconcile_inventory.py`) and registry (`state_registry.py`)
+- Define protected-opportunity rules (active/paused engagements, pending applications)
+- Filter garbage/error pages from `Find Opportunities`
+- Persist outputs to `/home/ubuntu/hermes-control/reports/`
 
 **Deliverables:**
-- Updated PRD + SRS
-- Architecture diagrams (Graphify)
-- Micro-agent prompts (stored in `/prompts`)
-- Finalized Google Sheets template structure
+- Authenticated browser discovery pipeline
+- Unified `cca_opportunity_state_registry.json`
+- Reconciliation report (`cca_reconciliation_report.md`)
+- Identified net-new candidates protected from duplicates
 
-**Tools:** AGENTOS, Graphify, code-review-graph, Hermes Agent
+**Milestone:** Operator can run `python3 scripts/browser_discovery_v6.py` and `python3 scripts/reconcile_inventory.py` safely.
+
+**Tools:** Playwright, Python, JSON/Markdown reports, Hermes hooks
 
 ---
 
-#### **Phase 2: Research & Draft Workflow (Days 8–14)**
+#### **Phase 2: Scoring & Approval Gate (Days 13–17)**
 
-**Objective:** Build the automated research and email drafting capability.
+**Objective:** Score net-new opportunities for rep-fit and implement a lifecycle/approval gate that prevents unsafe CRM writes.
 
 **Tasks:**
-- Build `CC_Research_Draft_Main` workflow in n8n
-- Implement Google Sheets read/write nodes
-- Create and integrate **Researcher Agent** prompt (Kimi-k2.6)
-- Create and integrate **Writer Agent** prompt
-- Create and integrate **Scorer Agent** (optional but recommended)
-- Add status updates (`New` → `Researching` → `Draft Ready`)
-- Implement batch processing with limits
-- Add Telegram notification when drafts are ready
-- Add basic error handling
+- Define rep-fit scoring rubric (minimum deal-size thresholds, industry fit, geography, remote-friendliness)
+- Implement **Researcher**, **Writer**, and **Scorer** agents as Python modules
+- Build opportunity lifecycle state machine (`sourced` → `researched` → `rep-fit scored` → `application draft created` → `application approved` → `application submitted` → `accepted`/`rejected`)
+- Implement `approval_gate.py` with integrity checks and daily/batch limits
+- Add approval taxonomy: `research_scoring`, `deeper_research`, `apply_to_principal`, `application_submitted`, `icp_campaign_draft`, `icp_campaign_send`
+- Add dry-run guards on every write path
+- Add basic error handling and structured logging
 
 **Deliverables:**
-- Functional Research & Draft workflow
-- Tested micro-agent prompts
-- Working Telegram notification on draft completion
+- Rep-fit scoring pipeline
+- Lifecycle state registry
+- Approval gate with validation and limit enforcement
+- Tested agent prompts
 
-**Milestone:** Operator can add leads → Run workflow → Receive drafts in Google Sheets
+**Milestone:** Operator can run `cca run-research-cycle --dry-run` and `cca score-opportunities --dry-run` safely.
 
 ---
 
-#### **Phase 3: Approval & Sending Workflow (Days 15–20)**
+#### **Phase 3: Telegram Approvals & Controlled-Write MVP (Days 18–22)**
 
-**Objective:** Complete the human-in-the-loop sending capability.
+**Objective:** Replace n8n command triggers and Gmail/SMTP sending with a Hermes-managed, inline-keyboard approval flow and a controlled application-submission engine.
 
 **Tasks:**
-- Build `CC_Approve_Send_Main` workflow
-- Implement Telegram Trigger node for commands (`/approve`, `/send pending`)
-- Add logic to read only rows where `Approved = TRUE`
-- Integrate Gmail OAuth or SMTP node for sending
-- Update status to `Sent` + populate `Sent Timestamp`
-- Send Telegram confirmation after sending
-- Implement daily volume limit check from Config sheet
-- Improve error handling and logging
-- Connect both main workflows with shared logic (using sub-workflows)
+- Build Telegram inline-keyboard approval request generation (`cca request-approval --dry-run`)
+- Implement persistent approval callback worker (daemon) that receives operator decisions
+- Add Playwright shadow-DOM validation to confirm approval state before writes
+- Implement controlled-write MVP: only apply to a principal after explicit operator approval
+- Build automated application submission engine that fills CommissionCrowd application forms
+- Update lifecycle status to `application_submitted` + timestamp after submission
+- Send Telegram confirmation after each approval/submission action
+- Enforce daily volume and batch limits from config
+- Improve error handling, logging, and audit trail
 
 **Deliverables:**
-- End-to-end working flow (Research → Review → Approve → Send)
-- Telegram command handling
-- Proper status tracking and audit trail
+- Telegram inline-keyboard approval daemon
+- Controlled application submission engine
+- End-to-end flow: Research → Score → Draft → Approve → Submit
+- Audit trail in state registry and reports
 
-**Milestone:** Operator can review drafts → Approve via checkbox → Trigger sending via Telegram
+**Milestone:** Operator receives a Telegram approval request, clicks approve, and the system submits the application safely.
 
 ---
 
-#### **Phase 4: Testing, Hardening & Polish (Days 21–25)**
+#### **Phase 4: Testing, Hardening & Documentation (Days 23–27)**
 
-**Objective:** Make the system reliable and production-ready for pilot use.
+**Objective:** Make the Python workflow layer reliable and document it for operator use.
 
 **Tasks:**
-- Perform end-to-end testing with real (anonymized) data
-- Test error scenarios and recovery
-- Improve idempotency of workflows
-- Add better logging and RunLog sheet (optional)
-- Refine Telegram commands and notifications
-- Create basic Operator Runbook
-- Export all workflows as JSON for backup
-- Run **code-review-graph** on final workflows
-- Update all documentation
+- Perform end-to-end testing with real (anonymized) data via pytest and dry runs
+- Test error scenarios and recovery paths
+- Improve idempotency of workflows (dry-run guards, registry deduplication)
+- Add structured logging and `data/runs/` output
+- Refine Telegram notifications and approval messages
+- Create Operator Runbook (`docs/mvp-operator-runbook.md`)
+- Write architecture decision records (ADRs) and update implementation plan
+- Run ruff, mypy, and pytest in `./scripts/dev_check.sh`
+- Keep n8n instance as read-only reference; do not export new JSON workflows
 
 **Deliverables:**
-- Stable MVP
-- Operator Runbook
-- Backup of all workflows
-- Finalized documentation set
+- Stable MVP with 575 passing tests
+- Operator runbooks and ADRs
+- Ruff-clean, type-checked Python codebase
+- Refreshed documentation set
 
 ---
 
-#### **Phase 5: Pilot & First Client Onboarding (Days 26–30)**
+#### **Phase 5: Identity/Commercial Verification & Pilot (Days 28+)**
 
-**Objective:** Validate the system with a real (or test) client.
+**Objective:** Close the candidate identity and commercial verification gaps so the system can be used with a real client.
 
 **Tasks:**
-- Onboard 1 pilot client using the onboarding flow
-- Run the full system for 3–5 days
+- Reconcile candidate identity across CommissionCrowd detail pages, public web signals, and CRM records
+- Verify commercial details (company name, industry, products/services, compensation structure, geography) before any application
+- Onboard 1 pilot client using the onboarding flow once verification is reliable
+- Run the full system for 3–5 days with operator supervision
 - Collect feedback on draft quality and usability
 - Fix critical issues discovered during pilot
 - Refine prompts based on real output quality
@@ -172,19 +184,22 @@ The goal is to deliver a working system that can:
 - Prepare system for additional clients
 
 **Deliverables:**
+- Verified net-new candidates with commercial signals
 - Working system used with at least one client/pilot
 - Improved prompts and workflows
 - Readiness for paid client work
+
+**Blocker:** No CRM write, approval, or application can be made until candidate identity/commercial verification is complete.
 
 ---
 
 ### 4. Development Workflow (Ongoing)
 
 1. **Define/Update Spec** → Use **AGENTOS**
-2. **Visualize** → Use **Graphify**
-3. **Build/Modify** → n8n workflows + Hermes Agent
-4. **Review** → Use **code-review-graph**
-5. **Test** → Manual + sample data
+2. **Visualize** → Use **Graphify** (optional/backlog)
+3. **Build/Modify** → Python modules + Hermes hook scripts
+4. **Review** → Pull request + pytest + ruff + mypy (code-review-graph optional)
+5. **Test** → Unit tests + dry-run CLI commands + manual sample data
 6. **Document** → Update relevant docs
 
 ---
@@ -193,27 +208,29 @@ The goal is to deliver a working system that can:
 
 | Milestone | Target Date | Success Criteria |
 |---------|-------------|------------------|
-| Environment Ready | Day 3 | n8n running on OCI + credentials configured |
-| Specs Complete | Day 7 | PRD, SRS, prompts, and diagrams finalized |
-| Research & Draft Working | Day 14 | Can generate drafts from new leads |
-| Full End-to-End Flow | Day 20 | Can approve and send emails via Telegram |
-| MVP Stable | Day 25 | System runs reliably with error handling |
-| Pilot Complete | Day 30 | Used successfully with at least one client |
+| Environment Ready | Day 5 | Python CLI + Hermes hooks runnable; n8n read-only |
+| Browser Discovery Working | Day 12 | Playwright extracts authenticated CommissionCrowd state |
+| Reconciliation & Scoring Working | Day 17 | Registry identifies net-new, protected, scored candidates |
+| Approval Gate & Telegram Approvals | Day 22 | Operator can approve/submit via inline-keyboard with dry-run guards |
+| MVP Stable | Day 27 | 575 tests pass; ruff/mypy clean; runbooks finalized |
+| Pilot Ready | Day 30+ | Candidate identity/commercial verification gap closed; first client onboarded |
 
 ---
 
 ### 6. Resource Requirements
 
-- **Time Commitment:** 2–4 hours per day (higher in first 2 weeks)
+- **Time Commitment:** 2–4 hours per day (higher during verification/pilot)
 - **Primary Tools:**
-  - Hermes Agent (for generating n8n workflows and prompts)
+  - Hermes Agent (for generating Python modules and prompts)
   - AGENTOS (for specifications)
-  - Graphify + code-review-graph
+  - Graphify + code-review-graph (optional/backlog)
+  - pytest + ruff + mypy
 - **Accounts Needed:**
   - Oracle Cloud (Free Tier)
   - Ollama.com Cloud subscription
   - Google Workspace
   - Telegram Bot
+  - CommissionCrowd account
 
 ---
 
@@ -222,25 +239,49 @@ The goal is to deliver a working system that can:
 | Risk                              | Likelihood | Impact | Mitigation |
 |-----------------------------------|------------|--------|----------|
 | LLM output quality inconsistent   | High       | High   | Strong prompting + human review + iteration |
-| n8n workflow complexity grows     | Medium     | Medium | Use sub-workflows and modular design |
+| Python workflow complexity grows  | Medium     | Medium | Modular modules under `src/workflows/` + tests |
+| CommissionCrowd UI changes      | Medium     | High   | Playwright selectors + recovery runbook |
+| Candidate identity/commercial verification gaps | High | High | Manual verification workflow; block writes until confirmed |
 | Google Sheets limitations         | Medium     | Low    | Keep data volume reasonable in MVP |
 | Operator learning curve           | Medium     | Medium | Follow clear runbooks and documentation |
-| Telegram command reliability      | Low        | Medium | Test thoroughly in Phase 3 |
+| Telegram approval reliability   | Low        | Medium | Shadow validation + dry-run guards + daemon retry |
 
 ---
 
 ### 8. Success Criteria for MVP
 
 By Day 30, the system should:
-- Allow adding leads to Google Sheets
-- Automatically research and generate personalized drafts
-- Enable review and approval via Google Sheets + Telegram
-- Send approved emails reliably
-- Provide clear status tracking and notifications
-- Be stable enough for pilot client use
+- Authenticate to CommissionCrowd and extract live opportunity state
+- Reconcile browser-discovered opportunities against the CRM without duplicates
+- Score leads for rep-fit and generate application-to-principal drafts
+- Gate every CRM write and application submission through `approval_gate.py`
+- Request and receive operator approvals via Telegram inline-keyboard callbacks
+- Submit approved applications automatically (controlled-write MVP)
+- Provide clear status tracking, audit trail, and notifications
+- Be stable enough for pilot client use after identity/commercial verification
 
 ---
 
-This **Initial Implementation Plan** gives you a clear, realistic 30-day roadmap to go from zero to a working MVP.
+This refreshed plan reflects the actual implementation path from a legacy n8n-first design to a Hermes-driven, testable Python MVP.
 
-Would you like me to expand any phase into more detailed daily tasks, or create a **Phase 0–1 Execution Checklist** to get started immediately?
+---
+
+### 9. n8n Legacy / Reference Only
+
+n8n was the originally planned primary workflow engine. It remains running on OCI (`:5678`) as a **read-only reference** and is no longer the source of truth for new development.
+
+| Aspect | Legacy (n8n) | Current (Hermes Hooks + Python CLI) |
+|--------|--------------|-------------------------------------|
+| Orchestration | n8n workflow JSONs | `src/commission_crowd_agent/workflows/*.py` |
+| Trigger | n8n Schedule / Telegram nodes | Hermes hook scripts under `scripts/hooks/` |
+| Configuration | n8n Credential Store | Pydantic Settings + shared secrets |
+| Testing | Manual n8n runs | pytest + dry-run flags |
+| Version Control | Exported JSON blobs | Source code + tests |
+| Observability | n8n execution log | Hermes reports + `data/runs/` logs |
+| Approval | Google Sheets checkbox | Telegram inline-keyboard approval daemon |
+
+No new n8n workflows are created for the MVP. Legacy n8n exports and documentation are preserved under `docs/legacy/n8n/` for reference only.
+
+---
+
+Would you like me to expand Phase 5 (verification/pilot) into more detailed daily tasks, or create a **Verification Checklist** to unblock operator decisions?

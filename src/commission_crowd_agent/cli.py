@@ -5,9 +5,7 @@ Provides operator-facing commands for the Hermes hooks architecture.
 
 from __future__ import annotations
 
-import asyncio
-import json
-import re
+import contextlib
 from typing import Any
 
 import typer
@@ -16,31 +14,20 @@ from rich.table import Table
 
 from .adapters import GoogleSheetsAdapter, NotifierAdapter, ScoringAdapter
 from .approval_gate import ApprovalGate
-from .canonical import CanonicalOpportunity
 from .config import CcaSettings, load_settings
 from .domain import Lead
 from .lead_ingestion import LeadIngester
 from .lead_scoring import LeadScorer
 from .operator_source import OperatorSourceIngester
+from .report_fetcher import CommissionReportFetcher
 from .secrets import (
     MissingEnvFileError,
     load_shared_env,
 )
-from .state_registry import (
-    LIFECYCLE_APPLICATION_DRAFT_PENDING,
-    OpportunityStateRecord,
-    OpportunityStateRegistry,
+from .supervisor_relay import (
+    SupervisorRelay,
 )
-from .supervisor_relay import SupervisorRelay
 from .workflow_runner import WorkflowRunner
-from .workflows.approvals import (
-    DEFAULT_REGISTRY_PATH,
-    ApprovalPack,
-    load_registry,
-    migrate_lifecycle_state,
-    save_registry,
-    send_approval_request,
-)
 
 app = typer.Typer(help="Commission Crowd Agent CLI")
 console = Console()
@@ -395,181 +382,16 @@ def draft_outreach(
         console.print("[LIVE] draft-outreach not yet wired to real adapter.")
 
 
-def _build_approval_pack_from_record(record: dict[str, Any]) -> ApprovalPack | None:
-    """Build a real ApprovalPack from a Google Sheets approval row.
-
-    Parses the ``notes`` field for real commission terms when available,
-    infers a target-size label from those terms, and preserves the Sheet's
-    risk level. Returns ``None`` if the row lacks an entity ID or approval ID.
-    """
-    opportunity_id = record.get("entity_id", "")
-    approval_id = record.get("approval_id", "")
-    if not opportunity_id or not approval_id:
-        return None
-
-    title = record.get("entity_name") or record.get("requested_action", "Unknown")
-
-    # Commission terms are usually stored in notes as "Commission: ... | Score: ..."
-    notes = record.get("notes", "")
-    commission_terms = record.get("requested_action", "Not stated")
-    commission_match = re.search(r"Commission:\s*(.+?)\s*(?:\||\Z)", notes)
-    if commission_match:
-        commission_terms = commission_match.group(1).strip()
-
-    # Best-effort target size from the commission text
-    target_size = ""
-    value_match = re.search(r"\$[\d,]+(?:\s*[-–]\s*\$?[\d,]+)?", commission_terms)
-    if value_match:
-        target_size = value_match.group(0)
-
-    opp = CanonicalOpportunity(
-        source_opportunity_id=opportunity_id,
-        title=title,
-        company_name=record.get("entity_name") or "",
-        commission_text=commission_terms,
-    )
-    pack = ApprovalPack.from_canonical(opp, approval_id=approval_id, target_size=target_size)
-    pack.risk_level = record.get("risk_level") or pack.risk_level
-    # source_url is a computed property on CanonicalOpportunity; preserve the
-    # explicit URL stored in the approvals tab.
-    pack.source_url = record.get("source_url", "")
-    return pack
-
-
 @app.command(name="request-approval")
 def request_approval(
     client: str = typer.Option(default="DemoClient", help="Client name"),
-    dry_run: bool = typer.Option(
-        default=False,
-        help="Simulate without sending Telegram messages or writing registry",
-    ),
+    dry_run: bool = typer.Option(default=False, help="Run with stub data"),
 ) -> None:
-    """Dispatch inline-keyboard Telegram approval requests for pending approvals.
-
-    Reads pending approvals from the 'approvals' tab, builds a real ApprovalPack
-    for each from the stored opportunity metadata, updates the opportunity state
-    registry to 'application_draft_pending', persists the registry, and sends a
-    Telegram message with 🟢 Approve / 🔴 Reject inline buttons.
-
-    In dry-run mode, a sample approval pack is rendered and no external calls
-    are made.
-    """
-    settings = load_settings()
-    notifier = _build_notifier(settings, dry_run=dry_run)
-
-    if not dry_run and not notifier.token_present():
-        console.print("[red]❌ TELEGRAM_BOT_TOKEN not configured[/red]")
-        raise typer.Exit(1)
-
-    if not dry_run and not settings.telegram_chat_id:
-        console.print("[red]❌ TELEGRAM_CHAT_ID not configured (required for live send)[/red]")
-        raise typer.Exit(1)
-
-    packs: list[ApprovalPack] = []
-    registry: OpportunityStateRegistry | None = None
-
+    """Send operator a summary of leads awaiting approval."""
     if dry_run:
-        # Render a sample pack so the operator can verify the inline-keyboard layout
-        packs = [
-            ApprovalPack(
-                opportunity_id="SAMPLE-1001",
-                title=f"Sample Opportunity — {client}",
-                principal_name="Sample Principal Ltd",
-                commission_terms="25% on first-year revenue",
-                target_size="$5,000–$25,000 ACV",
-                risk_level="low",
-                approval_id="A001",
-            )
-        ]
+        console.print("[DRY] Approval request queued for", client)
     else:
-        if not settings.google_ready:
-            console.print(
-                "[red]❌ Google credentials not configured (required to read approvals)[/red]"
-            )
-            raise typer.Exit(1)
-
-        adapter = _build_sheets_adapter(settings, dry_run=False)
-        gate = ApprovalGate(sheets_adapter=adapter, notifier=notifier)
-
-        # Validate approvals tab exists before reading
-        header_check = gate.validate_header()
-        if not header_check["ok"]:
-            console.print(f"[red]❌ {header_check['error']}[/red]")
-            raise typer.Exit(1)
-
-        pending = gate.list_pending()
-        if not pending:
-            console.print("[yellow]⚠ No pending approvals found in 'approvals' tab[/yellow]")
-            raise typer.Exit(0)
-
-        registry = load_registry(DEFAULT_REGISTRY_PATH)
-
-        for record in pending:
-            pack = _build_approval_pack_from_record(record)
-            if pack is None:
-                continue
-            packs.append(pack)
-            opp_id = pack.opportunity_id
-
-            rec = registry.get_by_id(opp_id)
-            if rec is None:
-                rec = OpportunityStateRecord(opportunity_id=opp_id)
-                rec.title = pack.title
-                rec.principal_name = pack.principal_name
-                rec.commission_text = pack.commission_terms
-                rec.source_url = pack.source_url
-                registry._records[opp_id] = rec
-
-            if rec.lifecycle_state == LIFECYCLE_APPLICATION_DRAFT_PENDING:
-                continue
-            if rec.is_terminal():
-                console.print(
-                    f"[yellow]   ⚠ Skipping terminal opportunity {opp_id} "
-                    f"({rec.lifecycle_state})[/yellow]"
-                )
-                continue
-
-            migrate_lifecycle_state(registry, opp_id, LIFECYCLE_APPLICATION_DRAFT_PENDING)
-
-        if packs and registry is not None:
-            save_registry(registry, DEFAULT_REGISTRY_PATH)
-
-    # Dispatch Telegram inline-keyboard messages
-    sent = 0
-    errors: list[str] = []
-    for pack in packs:
-        result = asyncio.run(
-            send_approval_request(
-                pack,
-                notifier,
-                chat_id=settings.telegram_chat_id,
-                dry_run=dry_run,
-            )
-        )
-        if result.get("ok"):
-            sent += 1
-            if dry_run:
-                console.print("[blue]📨 Sample approval message that would be sent:[/blue]")
-                console.print(result.get("text", ""))
-                console.print("Inline keyboard layout:")
-                console.print(json.dumps(result.get("reply_markup", {}), indent=2))
-            else:
-                console.print(f"[green]   ✅ Approval request sent: {pack.approval_id}[/green]")
-        else:
-            error = result.get("error", "unknown")
-            errors.append(f"{pack.approval_id}: {error}")
-            console.print(f"[red]   ❌ Failed to send {pack.approval_id}: {error}[/red]")
-
-    console.print(f"{'[DRY]' if dry_run else '[LIVE]'} request-approval complete")
-    console.print(f"   Packs prepared: {len(packs)}")
-    console.print(f"   Telegram messages dispatched: {sent}")
-    if errors:
-        console.print(f"   Errors: {len(errors)}")
-
-    if dry_run:
-        console.print("   [dim]No Telegram message or registry write was performed[/dim]")
-    elif registry is not None:
-        console.print(f"   Registry persisted to {DEFAULT_REGISTRY_PATH}")
+        console.print("[LIVE] request-approval not yet wired to Telegram adapter.")
 
 
 @app.command(name="send-approved-outreach")
@@ -1342,6 +1164,99 @@ def prospect_cmd(
     console.print(f"[green]✅ {exec_mode} run complete[/green]")
     for sid in result.get("source_ids", []):
         console.print(f"  [dim]→ Source ID: {sid}[/dim]")
+
+
+@app.command(name="fetch-reports")
+def fetch_reports(
+    dry_run: bool = typer.Option(default=True, help="Simulate without writing the registry"),
+    limit: int = typer.Option(default=100, help="Maximum reports to fetch"),
+) -> None:
+    """Fetch commission reports and persist them to the report registry.
+
+    Defaults to dry-run mode, which instantiates the fetcher and returns a
+    shadow summary with zero writes.  Pass --dry-run=False for live fetching
+    once the concrete scrapers are wired.
+    """
+    fetcher = CommissionReportFetcher()
+    result = fetcher.fetch_account_reports(dry_run=dry_run, limit=limit)
+
+    status_icon = "✅" if result["ok"] else "❌"
+    console.print(f"{status_icon} fetch-reports")
+    console.print(f"   Mode: {'shadow' if result.get('dry_run') else 'live'}")
+    console.print(f"   Fetched: {result.get('fetched', 0)}")
+    console.print(f"   Added: {result.get('added', 0)}")
+    console.print(f"   Conflicts: {result.get('conflicts', 0)}")
+    if result.get("errors"):
+        for err in result["errors"]:
+            console.print(f"   [red]Error: {err}[/red]")
+    if dry_run:
+        console.print("   [dim]Zero writes performed (dry-run)[/dim]")
+    else:
+        console.print(f"   Registry path: {result.get('registry_path', '—')}")
+
+
+@app.command(name="submit-application")
+def submit_application(
+    opportunity_id: str = typer.Option(..., help="Opportunity ID to submit"),
+    approval_id: str = typer.Option(..., help="Approved approval ID"),
+    dry_run: bool = typer.Option(default=True, help="Simulate submission without clicking"),
+) -> None:
+    """Submit an approved application to a principal (dry-run by default).
+
+    Verifies the opportunity is in 'application_approved' state, checks the
+    approval gate, runs a supervisor checkpoint, validates the form shadow,
+    and writes an audit record. The final form submit only happens when
+    --dry-run=False is passed.
+    """
+    from .form_submission_engine import FormSubmissionEngine
+    from .submission_audit import SubmissionAuditModule
+    from .supervisor_relay import SupervisorRelay
+    from .workflows.approvals import load_registry
+
+    settings = load_settings()
+    registry = load_registry()
+    audit = SubmissionAuditModule()
+    supervisor = SupervisorRelay(settings=settings)
+
+    # Browser is only required for live (non-dry-run) validation/submission.
+    browser: Any = None
+    if not dry_run:
+        from .browser_adapter import CommissionCrowdBrowserAdapter
+        console.print("[yellow]⚠️  Live submission requires a started browser session.[/yellow]")
+        console.print("[yellow]   Starting a headless browser for form validation...[/yellow]")
+        browser = CommissionCrowdBrowserAdapter()
+        browser.start()
+
+    engine = FormSubmissionEngine(
+        browser=browser,
+        gate=ApprovalGate(sheets_adapter=None),
+        supervisor=supervisor,
+        audit=audit,
+        settings=settings,
+    )
+    engine.attach_registry(registry)
+
+    result = engine.submit_application(
+        opportunity_id=opportunity_id,
+        approval_id=approval_id,
+        dry_run=dry_run,
+    )
+
+    status_icon = "✅" if result.ok else "❌"
+    console.print(f"{status_icon} submit-application")
+    console.print(f"   Opportunity: {result.opportunity_id}")
+    console.print(f"   Approval ID: {result.approval_id}")
+    console.print(f"   Dry run: {result.dry_run}")
+    console.print(f"   State migrated: {result.state_migrated}")
+    console.print(f"   Audit ID: {result.audit_id or '—'}")
+    if result.error:
+        console.print(f"   [red]Error: {result.error}[/red]")
+    if dry_run:
+        console.print("   [dim]No form was submitted (dry-run)[/dim]")
+
+    if browser is not None:
+        with contextlib.suppress(Exception):
+            browser.stop()
 
 
 def main() -> None:

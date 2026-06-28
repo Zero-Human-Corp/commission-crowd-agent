@@ -2,7 +2,7 @@
 
 Headless AI-powered automation system for B2B lead research, personalised outreach, and pipeline management.
 
-**Current Status:** `MVP_IMPLEMENTATION_COMPLETE` — Browser Discovery MVP code is complete and tested. `DEPENDENCY_HEALTHY` — CommissionCrowd browser adapter uses the correct canonical URL `https://www.commissioncrowd.com` with valid Let's Encrypt certificate (expires Aug 19 2026). Authenticated dashboard navigation confirmed working 2026-06-12. Card-click detail capture remains blocked by candidate identity and commercial verification gaps, not infrastructure. `NOT_READY_FOR_OPERATOR_DECISIONS` — Prior runs identified 48 net-new Find Opportunities candidates and 5 shortlisted prospects, but none have verified commercial details. `NOT_READY_FOR_PRODUCTION` — Candidate identity reconciliation and commercial verification must be completed before any CRM write, approval, or application. See [Known Limitations](docs/known-limitations.md) and `/home/ubuntu/hermes-control/reports/cca_external_dependency_blocker_2026-06-10.md` (historical audit, superseded). Tests passing. Ruff clean. n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
+**Current Status:** `MVP_IMPLEMENTATION_COMPLETE` — Browser Discovery MVP code is complete and tested. `DEPENDENCY_HEALTHY` — CommissionCrowd browser adapter uses the correct canonical URL `https://www.commissioncrowd.com` with valid Let's Encrypt certificate (expires Aug 19 2026). Authenticated dashboard navigation confirmed working 2026-06-12. Card-click detail capture remains blocked by candidate identity and commercial verification gaps, not infrastructure. `NOT_READY_FOR_OPERATOR_DECISIONS` — Current authenticated state shows no verified net-new candidates; prior shortlists are on hold until candidate identity and commercial details are verified. `NOT_READY_FOR_PRODUCTION` — Candidate identity reconciliation and commercial verification must be completed before any CRM write, approval, or application. See [Known Limitations](docs/known-limitations.md) and `/home/ubuntu/hermes-control/reports/cca_external_dependency_blocker_2026-06-10.md` (historical audit, superseded). Tests passing. Ruff clean. n8n is optional legacy/reference only. Shared secrets loaded from `/home/ubuntu/hermes-control/secrets/shared.env`.
 
 ---
 
@@ -169,6 +169,8 @@ cca draft-outreach --dry-run       # Generate email drafts
 cca request-approval --dry-run     # Queue operator approval summary
 cca send-approved-outreach --dry-run   # Dispatch approved emails
 cca daily-summary --dry-run        # Pipeline stats
+cca fetch-reports --dry-run        # Simulate commission report fetching (Sprint 3)
+cca submit-application --opportunity-id ID --approval-id AID --dry-run  # Simulate form submission (Sprint 3)
 ```
 
 ---

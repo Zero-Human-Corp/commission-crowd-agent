@@ -20,7 +20,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -78,7 +78,7 @@ class CanonicalOpportunity(BaseModel):
 
     # ── Provenance ──────────────────────────────────────────────────────
     raw_provenance: dict[str, Any] = Field(default_factory=dict)
-    fetched_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     data_quality_flags: list[str] = Field(default_factory=list)
 
     # ── Computed helpers (not stored, derived) ──────────────────────────
@@ -211,7 +211,7 @@ class CanonicalOpportunity(BaseModel):
             invitation_count=int(raw.get("invitation_count", 0) or 0),
             completeness=int(raw.get("completeness", 0) or 0),
             raw_provenance=raw,
-            fetched_at=datetime.now(UTC),
+            fetched_at=datetime.now(timezone.utc),
             data_quality_flags=flags,
         )
 

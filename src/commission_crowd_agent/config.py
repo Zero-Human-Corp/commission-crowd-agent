@@ -27,6 +27,9 @@ class CcaSettings(BaseSettings):
     )
 
     # --- LLM / Ollama ---
+    # Supported Ollama.com Cloud model options include:
+    #   kimi-k2.6, glm-5.1, glm-5.2:cloud, qwen3-coder-next, deepseek-v3.2,
+    #   gemma3:27b-cloud, nemotron-3-super:cloud, kimi-k2.6:cloud
     ollama_base_url: str = Field(default="", description="Ollama.com Cloud base URL")
     ollama_api_key: str = Field(default="", description="Ollama API key")
     ollama_model: str = Field(default="kimi-k2.6", description="Model name for agents")

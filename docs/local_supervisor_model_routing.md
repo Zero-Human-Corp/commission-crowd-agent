@@ -7,6 +7,7 @@ The Supervisor Relay routes supervisory decisions (code review, mission validati
 | Role | Model | Task type | Default temperature |
 |---|---|---|---|
 | Primary supervisor | `glm-5.1` | General mission & report review | `0.2` |
+| Alternative primary | `glm-5.2:cloud` | Faster general review (drop-in for `glm-5.1`) | `0.2` |
 | Code review | `qwen3-coder-next` | Code quality & security review | `0.2` |
 | Reasoning fallback | `deepseek-v3.2` | Complex reasoning, risk analysis | `0.2` |
 | Draft review | `kimi-k2-thinking` | Outreach text quality & tone | `0.2` |
@@ -25,6 +26,7 @@ SUPERVISOR_TIMEOUT=120
 
 # Override models (optional)
 SUPERVISOR_PRIMARY_MODEL=glm-5.1
+# Alternative: SUPERVISOR_PRIMARY_MODEL=glm-5.2:cloud
 SUPERVISOR_CODE_REVIEW_MODEL=qwen3-coder-next
 SUPERVISOR_REASONING_FALLBACK_MODEL=deepseek-v3.2
 SUPERVISOR_DRAFT_REVIEW_MODEL=kimi-k2-thinking

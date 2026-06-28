@@ -7,7 +7,13 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from enum import StrEnum
+try:
+    from enum import StrEnum
+except ImportError:  # pragma: no cover (Python < 3.11)
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        pass
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
