@@ -42,3 +42,6 @@ graphify-out/
 credentials.*
 tokens.*
 docs/archive/*secrets*
+
+# Claude Code internal concurrency scratchpads
+.claude/
