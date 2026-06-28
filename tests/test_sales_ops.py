@@ -139,6 +139,22 @@ class TestAdvance:
         assert "Invalid transition" in result["error"]
 
     def test_advance_to_submitted(self, pipeline, mock_sheets, mock_calendar) -> None:
+        # Wave 3 Track A: application_submitted is identity-gated. Wire a
+        # verified+reconciled registry record so the gate passes (mirrors the
+        # pattern in tests/test_identity_gate.py::test_verified_and_reconciled_proceeds).
+        from commission_crowd_agent.state_registry import (
+            IDENTITY_RECONCILED_DISPOSITION,
+            IDENTITY_VERIFIED_STATUS,
+            OpportunityStateRegistry,
+        )
+
+        registry = OpportunityStateRegistry()
+        rec = registry._get_or_create("L001")
+        rec.record_identity_verification(
+            IDENTITY_VERIFIED_STATUS, disposition=IDENTITY_RECONCILED_DISPOSITION
+        )
+        pipeline.crm.attach_registry(registry)
+
         mock_sheets.read_last_rows.return_value = self._read_rows("application_approved")
         mock_sheets.upsert_row_by_key.return_value = {"ok": True}
         result = pipeline.advance(
