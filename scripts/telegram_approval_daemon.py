@@ -26,6 +26,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import os
 import signal
 import sys
 import traceback
@@ -41,9 +42,7 @@ from commission_crowd_agent.adapters import (  # type: ignore[import-untyped]
 )
 from commission_crowd_agent.approval_gate import ApprovalGate  # type: ignore[import-untyped]
 from commission_crowd_agent.config import load_settings  # type: ignore[import-untyped]
-from commission_crowd_agent.state_registry import (
-    OpportunityStateRegistry,  # type: ignore[import-untyped]
-)
+from commission_crowd_agent.state_registry import OpportunityStateRegistry  # type: ignore[import-untyped]
 from commission_crowd_agent.supervisor_relay import (  # type: ignore[import-untyped]
     SupervisorRelay,
     SupervisorTaskType,
@@ -57,7 +56,7 @@ from commission_crowd_agent.workflows.approvals import (  # type: ignore[import-
 
 RUNTIME_DIR = Path("/home/ubuntu/hermes-control/runtime")
 DEFAULT_REGISTRY_PATH = RUNTIME_DIR / "cca_state_registry.json"
-LOG_PATH = RUNTIME_DIR / "cca_telegram_daemon.log"
+LOG_PATH = Path(os.environ.get("LOG_PATH", RUNTIME_DIR / "cca_telegram_daemon.log"))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -100,7 +99,8 @@ def _supervisor_checkpoint(callback: dict[str, Any], *, dry_run: bool = False) -
         "Respond only with the requested JSON."
     )
     # Option 2: supervisor inference is independent of daemon write dry-run.
-    relay_dry_run = __import__("os").environ.get("CCA_SUPERVISOR_INFERENCE_DRY_RUN", "").lower() in {"1", "true"}
+    env_dry_run = os.environ.get("CCA_SUPERVISOR_INFERENCE_DRY_RUN", "").lower()
+    relay_dry_run = env_dry_run in {"1", "true"}
     relay = SupervisorRelay(dry_run=relay_dry_run)
     try:
         resp = relay.route(SupervisorTaskType.PRIMARY_SUPERVISOR, prompt, system=system)
@@ -305,7 +305,7 @@ async def _run_demo_callback(
     registry_path: Path,
 ) -> int:
     """Simulate a single operator tap and exercise the supervisor checkpoint."""
-    from commission_crowd_agent.workflows.approvals import (  # type: ignore[import-untyped]
+    from commission_crowd_agent.workflows.approvals import (
         ApprovalPack,
         LIFECYCLE_APPLICATION_DRAFT_PENDING,
         OpportunityStateRecord,
@@ -337,9 +337,7 @@ async def _run_demo_callback(
         risk_level="low",
         approval_id=approval_id,
     )
-    send_result = await send_approval_request(
-        pack, notifier, chat_id=chat_id, dry_run=dry_run
-    )
+    send_result = await send_approval_request(pack, notifier, chat_id=chat_id, dry_run=dry_run)
     fake_query = {
         "id": "cq-ws-a-demo-001",
         "data": f"{action}_{opportunity_id}",

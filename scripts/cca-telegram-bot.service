@@ -9,12 +9,15 @@ Group=ubuntu
 WorkingDirectory=/home/ubuntu/projects/commission-crowd-agent
 Environment="PATH=/home/ubuntu/projects/commission-crowd-agent/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="PYTHONPATH=/home/ubuntu/projects/commission-crowd-agent/src"
+Environment="LOG_PATH=/home/ubuntu/hermes-control/runtime/cca_telegram_daemon.log"
 EnvironmentFile=/home/ubuntu/projects/commission-crowd-agent/.env
 EnvironmentFile=-/home/ubuntu/hermes-control/secrets/shared.env
+ExecStartPre=/usr/bin/install -d -m 750 -o ubuntu -g ubuntu /home/ubuntu/hermes-control/runtime
 ExecStart=/home/ubuntu/projects/commission-crowd-agent/.venv/bin/python -m scripts.telegram_approval_daemon
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartSec=10
+SyslogIdentifier=cca-telegram-bot
 StandardOutput=append:/home/ubuntu/hermes-control/runtime/cca_telegram_daemon.log
 StandardError=append:/home/ubuntu/hermes-control/runtime/cca_telegram_daemon.log
 
